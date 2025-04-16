@@ -40,6 +40,9 @@
       "@config": ["src/config"],
       "@config/*": ["src/config/*"],
 
+      "@data": ["src/data"],
+      "@data/*": ["src/data/*"],
+
       "@directives": ["src/directives"],
       "@directives/*": ["src/directives/*"],
 

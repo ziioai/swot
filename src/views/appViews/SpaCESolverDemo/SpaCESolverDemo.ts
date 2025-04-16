@@ -61,7 +61,7 @@ import {
   播放咕嘟声,
   播放咔哒声,
   播放喇叭式胜利音效,
-  播放随机曲谱,
+  // 播放随机曲谱,
   // 播放猫叫声,
   // 播放男人说话声,
   // 播放女人说Good声,
@@ -215,13 +215,19 @@ const SpaCESolverDemo = defineComponent({
       await saveQtBookBackup({key: ssData.qtBookVersion, data: dataWrap.qtBook});
     };
 
-    const 更新笔记 = async (dataWrap: any) => {
+    const 更新笔记数据 = async (dataWrap: any) => {
       await 记录笔记版本(dataWrap);
       播放咔哒声();
       // console.log(dataWrap);
       // console.log(dataWrap.outputData);
       await SpaCE_Step1_AfterProcess(dataWrap);
       ssData.qtBookVersion = nanoid();
+    };
+
+    const 真的把笔记给更新了 = async () => {
+      await 更新笔记数据(ssData.data3);
+      ssData.theData.qtBook = ssData.data3.qtBook;
+      ssData.data2.qtBook = ssData.data3.qtBook;
     };
 
     const 函数_分析错误 = async () => {
@@ -316,7 +322,7 @@ const SpaCESolverDemo = defineComponent({
         播放咕嘟声();
         toast.add({ severity: "error", summary: "答错了！", detail: "请分析错误", life: 1000 });
         await 函数_分析错误();
-        await 更新笔记(ssData.data2);
+        await 真的把笔记给更新了();
         await 函数_刷新并连续做题且做错时自动更新笔记直到一周全对();
       }
     };
@@ -331,7 +337,7 @@ const SpaCESolverDemo = defineComponent({
         播放咕嘟声();
         toast.add({ severity: "error", summary: "答错了！", detail: "请分析错误", life: 1000 });
         await 函数_分析错误();
-        await 更新笔记(ssData.data2);
+        await 真的把笔记给更新了();
         await 函数_刷新并连续做题且做错时自动更新笔记直到一周全对();
       }
     };
@@ -340,35 +346,7 @@ const SpaCESolverDemo = defineComponent({
 
     return ()=>{
       return [
-        vnd(Panel, { header: "资料", toggleable: true, class: "my-1.5rem! col" }, {
-          default: () => vnd("div", {class: "p-panel p-0.5rem max-h-12rem overflow-auto"}, [
 
-            vnd("div", {class: "stack-v"}, [
-              vnd("a", {href: "https://pku-space.github.io/SpaCE2025/", target: "_blank"}, [ "SpaCE2025" ]),
-
-              vnd("div", {class: "stack-h"}, [
-                vnd(ToolButton, { label: "播放叮咚声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放叮咚声, }),
-                vnd(ToolButton, { label: "播放咕嘟声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放咕嘟声, }),
-                vnd(ToolButton, { label: "播放咔哒声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放咔哒声, }),
-                // vnd(ToolButton, { label: "播放猫叫声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放猫叫声, }),
-                // vnd(ToolButton, { label: "播放男人说话声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放男人说话声, }),
-                // vnd(ToolButton, { label: "播放女人说Good声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放女人说Good声, }),
-              ]),
-
-              vnd("div", {class: "stack-h"}, [
-                vnd(ToolButton, { label: "播放喇叭式胜利音效", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放喇叭式胜利音效, }),
-                // vnd(ToolButton, { label: "播放胜利音效", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放胜利音效, }),
-                // vnd(ToolButton, { label: "播放小星星", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放小星星, }),
-                // vnd(ToolButton, { label: "播放电子舞曲", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放电子舞曲, }),
-                vnd(ToolButton, { label: "播放随机曲谱", icon: "pi pi-play", class: "mr-0.5rem", onClick: ()=>{播放随机曲谱(16);}, }),
-                vnd(ToolButton, { label: "播放随机曲谱64", icon: "pi pi-play", class: "mr-0.5rem", onClick: ()=>{播放随机曲谱(64);}, }),
-              ]),
-
-            ]),
-
-            // vnd("div", {class: "stack-h"}, []),
-          ]),
-        }),
 
         vnd(Panel, { header: "随机例题", toggleable: true, class: "my-1.5rem! col" }, {
           default: () => vnd("div", {class: "stack-v"}, [
@@ -433,7 +411,7 @@ const SpaCESolverDemo = defineComponent({
             vnd("div", {class: "stack-h"}, [
               vnd(ToolButton, { label: "更新", icon: "pi pi-play", class: "mr-1.5rem",
                 onClick: async () => {
-                  await 更新笔记(ssData.theData);
+                  await 更新笔记数据(ssData.theData);
                 },
               }),
             ]),
@@ -528,11 +506,7 @@ const SpaCESolverDemo = defineComponent({
                 ssData.data3.outputData==null?null:
                 vnd("div", {class: "stack-h"}, [
                   vnd(ToolButton, { label: "更新", icon: "pi pi-play", class: "mr-1.5rem",
-                    onClick: async () => {
-                      await 更新笔记(ssData.data3);
-                      ssData.theData.qtBook = ssData.data3.qtBook;
-                      ssData.data2.qtBook = ssData.data3.qtBook;
-                    },
+                    onClick: 真的把笔记给更新了,
                   }),
                 ]),
               ],

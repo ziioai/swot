@@ -10,6 +10,7 @@ import AppNotesView from '@views/appViews/AppNotesView';
 import AppAboutView from '@views/appViews/AppAboutView';
 import AppConfigView from '@views/appViews/AppConfigView';
 import SpaCESolverDemo from '@views/appViews/SpaCESolverDemo';
+import AITrainingSystem from '@views/appViews/AITrainingSystem';
 
 // const routes = [
 //   { path: '/:pathMatch(.*)*', name: '404', component: NotFoundView },
@@ -26,6 +27,7 @@ const routes = [
   { path: '/', redirect: '/ss' },
   { path: '/', name: 'app-root', component: AppView, children: [
     { path: 'ss', name: 'app-ss', component: SpaCESolverDemo },
+    { path: 'train', name: 'app-train', component: AITrainingSystem },
     { path: 'notes', name: 'app-notes', component: AppNotesView },
     { path: 'about', name: 'app-about', component: AppAboutView },
     { path: 'config', name: 'app-config', component: AppConfigView },

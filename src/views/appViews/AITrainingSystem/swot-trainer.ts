@@ -1,4 +1,11 @@
 
+import type {
+  QuestionEntry,
+  QuestionTrainingState,
+  SWOTOptions,
+  SWOTState,
+} from "./types";
+
 export const 思路 = `
 - O 是否达到最大循环次数
   - 达到：结束训练
@@ -103,6 +110,7 @@ export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrai
   try {
 
     /** @TODO 更新笔记 */
+    // 这是一项既耗时间又耗资源的操作，且一旦中断便无法恢复
 
     return 1;
   } catch (err) {
@@ -123,6 +131,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
   try {
 
     /** @TODO 做题 */
+    // 这是一项既耗时间又耗资源的操作，且一旦中断便无法恢复
 
     return 1;
   } catch (err) {
@@ -167,44 +176,7 @@ export function 处理单个错题(swot: SWOT, quId: QuestionTrainingState["nnid
 
 
 
-export interface SWOTOptions {
-  maxLoopCount?: number;            // 最大循环次数：循环已经进行了 xx 次，就结束吧
-  maxVerifyCount?: number;          // 最大验证次数：在版本中所有未跳过的非简单题都做了 xx 次，还没做对，就结束吧
-  maxCertifyCount?: number;         // 最大确证次数：在版本中所有未跳过的非简单题都做对了 xx 次，就结束吧
-  versionSimpleThreshold?: number;  // 版本简单阈值：某题在版本中每次都做对且达 xx 次，则标记为【版本简单题】
-  totalSimpleThreshold?: number;    // 总体简单阈值：某题在全程中每次都做对且达 xx 次，则标记为【总体简单题】
-  versionSkipThreshold?: number;    // 版本难题阈值：某题在版本中累计做错 xx 次，则标记为【版本跳过题】
-  totalSkipThreshold?: number;      // 总体难题阈值：某题在全程中累计做出 xx 次，则标记为【总体跳过题】
-};
-export interface SWOTState {
-  totalCount?: number;           // 总体循环次数
-  versionCount?: number;         // 版本循环次数
-  versionCertifyCount?: number;  // 版本确证次数
-  quStateDict: Record<QuestionTrainingState["nnid"], QuestionTrainingState>;  // 题目状态字典
 
-  ended?: boolean;  // 是否结束
-  endReason?: string;  // 结束原因
-  endTime?: string;  // 结束时间
-  startTime?: string;  // 开始时间
-};
-export interface QuestionEntry {
-  nnid: string;     // 题目的唯一标识符
-  content: string;  // 题目的内容
-  answer: string;   // 题目的答案
-}
-export interface QuestionTrainingState {
-  nnid: string;            // 题目的唯一标识符
-  trainedCountV?: number;  // 训练次数（版本）
-  trainedCountT?: number;  // 训练次数（总体）
-  correctCountV?: number;  // 正确次数（版本）
-  correctCountT?: number;  // 正确次数（总体）
-  errorCountV?: number;    // 错误次数（版本）
-  errorCountT?: number;    // 错误次数（总体）
-  isSimpleV?: boolean;     // 是否是简单题（版本）
-  isSimpleT?: boolean;     // 是否是简单题（总体）
-  isSkipV?: boolean;       // 是否是难题（版本）
-  isSkipT?: boolean;       // 是否是难题（总体）
-}
 
 export class SWOT {
   maxLoopCount: number = 30;           // 最大循环次数

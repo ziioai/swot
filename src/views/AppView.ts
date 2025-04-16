@@ -181,7 +181,7 @@ const AppView = defineComponent({
           vnd(Menubar, {
             // class: "my-6rem!",
             class: [
-              "md:max-w-768px md:mx-auto w-100%",
+              "xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto w-100%",
               "border-none! bg-transparent!",
               // "bg-blue!",
               // "bg-white! dark:bg-black! bg-opacity-50!",
@@ -229,15 +229,15 @@ const AppView = defineComponent({
         vnd("div", { class: [
           "z-80",
           "my-5rem",
-          "md:rounded-0.5rem md:border-2 md:max-w-768px md:mx-auto",
+          "md:rounded-0.5rem md:border-2 xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto",
           "w-100% p-0.75rem bg-var-p-panel-background border-var-p-panel-border-color overflow-auto",
-          "min-h-200vh",
+          "min-h-80vh",
           // "grow-1",
         ] }, [
 
 
           vnd("div", { class: [
-            "==md:rounded-0.5rem ==md:border-2 md:max-w-768px md:mx-auto",
+            "==md:rounded-0.5rem ==md:border-2 xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto",
             "w-100% ==p-0.75rem bg-var-p-panel-background ==border-var-p-panel-border-color",
             // "grow-1 overflow-auto",
             "bg-transparent! [background:transparent]!",

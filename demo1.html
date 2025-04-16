@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SWOT Training System</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">SWOT Training System</h1>
+      <p class="text-gray-600">Smart Weakness-Oriented Training</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Control Panel -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Control Panel</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
+              Start Training
+            </button>
+          </div>
+          <div>
+            <button class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
+              Continue Training
+            </button>
+          </div>
+          <div>
+            <button class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition">
+              Stop Training
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t">
+          <h3 class="font-medium text-gray-700 mb-2">Training Parameters</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <label class="text-gray-600">Max Loop Count</label>
+              <input type="number" value="30" class="w-20 border rounded px-2 py-1">
+            </div>
+            <div class="flex justify-between items-center">
+              <label class="text-gray-600">Max Verify Count</label>
+              <input type="number" value="20" class="w-20 border rounded px-2 py-1">
+            </div>
+            <div class="flex justify-between items-center">
+              <label class="text-gray-600">Version Simple Threshold</label>
+              <input type="number" value="2" class="w-20 border rounded px-2 py-1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Status -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Training Status</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-gray-600">Current Loop</span>
+              <span class="font-medium">5/30</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+              <div class="bg-blue-600 h-2.5 rounded-full" style="width: 16%"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-blue-50 p-3 rounded">
+              <p class="text-sm text-gray-500">Version Certify Count</p>
+              <p class="text-xl font-bold">1/2</p>
+            </div>
+            <div class="bg-green-50 p-3 rounded">
+              <p class="text-sm text-gray-500">Questions Completed</p>
+              <p class="text-xl font-bold">8/15</p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t">
+            <h3 class="font-medium text-gray-700 mb-2">Current Status</h3>
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3">
+              <p class="text-yellow-700">Training in progress</p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t">
+            <h3 class="font-medium text-gray-700 mb-2">Last Action</h3>
+            <p class="text-sm text-gray-600">Processed 3 questions (2 correct, 1 wrong)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Questions Status</h2>
+        
+        <div class="mb-4">
+          <input type="text" placeholder="Filter questions..." class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div class="overflow-y-auto max-h-96">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">ID</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Stats</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr>
+                <td class="px-3 py-2 text-sm">Q001</td>
+                <td class="px-3 py-2">
+                  <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Simple</span>
+                </td>
+                <td class="px-3 py-2 text-xs">4/4 (V:2/2)</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-sm">Q002</td>
+                <td class="px-3 py-2">
+                  <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Active</span>
+                </td>
+                <td class="px-3 py-2 text-xs">3/4 (V:1/2)</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-sm">Q003</td>
+                <td class="px-3 py-2">
+                  <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Skipped</span>
+                </td>
+                <td class="px-3 py-2 text-xs">2/6 (V:1/5)</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-sm">Q004</td>
+                <td class="px-3 py-2">
+                  <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">New</span>
+                </td>
+                <td class="px-3 py-2 text-xs">0/0 (V:0/0)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question Details -->
+    <div class="mt-6 bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Question Details</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-medium text-gray-700 mb-2">Q002: Sample Question</h3>
+          <div class="bg-gray-50 p-4 rounded mb-4">
+            <p class="text-gray-800">What is the capital of France?</p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded">
+            <p class="text-gray-800">Answer: Paris</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="font-medium text-gray-700 mb-2">Statistics</h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-gray-600">Version Stats</p>
+              <div class="flex items-center space-x-2 mt-1">
+                <span class="w-16 text-sm">Correct:</span>
+                <span class="font-medium">1</span>
+                <span class="w-16 text-sm">Wrong:</span>
+                <span class="font-medium">1</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600">Total Stats</p>
+              <div class="flex items-center space-x-2 mt-1">
+                <span class="w-16 text-sm">Correct:</span>
+                <span class="font-medium">3</span>
+                <span class="w-16 text-sm">Wrong:</span>
+                <span class="font-medium">1</span>
+              </div>
+            </div>
+            <div class="pt-4 border-t">
+              <p class="text-sm text-gray-600">Notes</p>
+              <textarea class="w-full border rounded p-2 mt-1 h-24" placeholder="Add notes about this question..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
