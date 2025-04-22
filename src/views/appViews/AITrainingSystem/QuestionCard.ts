@@ -4,7 +4,7 @@ import { h as vnd, defineComponent, PropType } from 'vue';
 import Panel from 'primevue/panel';
 import Badge from 'primevue/badge';
 import ToolButton from '@components/shared/ToolButton';
-import { QuestionDisplay, QuestionTrainingState } from './types';
+import { QuestionEntry, QuestionTrainingState } from './types';
 
 export default defineComponent({
   name: "QuestionCard",
@@ -13,7 +13,7 @@ export default defineComponent({
     idx: { type: Number, required: false, },
     state: { type: String, required: false, },
     question: {
-      type: Object as PropType<QuestionDisplay>,
+      type: Object as PropType<QuestionEntry>,
       required: true,
     },
     response: {
@@ -78,6 +78,9 @@ export default defineComponent({
           ]}, [
             JSON.stringify(props.question.content, null, 2),
           ]),
+          vnd("div", { class: []}, [`题面字段`]),
+          vnd("div", { class: []}, [`答案字段`]),
+          vnd("div", { class: []}, [`解释字段`]),
 
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`作答`]),
           vnd("div", { class: [
@@ -149,8 +152,8 @@ export default defineComponent({
           ]),
 
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`状态`]),
-          vnd("div", { class: []}, [`版本 : 做了 ${props.trainingState.trainedCountV} 次，正确 ${props.trainingState.correctCountV} 次，错误 ${props.trainingState.errorCountV} 次`]),
-          vnd("div", { class: []}, [`总计 : 做了 ${props.trainingState.trainedCountT} 次，正确 ${props.trainingState.correctCountT} 次，错误 ${props.trainingState.errorCountT} 次`]),
+          vnd("div", { class: []}, [`版本 : 做了 ${props.trainingState.trainedCountV??0} 次，正确 ${props.trainingState.correctCountV??0} 次，错误 ${props.trainingState.errorCountV??0} 次`]),
+          vnd("div", { class: []}, [`总计 : 做了 ${props.trainingState.trainedCountT??0} 次，正确 ${props.trainingState.correctCountT??0} 次，错误 ${props.trainingState.errorCountT??0} 次`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
             "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",

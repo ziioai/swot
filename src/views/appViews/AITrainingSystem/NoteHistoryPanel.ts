@@ -1,5 +1,7 @@
-import { h as vnd, defineComponent, PropType, } from 'vue';
+// @unocss-include
+
 import clipboard from "clipboard";
+import { h as vnd, defineComponent, PropType, } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
 // import Badge from 'primevue/badge';
 import Panel from 'primevue/panel';
@@ -19,14 +21,6 @@ export default defineComponent({
     return () => {
 
       const make = () => vnd("div", { class: "stack-v" }, [
-        // vnd("div", { class: ["mt-2 stack-h-center"]}, [
-        //   vnd("div", { class: ["font-bold opacity-80"]}, [`当前版本：`]),
-        //   vnd(Badge, {
-        //     value: props?.version??"???",
-        //     severity: "secondary",
-        //   }),
-        // ]),
-
         vnd("div", { class: [
           "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
           "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",

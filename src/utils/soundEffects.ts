@@ -385,18 +385,157 @@ export const 咕嘟声曲谱: SoundEffect = {
       ]
     }
   ],
-  effects: [
+  // effects: [
+  //   {
+  //     type: "filter",
+  //     params: {
+  //       type: "lowpass",
+  //       frequency: 400,
+  //       Q: 5
+  //     }
+  //   }
+  // ]
+};
+export const 播放咕嘟声 = () => 播放音效(咕嘟声曲谱);
+
+// 曲谱定义 - 哐当声
+export const 哐当声曲谱: SoundEffect = {
+  name: "哐当声",
+  type: "composite",
+  masterVolume: 1.0,
+  elements: [
+    // 主要金属碰撞声
     {
-      type: "filter",
+      type: "noise",
+      startTime: 0,
+      duration: 0.25,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.85 }, // 强烈的初始冲击
+        { time: 0.05, value: 0.5 },
+        { time: 0.15, value: 0.2 },
+        { time: 0.25, value: 0 }
+      ],
+      decayRate: 0.3
+    },
+    
+    // 金属共振 - 低频
+    {
+      type: "tone",
+      oscillatorType: "triangle",
+      frequency: 120, // 低音金属共振
+      startTime: 0.01,
+      duration: 0.3,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.7 },
+        { time: 0.1, value: 0.3 },
+        { time: 0.3, value: 0 }
+      ]
+    },
+    
+    // 金属共振 - 中频
+    {
+      type: "tone",
+      oscillatorType: "triangle",
+      frequency: 350,
+      startTime: 0.01,
+      duration: 0.2,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.5 },
+        { time: 0.08, value: 0.25 },
+        { time: 0.2, value: 0 }
+      ],
+      vibrato: {
+        frequency: 30, // 快速振动模拟金属抖动
+        depth: 15,
+        startTime: 0.01,
+        duration: 0.18
+      }
+    },
+    
+    // // 金属尖锐声
+    // {
+    //   type: "tone",
+    //   oscillatorType: "sawtooth",
+    //   frequency: 1200,
+    //   startTime: 0,
+    //   duration: 0.15,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.01, value: 0.4 },
+    //     { time: 0.05, value: 0.15 },
+    //     { time: 0.15, value: 0 }
+    //   ]
+    // },
+    
+    // 次级碰撞 - 模拟物体弹跳
+    {
+      type: "noise",
+      startTime: 0.14,
+      duration: 0.15,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.45 }, // 次级撞击，比第一次弱
+        { time: 0.05, value: 0.2 },
+        { time: 0.15, value: 0 }
+      ],
+      decayRate: 0.4
+    },
+    
+    // 次级金属共振 - 模拟弹跳后的余震
+    {
+      type: "tone",
+      oscillatorType: "triangle",
+      frequency: 180,
+      startTime: 0.15,
+      duration: 0.25,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.4 },
+        { time: 0.1, value: 0.15 },
+        { time: 0.25, value: 0 }
+      ]
+    },
+    
+    // // 金属余音 - 高频泛音衰减
+    // {
+    //   type: "frequencyRamp",
+    //   oscillatorType: "sine",
+    //   startFrequency: 3000,
+    //   endFrequency: 1500,
+    //   startTime: 0.02,
+    //   duration: 0.35,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.01, value: 0.15 },
+    //     { time: 0.2, value: 0.05 },
+    //     { time: 0.35, value: 0 }
+    //   ]
+    // }
+  ],
+  effects: [
+    // // 滤波器 - 强化金属质感
+    // {
+    //   type: "filter",
+    //   params: {
+    //     type: "bandpass",
+    //     frequency: 2500,
+    //     Q: 1.5
+    //   }
+    // },
+    // 混响 - 模拟空间效果
+    {
+      type: "reverb",
       params: {
-        type: "lowpass",
-        frequency: 400,
-        Q: 5
+        duration: 0.8,
+        decayRate: 25.64
       }
     }
   ]
 };
-export const 播放咕嘟声 = () => 播放音效(咕嘟声曲谱);
+export const 播放哐当声 = () => 播放音效(哐当声曲谱);
 
 // 曲谱定义 - 咔哒声
 export const 咔哒声曲谱: SoundEffect = {
@@ -429,18 +568,233 @@ export const 咔哒声曲谱: SoundEffect = {
       ]
     }
   ],
+  // effects: [
+  //   {
+  //     type: "filter",
+  //     params: {
+  //       type: "bandpass",
+  //       frequency: 3500,  // 提高中心频率使声音更明亮
+  //       Q: 0.8            // 降低Q值使频带更宽
+  //     }
+  //   }
+  // ]
+};
+export const 播放咔哒声 = () => 播放音效(咔哒声曲谱);
+
+// 曲谱定义 - 坠落声
+export const 坠落声曲谱: SoundEffect = {
+  name: "坠落声",
+  type: "composite",
+  masterVolume: 1.0,
+  elements: [
+    // 主要下落音效 - 从高到低快速滑落的频率
+    {
+      type: "frequencyRamp",
+      oscillatorType: "sawtooth",
+      startFrequency: 800,
+      endFrequency: 150,
+      startTime: 0,
+      duration: 0.6,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.05, value: 0.5 },
+        { time: 0.4, value: 0.3 },
+        { time: 0.6, value: 0 }
+      ]
+    },
+    // 次要下落音效 - 稍微滞后，增强立体感
+    {
+      type: "frequencyRamp",
+      oscillatorType: "triangle",
+      startFrequency: 700,
+      endFrequency: 100,
+      startTime: 0.1,
+      duration: 0.6,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.05, value: 0.3 },
+        { time: 0.45, value: 0.15 },
+        { time: 0.6, value: 0 }
+      ]
+    },
+    // 添加呼啸风声 - 随下落过程越来越强
+    {
+      type: "noise",
+      startTime: 0.05,
+      duration: 0.7,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.2, value: 0.1 },
+        { time: 0.5, value: 0.2 },
+        { time: 0.7, value: 0 }
+      ],
+      decayRate: 0.1
+    },
+    // // 撞击声 - 在下落结束时
+    // {
+    //   type: "noise",
+    //   startTime: 0.6,
+    //   duration: 0.2,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.01, value: 0.6 },
+    //     { time: 0.05, value: 0.3 },
+    //     { time: 0.2, value: 0 }
+    //   ],
+    //   decayRate: 0.4
+    // },
+    // // 低频撞击 - 增强撞击感
+    // {
+    //   type: "tone",
+    //   oscillatorType: "sine",
+    //   frequency: 80,
+    //   startTime: 0.6,
+    //   duration: 0.25,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.01, value: 0.7 },
+    //     { time: 0.1, value: 0.2 },
+    //     { time: 0.25, value: 0 }
+    //   ]
+    // }
+  ],
+  effects: [
+    // // 滤波器 - 突出空气摩擦感
+    // {
+    //   type: "filter",
+    //   params: {
+    //     type: "bandpass",
+    //     frequency: 2600,
+    //     Q: 0.8
+    //   }
+    // },
+
+    // 混响 - 提供空间感
+    {
+      type: "reverb",
+      params: {
+        duration: 1.2,
+        decayRate: 2.3
+      }
+    }
+  ]
+};
+export const 播放坠落声 = () => 播放音效(坠落声曲谱);
+
+// 曲谱定义 - 报错声
+export const 报错声曲谱: SoundEffect = {
+  name: "报错声",
+  type: "composite",
+  masterVolume: 1,
+  elements: [
+    // 主要错误音 - 降调的两个音符
+    {
+      type: "tone",
+      oscillatorType: "square",
+      frequency: 392.00, // G4
+      startTime: 0.0,
+      duration: 0.15,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.5 },
+        { time: 0.12, value: 0.3 },
+        { time: 0.15, value: 0 }
+      ]
+    },
+    {
+      type: "tone",
+      oscillatorType: "square",
+      frequency: 261.63, // C4
+      startTime: 0.15,
+      duration: 0.25,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.02, value: 0.6 },
+        { time: 0.2, value: 0.3 },
+        { time: 0.25, value: 0 }
+      ]
+    },
+    
+    // 增加嘈杂感 - 警告色彩
+    {
+      type: "tone",
+      oscillatorType: "sawtooth",
+      frequency: 196.00, // G3
+      startTime: 0.16,
+      duration: 0.22,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.02, value: 0.15 },
+        { time: 0.18, value: 0.08 },
+        { time: 0.22, value: 0 }
+      ]
+    },
+    
+    // 添加噪声元素增强错误感
+    {
+      type: "noise",
+      startTime: 0.15,
+      duration: 0.2,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.15 },
+        { time: 0.15, value: 0.10 },
+        { time: 0.2, value: 0 }
+      ],
+      decayRate: 0.3
+    },
+    
+    // 添加低频共鸣，增强警告感
+    {
+      type: "tone",
+      oscillatorType: "sine",
+      frequency: 110.00, // A2
+      startTime: 0.15,
+      duration: 0.3,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.05, value: 0.25 },
+        { time: 0.2, value: 0.15 },
+        { time: 0.3, value: 0 }
+      ]
+    },
+    
+    // 高频尖锐声 - 引起注意
+    {
+      type: "tone",
+      oscillatorType: "triangle",
+      frequency: 1046.50, // C6
+      startTime: 0.01,
+      duration: 0.1,
+      gainEnvelope: [
+        { time: 0, value: 0 },
+        { time: 0.01, value: 0.12 },
+        { time: 0.08, value: 0.05 },
+        { time: 0.1, value: 0 }
+      ]
+    }
+  ],
   effects: [
     {
       type: "filter",
       params: {
         type: "bandpass",
-        frequency: 3500,  // 提高中心频率使声音更明亮
-        Q: 0.8            // 降低Q值使频带更宽
+        frequency: 3200,
+        Q: 0.80
       }
-    }
+    },
+    {
+      type: "reverb",
+      params: {
+        duration: 2.25,
+        decayRate: 20.5,
+      }
+    },
   ]
 };
-export const 播放咔哒声 = () => 播放音效(咔哒声曲谱);
+export const 播放报错声 = () => 播放音效(报错声曲谱);
+
+
 
 
 
@@ -729,17 +1083,17 @@ export const 喇叭式胜利音效曲谱: SoundEffect = {
       type: "filter",
       params: {
         type: "highpass", // 高通滤波器使声音更亮更清晰
-        frequency: 600,
+        frequency: 800,
         Q: 0.7
       }
     },
     {
       type: "reverb",
       params: {
-        duration: 0.8, // 减少混响时间
-        decayRate: 0.5 // 增加衰减速率
+        duration: 2.25,
+        decayRate: 20.5,
       }
-    }
+    },
   ]
 };
 
@@ -771,22 +1125,22 @@ export const 猫叫声曲谱: SoundEffect = {
       ]
     },
     
-    // 第二次叫声 - 猫通常会连叫两声
-    {
-      type: "frequencyRamp",
-      oscillatorType: "sawtooth",
-      startFrequency: 950,
-      endFrequency: 600,
-      startTime: 0.7,
-      duration: 0.6,
-      gainEnvelope: [
-        { time: 0, value: 0 },
-        { time: 0.05, value: 0.55 },
-        { time: 0.25, value: 0.4 },
-        { time: 0.5, value: 0.2 },
-        { time: 0.6, value: 0 }
-      ]
-    },
+    // // 第二次叫声 - 猫通常会连叫两声
+    // {
+    //   type: "frequencyRamp",
+    //   oscillatorType: "sawtooth",
+    //   startFrequency: 950,
+    //   endFrequency: 600,
+    //   startTime: 0.7,
+    //   duration: 0.6,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.05, value: 0.55 },
+    //     { time: 0.25, value: 0.4 },
+    //     { time: 0.5, value: 0.2 },
+    //     { time: 0.6, value: 0 }
+    //   ]
+    // },
     
     // 添加颤音效果 - 使猫叫声更加逼真
     {
@@ -809,26 +1163,26 @@ export const 猫叫声曲谱: SoundEffect = {
       }
     },
     
-    // 第二次叫声的颤音效果
-    {
-      type: "tone",
-      oscillatorType: "triangle",
-      frequency: 870,
-      startTime: 0.72,
-      duration: 0.55,
-      gainEnvelope: [
-        { time: 0, value: 0 },
-        { time: 0.03, value: 0.25 },
-        { time: 0.3, value: 0.2 },
-        { time: 0.55, value: 0 }
-      ],
-      vibrato: {
-        frequency: 12,
-        depth: 15,
-        startTime: 0.05,
-        duration: 0.45
-      }
-    },
+    // // 第二次叫声的颤音效果
+    // {
+    //   type: "tone",
+    //   oscillatorType: "triangle",
+    //   frequency: 870,
+    //   startTime: 0.72,
+    //   duration: 0.55,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.03, value: 0.25 },
+    //     { time: 0.3, value: 0.2 },
+    //     { time: 0.55, value: 0 }
+    //   ],
+    //   vibrato: {
+    //     frequency: 12,
+    //     depth: 15,
+    //     startTime: 0.05,
+    //     duration: 0.45
+    //   }
+    // },
     
     // 高频部分 - 模拟猫叫声中的尖锐成分
     {
@@ -845,20 +1199,20 @@ export const 猫叫声曲谱: SoundEffect = {
       ]
     },
     
-    // 第二次叫声的高频部分
-    {
-      type: "tone",
-      oscillatorType: "sine",
-      frequency: 1950,
-      startTime: 0.73,
-      duration: 0.5,
-      gainEnvelope: [
-        { time: 0, value: 0 },
-        { time: 0.05, value: 0.12 },
-        { time: 0.3, value: 0.08 },
-        { time: 0.5, value: 0 }
-      ]
-    },
+    // // 第二次叫声的高频部分
+    // {
+    //   type: "tone",
+    //   oscillatorType: "sine",
+    //   frequency: 1950,
+    //   startTime: 0.73,
+    //   duration: 0.5,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.05, value: 0.12 },
+    //     { time: 0.3, value: 0.08 },
+    //     { time: 0.5, value: 0 }
+    //   ]
+    // },
     
     // 添加少量噪声 - 模拟猫叫声中的气息成分
     {
@@ -874,38 +1228,45 @@ export const 猫叫声曲谱: SoundEffect = {
       decayRate: 0.2
     },
     
-    // 第二次叫声的噪声成分
-    {
-      type: "noise",
-      startTime: 0.71,
-      duration: 0.55,
-      gainEnvelope: [
-        { time: 0, value: 0 },
-        { time: 0.05, value: 0.08 },
-        { time: 0.35, value: 0.04 },
-        { time: 0.55, value: 0 }
-      ],
-      decayRate: 0.25
-    }
+    // // 第二次叫声的噪声成分
+    // {
+    //   type: "noise",
+    //   startTime: 0.71,
+    //   duration: 0.55,
+    //   gainEnvelope: [
+    //     { time: 0, value: 0 },
+    //     { time: 0.05, value: 0.08 },
+    //     { time: 0.35, value: 0.04 },
+    //     { time: 0.55, value: 0 }
+    //   ],
+    //   decayRate: 0.25
+    // },
   ],
   effects: [
+    {
+      type: "reverb",
+      params: {
+        duration: 2.25,
+        decayRate: 20.5,
+      }
+    },
     // 带通滤波器突出猫叫声特有的频率范围
     {
       type: "filter",
       params: {
         type: "bandpass",
-        frequency: 1200,
+        frequency: 2600,
         Q: 1.2
       }
     },
-    // 轻微混响模拟空间感
-    {
-      type: "reverb",
-      params: {
-        duration: 0.8,
-        decayRate: 0.4
-      }
-    }
+    // // 轻微混响模拟空间感
+    // {
+    //   type: "reverb",
+    //   params: {
+    //     duration: 0.8,
+    //     decayRate: 0.4
+    //   }
+    // },
   ]
 };
 export const 播放猫叫声 = () => 播放音效(猫叫声曲谱);
@@ -1141,30 +1502,27 @@ export const 男人说话声曲谱: SoundEffect = {
       }
     }
   ],
-  effects: [
-    // 模拟人声特有的频率响应
-    {
-      type: "filter",
-      params: {
-        type: "bandpass",
-        frequency: 800,  // 中心频率在人声范围内
-        Q: 0.9           // 较宽的通带宽度
-      }
-    },
-    // 添加少量混响模拟口腔共鸣
-    {
-      type: "reverb",
-      params: {
-        duration: 0.3,   // 短暂的混响
-        decayRate: 0.6   // 较快的衰减
-      }
-    }
-  ]
+  // effects: [
+  //   // 模拟人声特有的频率响应
+  //   {
+  //     type: "filter",
+  //     params: {
+  //       type: "bandpass",
+  //       frequency: 800,  // 中心频率在人声范围内
+  //       Q: 0.9           // 较宽的通带宽度
+  //     }
+  //   },
+  //   // 添加少量混响模拟口腔共鸣
+  //   {
+  //     type: "reverb",
+  //     params: {
+  //       duration: 0.3,   // 短暂的混响
+  //       decayRate: 0.6   // 较快的衰减
+  //     }
+  //   }
+  // ]
 };
-
 export const 播放男人说话声 = () => 播放音效(男人说话声曲谱);
-
-// ...existing code...
 
 // 曲谱定义 - 女人说"good"声音
 export const 女人说Good声曲谱: SoundEffect = {
@@ -1385,25 +1743,25 @@ export const 女人说Good声曲谱: SoundEffect = {
       }
     }
   ],
-  effects: [
-    // 模拟女声特有的频率响应 - 中心频率比男声高
-    {
-      type: "filter",
-      params: {
-        type: "bandpass",
-        frequency: 1200,  // 中心频率在女声范围内，高于男声
-        Q: 0.85           // 稍窄的通带宽度
-      }
-    },
-    // 添加少量混响模拟口腔共鸣
-    {
-      type: "reverb",
-      params: {
-        duration: 0.25,   // 短暂的混响
-        decayRate: 0.65   // 较快的衰减
-      }
-    }
-  ]
+  // effects: [
+  //   // 模拟女声特有的频率响应 - 中心频率比男声高
+  //   {
+  //     type: "filter",
+  //     params: {
+  //       type: "bandpass",
+  //       frequency: 1200,  // 中心频率在女声范围内，高于男声
+  //       Q: 0.85           // 稍窄的通带宽度
+  //     }
+  //   },
+  //   // 添加少量混响模拟口腔共鸣
+  //   {
+  //     type: "reverb",
+  //     params: {
+  //       duration: 0.25,   // 短暂的混响
+  //       decayRate: 0.65   // 较快的衰减
+  //     }
+  //   }
+  // ]
 };
 
 export const 播放女人说Good声 = () => 播放音效(女人说Good声曲谱);

@@ -24,7 +24,7 @@ import AITrainingSystem from '@views/appViews/AITrainingSystem';
 // ];
 const routes = [
   { path: '/:pathMatch(.*)*', name: '404', component: NotFoundView },
-  { path: '/', redirect: '/ss' },
+  { path: '/', redirect: '/train' },
   { path: '/', name: 'app-root', component: AppView, children: [
     { path: 'ss', name: 'app-ss', component: SpaCESolverDemo },
     { path: 'train', name: 'app-train', component: AITrainingSystem },

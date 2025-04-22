@@ -14,15 +14,22 @@ export interface SWOTOptions {
 export interface SWOTState {
   quCount?: number;              // 题目数量
 
+  /** @TODO 下面这几个定义有误解 */
   totalCount?: number;           // 总体做题次数
   versionCount?: number;         // 版本做题次数
   versionCertifyCount?: number;  // 版本确证次数
+
   quStateDict: Record<QuestionTrainingState["nnid"], QuestionTrainingState>;  // 题目状态字典
+  notebook: any;  // 笔记本
+  notebookVersion: string;  // 笔记本版本
 
   ended?: boolean;     // 是否结束
   endReason?: string;  // 结束原因
   endTime?: string;    // 结束时间
   startTime?: string;  // 开始时间
+
+  isProcessingBatch?: boolean;  // 是否正在处理批次
+  lastBatchIndex?: number;      // 上一个批次的索引
 };
 export interface QuestionEntry {
   nnid: string;     // 题目的唯一标识符
@@ -43,24 +50,28 @@ export interface QuestionTrainingState {
   isSkipT?: boolean;       // 是否是难题（总体）
 }
 
-export interface NoteVersion {
-  version: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
+/**
+ * 训练状态枚举
+ */
+export enum TrainingState {
+  IDLE,             // 空闲状态，未开始训练
+  RUNNING,          // 正常运行中
+  PREPARING_PAUSE,  // 准备暂停（用户已请求暂停，但当前批次仍在处理）
+  PAUSED,           // 已暂停状态
+  ABORTING,         // 中止中（用户主动中止或发生错误）
+  ABORTED,          // 已经中止
+  // ENDING,           // 正常结束中（完成所有训练目标）
+  ENDED,            // 已经结束
 }
 
-export interface QuestionNote {
-  nnid: string;
-  content: string;
-  history: NoteVersion[];
-}
+export type TrainingStateText =
+"未开始" |
+"训练中" |
+"准备暂停" |
+"已暂停" |
+"中止中" |
+"已中止" |
+// "结束中" |
+"已结束" |
+"未知状态";
 
-export interface QuestionDisplay extends QuestionEntry {
-  status: 'processing' | 'simple' | 'active' | 'skipped';
-  aiThinking: string;
-  errorAnalysis?: string;
-  userAnswer?: string;
-  isCorrect?: boolean;
-  stats?: any;
-}

@@ -39,6 +39,7 @@ const GITHUB_DEV_URL = `https://github.com/ziioai/swot`;
 const GITHUB_URL = `https://github.com/ziioai/swot`;
 const ITEM_LIST = [
   { label: "配置", name: "app-config", icon: "pi pi-cog" },
+  { label: "Train", name: "app-train", icon: "pi pi-book" },
   { label: "SS Demo", name: "app-ss", icon: "pi pi-book" },
   { label: "说明", name: "app-about", icon: "pi pi-book" },
   { label: "笔记", name: "app-notes", icon: "pi pi-clipboard" },
@@ -115,7 +116,7 @@ const AppView = defineComponent({
 
 
     const { isCollapsed: barCollapsed } = useScrollCollapse({
-      threshold: 50,
+      threshold: 25,
       topOffset: 20,
       pixelsPerRem: 12, // Your code uses 12 pixels per rem
     });
