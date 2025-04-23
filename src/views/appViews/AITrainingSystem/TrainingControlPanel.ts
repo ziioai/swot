@@ -66,23 +66,10 @@ export default defineComponent({
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
             "bg-zinc-100/75!", "dark:bg-zinc-800/75!",
           ]}, [
-            JSON.stringify(_.pick(props.state, [
-              "quCount",
-
-              "totalCount",
-              "versionCount",
-              "versionCertifyCount",
-              "==quStateDict",
-              "==notebook",
-              "notebookVersion",
-
-              "ended",
-              "endReason",
-              "endTime",
-              "startTime",
-
-              "isProcessingBatch",
-              "lastBatchIndex",
+            JSON.stringify(_.omit(props.state, [
+              "quStateDict",
+              "quDataDict",
+              "notebook",
             ]), null, 2),
           ]),
           vnd("div", { class: [
@@ -147,13 +134,18 @@ export default defineComponent({
           label: "继续", icon: "pi pi-play", class: "w-full",
           onClick: () => emit('continue-training'),
         }),
+
+        ["已中止"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
+          label: "继续", icon: "pi pi-play", class: "w-full",
+          onClick: () => emit('continue-training'),
+        }),
         
         ["训练中", "准备暂停", "已暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
           label: "停止", icon: "pi pi-stop", class: "w-full",
           onClick: () => emit('stop-training'),
         }),
         
-        ["已暂停", "已中止", "已结束", "未知状态"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
+        ["未开始", "已暂停", "已中止", "已结束", "未知状态"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
           label: "重置", icon: "pi pi-refresh", class: "w-full",
           onClick: () => emit('reset-training'),
         }),

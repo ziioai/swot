@@ -24,6 +24,17 @@ import {
 } from "./swot-db-functions";
 
 import renderMarkdown from '@utils/md';
+
+import {
+  // save as appSave,
+  load as appLoad,
+} from '@utils/functions';
+type ModelDict = {name?: string, label?: string, id?: string|number};
+import {
+  suppliers,
+  type SupplierDict,
+} from 'llm-utils';
+
 import {
   SWOT,
   // defaultOptions, defaultState,
@@ -38,6 +49,21 @@ export default defineComponent({
   setup() {
     const toast = useToast();
 
+
+
+    const supplierForm = reactive({
+      selectedSupplier: suppliers[0] as SupplierDict,
+      apiKeyDict: {} as Record<string, string>,
+      supplierModelsDict: {} as Record<string, ModelDict[]>,
+      selectedModelDict: {} as Record<string, ModelDict>,
+    });
+    onMounted(async ()=>{
+      const supplierForm_ = await appLoad("supplierForm");
+      if (supplierForm_!=null) { Object.assign(supplierForm, supplierForm_); }
+    });
+
+
+
     const appData = reactive<{
       trainer?: SWOT | null;
       questions: QuestionEntry[];
@@ -49,20 +75,25 @@ export default defineComponent({
     const 加载训练题集 = () => {
       appData.questions = SpaCE2025_Demo_Data_Standardized;
       // toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
+      // save("questions", appData.questions);
+      // console.log("appData.questions", appData.questions);
     };
 
     const logAppData = () => {
       console.log("appData", appData);
     };
     const saveAppData = async () => {
-      save("questions", appData.questions);
+      // save("questions", appData.questions);
       if (!appData?.trainer?.isSWOT) {return;}
       const json = appData.trainer.toJSON(false);
       await save("trainer", json);
+      console.log("json", json);
+      console.log("appData.trainer", appData.trainer);
     };
     const loadAppData = async () => {
       appData.trainer = new SWOT();
       const trainerJson = await load("trainer");
+      console.log("trainerJson", trainerJson);
       if (trainerJson) {
         appData.trainer.fromJSON(trainerJson);
         toast.add({ severity: "info", summary: "已加载", detail: `已加载训练器状态`, life: 1000 });
@@ -70,15 +101,16 @@ export default defineComponent({
       appData.trainer.signalFn = (msg: string, severity: string="info", life: number=1000) => {
         toast.add({ severity: severity??"info", summary: "SWOT", detail: msg, life: life??1000 });
       }
+      appData.trainer.supplierForm = supplierForm;
       console.log("appData.trainer", appData.trainer);
 
-      const questions = await load("questions");
+      const questions = [] as any[];  //await load("questions");
       if (questions?.length) {
         appData.questions = questions;
         appData.trainer.loadQuEntries(questions, false);
         toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
       } else {
-        加载训练题集();
+        await 加载训练题集();
         appData.trainer.loadQuEntries(appData.questions, false);
         toast.add({ severity: "info", summary: "从头加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
       }
@@ -89,10 +121,8 @@ export default defineComponent({
       await loadAppData();
     });
 
-
-    const getTrainingState = (nnid: string) => {
-      return appData?.trainer?.state?.quStateDict?.[nnid] ?? { nnid: nnid, };
-    };
+    const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);
+    const quDataDict = computed(()=>appData?.trainer?.state?.quDataDict);
 
     const updateOptions = (options: SWOTOptions) => {
       if (!appData.trainer) { return; }
@@ -104,30 +134,35 @@ export default defineComponent({
       return appData.trainer?.getTrainingStateText() || "未开始";
     });
 
+    const afterBatchFn = async () => { await saveAppData(); };
+    const afterResetFn = async () => { await saveAppData(); };
+    const afterCancelPauseFn = async () => { await saveAppData(); };
+    const beforeStopFn = async () => { await saveAppData(); };
+    const afterStopFn = async () => { await saveAppData(); };
 
     // 训练控制函数
     const startTraining = async () => {
       if (!appData.trainer) { return; }
       toast.add({ severity: "info", summary: "开始训练", detail: "已经开始训练", life: 1000 });
-      await appData.trainer.start();
+      await appData.trainer.start(afterBatchFn);
     };
     
     const resetTraining = () => {
       if (!appData.trainer) { return; }
-      appData.trainer.reset();
+      appData.trainer.reset(afterResetFn);
       toast.add({ severity: "info", summary: "重置训练", detail: "已经重置训练", life: 1000 });
     };
     
     const continueTraining = async () => {
       if (!appData.trainer) { return; }
       toast.add({ severity: "info", summary: "继续训练", detail: "从暂停状态恢复训练", life: 1000 });
-      await appData.trainer.resume();
+      await appData.trainer.resume(afterBatchFn);
     };
     
     const pauseTraining = () => {
       if (!appData.trainer) { return; }
       if (appData.trainer.trainingState === TrainingState.RUNNING) {
-        appData.trainer.requestPause();
+        appData.trainer.requestPause({before: beforeStopFn, after: afterStopFn});
         toast.add({ severity: "info", summary: "准备暂停", detail: "等待当前批次完成后暂停", life: 1000 });
       }
     };
@@ -135,14 +170,14 @@ export default defineComponent({
     const cancelPauseRequest = () => {
       if (!appData.trainer) { return; }
       if (appData.trainer.trainingState === TrainingState.PREPARING_PAUSE) {
-        appData.trainer.cancelPauseRequest();
+        appData.trainer.cancelPauseRequest(afterCancelPauseFn);
         toast.add({ severity: "info", summary: "取消暂停", detail: "已取消暂停请求", life: 1000 });
       }
     };
     
     const stopTraining = () => {
       if (!appData.trainer) { return; }
-      appData.trainer.requestAbort("用户手动停止训练");
+      appData.trainer.requestAbort("用户手动停止训练", {before: beforeStopFn, after: afterStopFn});
       toast.add({ severity: "info", summary: "停止训练", detail: "正在停止训练...", life: 1000 });
     };
 
@@ -163,7 +198,7 @@ export default defineComponent({
         vnd(Panel, {
           header: "SWOT: self-prompt training",
           toggleable: true,
-          // collapsed: true,
+          collapsed: true,
           class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
         }, {
           default: () => [
@@ -281,13 +316,18 @@ export default defineComponent({
           default: () => vnd("div", {
             class: ["stack-h"],
           }, [
-            (appData.trainer?.quEntries??[]).map(question =>
+            (appData.trainer?.quEntries??[]).map((question, idx) =>
               vnd(QuestionCard, {
+                idx,
                 class: "w-100% md:max-w-48% xl:max-w-32%",
                 key: question.nnid,
                 question: question,
-                trainingState: getTrainingState(question.nnid),
-                onAnalyzeError: analyzeError
+                judgeResponse: quDataDict.value?.[question.nnid]?.judgeResponse,
+                response: quDataDict.value?.[question.nnid]?.response,
+                errorReport: quDataDict.value?.[question.nnid]?.errorReport,
+                trainingState: quStateDict.value?.[question.nnid]!,
+                state: "未知",
+                onAnalyzeError: analyzeError,
               })
             ),
           ]),

@@ -1,4 +1,5 @@
 
+import _ from 'lodash';
 
 export const SpaCE2025_Demo_Data_1 = [
   {"id":"rsr-demo-1","instruction":"判断interpretation是否正确。请只回答“正确”或“错误”。","text":"李国秀熟练地用左脚夹起水瓢，从桶里舀起水，开始浇灌院子里的盆栽。不远处，丈夫张顺东单手拿着手机，跟在妻子后面，聚精会神地录制视频。一旁的昆明市东川区电子商务公共服务中心负责人陆金云小声指导：“可以绕到侧面，拍个浇花的特写。”","interpretation":"“可以绕到侧面”是以“李国秀”为基准，确定“侧面”所指的具体方位。","answer":"正确"},
@@ -75,11 +76,24 @@ export const SpaCE2025_Demo_Data = [
   ...SpaCE2025_Demo_Data_3,
 ];
 
-export const SpaCE2025_Demo_Data_Standardized = SpaCE2025_Demo_Data.map(it=>{
+export const SpaCE2025_Demo_Data_Standardized = SpaCE2025_Demo_Data.map((it: any)=>{
+
+  let fields = [] as string[];
+  if (it?.text1?.length && it?.text2?.length) {
+    fields = [ "instruction", "text1", "text2" ];
+  } else if (it?.instruction?.includes?.("判断text的空间语言表达是否正确")) {
+    fields = [ "instruction", "text" ];
+  } else {
+    fields = [ "instruction", "text", "interpretation" ];
+  }
+  const content = _.pick(it, fields);
+  const explain = _.omit(it, [...fields, "answer", "id"]);
+
   const that = {
     nnid: `SpaCE2025Demo[${it.id}]`,
-    content: it,
+    content: content,
     answer: it.answer,
+    explain: explain,
   };
   return that;
 });

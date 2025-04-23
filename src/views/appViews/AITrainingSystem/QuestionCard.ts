@@ -16,6 +16,11 @@ export default defineComponent({
       type: Object as PropType<QuestionEntry>,
       required: true,
     },
+    judgeResponse: {
+      type: Object as any,
+      required: false,
+      default: null,
+    },
     response: {
       type: Object as any,
       required: false,
@@ -71,23 +76,48 @@ export default defineComponent({
 
           vnd(Badge, { value: getStatusText(), severity: "secondary", }),
 
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`题目`]),
+          vnd("div", { class: []}, [`题面字段`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
             "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
           ]}, [
             JSON.stringify(props.question.content, null, 2),
           ]),
-          vnd("div", { class: []}, [`题面字段`]),
           vnd("div", { class: []}, [`答案字段`]),
-          vnd("div", { class: []}, [`解释字段`]),
+          vnd("div", { class: [
+            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+          ]}, [
+            JSON.stringify(props.question.answer, null, 2),
+          ]),
+          props.question?.explain!=null && [
+            vnd("div", { class: []}, [`解释字段`]),
+            vnd("div", { class: [
+              "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
+              "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+            ]}, [
+              JSON.stringify(props.question.explain, null, 2),
+            ]),
+          ],
+
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`题型判断`]),
+          vnd("div", { class: [
+            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+          ]}, [
+            props?.judgeResponse?.outputData==null&&
+            JSON.stringify(props?.judgeResponse??null),
+            JSON.stringify(props?.judgeResponse?.outputData??null, null, 2),
+          ]),
 
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`作答`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
             "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
           ]}, [
-            JSON.stringify(props?.response??null, null, 2),
+            props?.response?.outputData==null&&
+            JSON.stringify(props?.response??null),
+            JSON.stringify(props?.response?.outputData??null, null, 2),
           ]),
 
           vnd("div", { class: ["stack-h gap-1rem!"]}, [
@@ -106,7 +136,7 @@ export default defineComponent({
                 "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
                 "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
               ]}, [
-                JSON.stringify(props?.response?.answer??null, null, 2),
+                JSON.stringify(props?.response?.outputData?.answer??null, null, 2),
               ]),
             ]),
           ]),

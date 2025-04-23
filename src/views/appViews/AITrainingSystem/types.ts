@@ -20,7 +20,9 @@ export interface SWOTState {
   versionCertifyCount?: number;  // 版本确证次数
 
   quStateDict: Record<QuestionTrainingState["nnid"], QuestionTrainingState>;  // 题目状态字典
-  notebook: any;  // 笔记本
+  quDataDict: Record<QuestionTrainingState["nnid"], any>;  // 题目临时数据字典
+
+  notebook: {entries: any[]};  // 笔记本
   notebookVersion: string;  // 笔记本版本
 
   ended?: boolean;     // 是否结束
@@ -35,6 +37,7 @@ export interface QuestionEntry {
   nnid: string;     // 题目的唯一标识符
   content: any;  // 题目的内容
   answer: string;   // 题目的答案
+  explain?: any;  // 题目的解释
 }
 export interface QuestionTrainingState {
   nnid: string;            // 题目的唯一标识符
