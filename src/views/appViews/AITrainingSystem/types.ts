@@ -51,6 +51,7 @@ export interface QuestionTrainingState {
   isSimpleT?: boolean;     // 是否是简单题（总体）
   isSkipV?: boolean;       // 是否是难题（版本）
   isSkipT?: boolean;       // 是否是难题（总体）
+  stateText: QuStateText;  // 题目状态文本
 }
 
 /**
@@ -78,3 +79,15 @@ export type TrainingStateText =
 "已结束" |
 "未知状态";
 
+export type QuStateText = 
+"预备" |
+"中断" |
+"报错" |
+"判断题型中" |
+"做题中" |
+"正确" |
+"错误分析中" |
+"错误已分析" |
+"太简单已跳过" |
+"太困难已跳过" |
+"验够了已跳过";

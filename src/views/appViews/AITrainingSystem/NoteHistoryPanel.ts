@@ -20,13 +20,14 @@ export default defineComponent({
 
     return () => {
 
-      const make = () => vnd("div", { class: "stack-v" }, [
-        vnd("div", { class: [
+      const make = () => vnd("div", { class: [ "stack-v" ] }, [
+
+        (props?.note?.entries as any[])?.map((entry, idx) => vnd("div", {key: `[${idx}]${entry?.name}`, class: [
           "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
           "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
-        ]}, [
-          JSON.stringify(props?.note??null, null, 2),
-        ]),
+        ],}, [
+          JSON.stringify(entry??null, null, 2),
+        ])),
 
         vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [
           vnd(ToolButton, { label: "手动保存版本", icon: "pi pi-save", class: "mr-0.5rem",
@@ -47,7 +48,7 @@ export default defineComponent({
         header: () => vnd("div", { class: "stack-h items-center" }, [
           vnd("div", { class: "font-bold" }, [props?.version??"???"]),
         ]),
-        default: () => make(),
+        default: () => vnd("div", {class: ["overflow-auto", "max-h-80vh"]}, [make()]),
       });
 
 

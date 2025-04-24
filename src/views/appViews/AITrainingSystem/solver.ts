@@ -4,8 +4,12 @@
 // stage0plus 先学习一些例题
 
 import _ from 'lodash';
-
 import { 进一步抽象的标准化处理函数 } from '@utils/functions';
+// import {produce} from 'immer';
+const produce = (data: any, fn: any) => {
+  fn?.(data);
+  return data;
+};
 
 export const 笔记介绍 = `
 你的笔记以 JSON 格式记录和呈现，遵循名为 \`QTBook\` 的接口定义：
@@ -56,6 +60,182 @@ export const 笔记操作介绍 = `
 `.trim();
 
 // - \`DELETE_QT(name:string)\`：删除名为name的题型。
+
+
+
+export function 笔记操作函数(dataWrap: any) {
+  const ops:any[] = dataWrap.operations??[];
+  if (dataWrap.qtBook.entries == null) {
+    dataWrap.qtBook.entries = [];
+  }
+  const book = dataWrap.qtBook;
+
+  const reIndex = (that: {datums?: null|(any[])})=>{
+    if (that.datums==null) { that.datums = []; }
+    that.datums.forEach((it: any) => {
+      it.idx = undefined;
+    });
+    that.datums = _.uniqBy(that.datums, (it: any) => JSON.stringify(it));
+    that.datums.forEach((it: any, idx: number) => {
+      it.idx = idx;
+    });
+  };
+
+  dataWrap.qtBook = produce(book, (draft: (typeof book)) => {
+    for (const op of ops) {
+      console.log(op.method);
+
+      if (op.method === "PASS") {
+        //
+      }
+
+      else if (op.method === "DELETE_QT") {
+        draft.entries = (draft?.entries??[]).filter((it: any) => it.name !== op.args.name);
+      }
+      else if (op.method === "CREATE_QT") {
+        draft.entries.push(op.args?.qt??op.args);
+        // 通过 json stringify 来去重
+        draft.entries = _.uniqBy(draft.entries, (it: any) => JSON.stringify(it));
+      }
+      else if (op.method === "MODIFY_QT") {
+        const idx = (draft?.entries??[]).findIndex((it: any) => it.name === op.args.name);
+        if (idx) {
+          draft.entries[idx] = op.args.newQt;
+        }
+      }
+      else if (op.method === "MODIFY_QT_KV") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          that[op.args.key] = op.args.value;
+          if (_.isArray(that[op.args.key])) {
+            that[op.args.key] = _.uniq(that[op.args.key]);
+          }
+        }
+      }
+
+      else if (op.method === "APPEND_DATUM") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.datums==null) { that.datums = []; }
+          that.datums.push(op.args.datum);
+          reIndex(that);
+        }
+      }
+      else if (op.method === "MODIFY_DATUM") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.datums==null) { that.datums = []; }
+          const idx = that.datums.findIndex((it: any) => it.idx === op.args.idx);
+          if (idx >= 0) {
+            that.datums[idx] = op.args.newDatum;
+            that.datums[idx].idx = op.args.idx;
+          }
+          reIndex(that);
+        }
+      }
+      else if (op.method === "DELETE_DATUM") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.datums==null) { that.datums = []; }
+          that.datums = that.datums.filter((it: any) => it.idx !== op.args.idx);
+          reIndex(that);
+        }
+      }
+
+      else if (op.method === "APPEND_TIP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.tips==null) { that.tips = []; }
+          that.tips.push(op.args.tip);
+          that.tips = _.uniq(that.tips);
+        }
+      }
+      else if (op.method === "MODIFY_TIP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.tips==null) { that.tips = []; }
+          const idx = that.tips.findIndex((it: any) => it === op.args.oldTip);
+          if (idx >= 0) {
+            that.tips[idx] = op.args.newTip;
+          }
+        }
+      }
+      else if (op.method === "REMOVE_TIP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.tips==null) { that.tips = []; }
+          that.tips = that.tips.filter((it: any) => it !== op.args.tip);
+        }
+      }
+
+      else if (op.method === "APPEND_STEP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.steps==null) { that.steps = []; }
+          that.steps.push(op.args.step);
+          that.steps = _.uniq(that.steps);
+        }
+      }
+      else if (op.method === "MODIFY_STEP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.steps==null) { that.steps = []; }
+          const idx = that.steps.findIndex((it: any) => it === op.args.oldStep);
+          if (idx >= 0) {
+            that.steps[idx] = op.args.newStep;
+          }
+        }
+      }
+      else if (op.method === "REMOVE_STEP") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.steps==null) { that.steps = []; }
+          that.steps = that.steps.filter((it: any) => it !== op.args.step);
+        }
+      }
+
+      else if (op.method === "INSERT_STEP_AFTER") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.steps==null) { that.steps = []; }
+          const idx = that.steps.findIndex((it: any) => it === op.args.refStep);
+          if (idx >= 0) {
+            that.steps.splice(idx + 1, 0, op.args.newStep);
+            that.steps = _.uniq(that.steps);
+          }
+        }
+      }
+      else if (op.method === "INSERT_STEP_BEFORE") {
+        const that = (draft?.entries??[]).find((it: any) => it.name === op.args.name);
+        if (that) {
+          if (that.steps==null) { that.steps = []; }
+          const idx = that.steps.findIndex((it: any) => it === op.args.refStep);
+          if (idx >= 0) {
+            that.steps.splice(idx, 0, op.args.newStep);
+            that.steps = _.uniq(that.steps);
+          }
+        }
+      }
+
+    }
+  });
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // stage0 判断题型
 

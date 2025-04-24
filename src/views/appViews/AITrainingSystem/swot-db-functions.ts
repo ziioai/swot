@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import _ from 'lodash';
+import { nanoid } from 'nanoid';
 import * as zipson from "zipson";
 import Dexie, { Table } from 'dexie';
 
@@ -34,16 +35,32 @@ export const saveChatRecord = async (item: Record<string, any>) => {
   const result = await db.chatRecords.put(_.cloneDeep(item));
   return result;
 };
-export const saveQtBookBackup = async (item: Record<string, any>) => {
-  const result = await db.qtBookBackups.put(_.cloneDeep(item));
-  return result;
-}
 export const getChatRecords = async (offset: number = 0, limit: number = 10) => {
   const records = await db.chatRecords.orderBy('id').offset(offset).limit(limit).toArray();
   return records;
 };
+export const 记录调模型时的数据 = async (data: any) => {
+  await saveChatRecord({key: nanoid(), data});
+};
+
+export const saveQtBookBackup = async (item: Record<string, any>) => {
+  const result = await db.qtBookBackups.put(_.cloneDeep(item));
+  return result;
+}
 export const getQtBookBackups = async (offset: number = 0, limit: number = 10) => {
   const backups = await db.qtBookBackups.orderBy('id').offset(offset).limit(limit).toArray();
   return backups;
 }
+
+export const 记录版本笔记数据 = async (data: any, version?: string) => {
+  version = version ?? data?.version ?? data?.notebookVersion ?? nanoid();
+  const found = await db.qtBookBackups.get({key: version});
+  if (found != null) {
+    await db.qtBookBackups.update(found.id, {key: version, data: _.cloneDeep(data)});
+    return found.id;
+  }
+  const result = await db.qtBookBackups.put({key: version, data: _.cloneDeep(data)});
+  return result;
+};
+
 

@@ -1,21 +1,26 @@
+
 import _ from "lodash";
-
-// import { nextTick } from "vue";
-
+import { nanoid } from 'nanoid';
 import { sleep } from "@utils/functions";
+import {
+  // saveChatRecord,
+  // saveQtBookBackup,
+  记录调模型时的数据,
+  记录版本笔记数据,
+} from './swot-db-functions';
 import {
   播放叮咚声,
   播放咕嘟声,
-  // 播放咔哒声,
+  播放咔哒声,
   // 播放坠落声,
   播放报错声,
-  // 播放哐当声,
-  // 播放喇叭式胜利音效,
-  // 播放随机曲谱,
-  // 播放猫叫声,
+  播放哐当声,
+  播放喇叭式胜利音效,
+  播放随机曲谱,
+  播放猫叫声,
   // 播放男人说话声,
   // 播放女人说Good声,
-  // 播放胜利音效,
+  播放胜利音效,
   // 播放小星星,
   // 播放电子舞曲,
 } from '@utils/soundEffects';
@@ -31,7 +36,8 @@ import type {
 import {
   stage0_判断题型_Process,
   stage1_根据笔记做题_Process,
-  // stage2_根据错题修改笔记_Process,
+  stage2_根据错题修改笔记_Process,
+  笔记操作函数,
 } from "./solver";
 
 
@@ -67,22 +73,36 @@ export const 思路 = `
       - 返回 O 继续下一轮循环
 `.trim();
 
+
+
 export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
   const totalCount = swot.state.totalCount ?? 0;
   const maxLoopCount = swot.maxLoopCount;
 
   // 是否达到最大循环次数
-  if (totalCount >= maxLoopCount) { swot.end("maxLoopCount reached"); return; }
+  if (totalCount >= maxLoopCount) { swot.end("maxLoopCount reached"); 播放胜利音效(); return; }
 
   // 所有【未跳过、非简单、未达最大验证次数】的题
-  const questionStates = Object.values(swot.state.quStateDict ?? {}).filter(it => {
-    if (it.isSkipV || it.isSkipT || it.isSimpleV || it.isSimpleT) return false;
-    if (it.trainedCountV ?? 0 >= swot.maxVerifyCount) return false;
+  const questionStates = [] as QuestionTrainingState[];
+  Object.values(swot.state.quStateDict ?? {}).forEach(it => {
+    if (it.isSimpleV || it.isSimpleT) {
+      it.stateText = "太简单已跳过";
+      return false;
+    }
+    if (it.isSkipV || it.isSkipT) {
+      it.stateText = "太困难已跳过";
+      return false;
+    }
+    if (it.correctCountV ?? 0 >= swot.maxVerifyCount) {
+      it.stateText = "验够了已跳过";
+      return false;
+    }
+    questionStates.push(it);
     return true;
   });
 
   // 是否都达到最大验证次数或最大确证次数
-  if (!questionStates.length) { swot.end("all questions reached max verify/certify count"); return; }
+  if (!questionStates.length) { swot.end("all questions reached max verify/certify count"); 播放喇叭式胜利音效(); return; }
 
   const quIds = questionStates.map(it => it.nnid);
 
@@ -90,6 +110,8 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
 }
 
 export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingState["nnid"][], afterBatchFn?: any) {
+
+  /** @TODO 如果有还未更新的笔记 需要更新 */
 
   const quEntries = quIds.map(id => swot.getQuEntry(id));
   // let allBugs = true;
@@ -122,13 +144,16 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
 
   await swot?.signalFn?.(`循环核心流程 开始，\n有${quEntries.length}题，\n共${batches.length}个批次，\n从批次[${startBatchIndex}]开始`, "info", 2000);
 
+  /** @TODO 代码模块化 */
   // Process questions in batches
   for (let batchIdx = startBatchIndex; batchIdx < batches.length; batchIdx++) {
+    let batchAllBugs = true;
+
     // 记录当前批次索引，用于恢复
     swot.state.lastBatchIndex = batchIdx;
     // 在每个批次开始前检查是否需要中止
     // await swot?.signalFn?.(`目前状态是${swot.trainingState}`, "info", 2000);
-    if ([TrainingState.ABORTING, TrainingState.ABORTED, TrainingState.ENDED].includes(swot.trainingState)) {
+    if (swot.shouldStop) {
       await swot?.signalFn?.(`程序应结束`, "error", 2000);
       swot.abortTraining();
       return;
@@ -141,37 +166,32 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
     const batchEntries = batch.entries;
     const batchIds = batch.ids;
 
-    await Promise.all(batchEntries.map(async (it) => {
+    const quResults = await Promise.all(batchEntries.map(async (it) => {
       const result = await 试做单个题目(swot, it.nnid);
       return result;
-    })).then(results => {
-      // 处理结果
-      results.forEach(async (result, idx) => {
-        const quId = batchIds[idx];
-        if (result === 1) {
-          allBugs = false;
-          await 处理单个对题(swot, quId);
-        } else if (result === 0) {
-          allBugs = false;
-          allCorrect = false;
-          await 处理单个错题(swot, quId);
-          errorQuIds.push(quId);
-        } else if (result === -1) {
-          allCorrect = false;
-          /** @TODO 可能要完善不知道什么 */
-        } else if (result === -2) {
-          // 比如中止了
-          allCorrect = false;
-          /** @TODO 可能要完善不知道什么 */
-        }
-      });
-    }).catch(err => {
-      allCorrect = false;
-      console.error(err);
-    });
-
-    // 设置批次处理完成
-    swot.state.isProcessingBatch = false;
+    }));
+    // const hdResults = 
+    await Promise.all(quResults.map(async (result, idx) => {
+      const quId = batchIds[idx];
+      if (result === 1) {
+        allBugs = false;
+        batchAllBugs = false;
+        await 处理单个对题(swot, quId);
+      } else if (result === 0) {
+        allBugs = false;
+        batchAllBugs = false;
+        allCorrect = false;
+        await 处理单个错题(swot, quId);
+        errorQuIds.push(quId);
+      } else if (result === -1) {
+        allCorrect = false;
+        /** @TODO 可能要完善不知道什么 */
+      } else if (result === -2) {
+        // 比如中止了
+        allCorrect = false;
+        /** @TODO 可能要完善不知道什么 */
+      }
+    }));
 
     // 批次处理后检查是否需要暂停
     if (swot.trainingState === TrainingState.PREPARING_PAUSE) {
@@ -181,122 +201,94 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
       // 记录下一个要处理的批次索引
       swot.state.lastBatchIndex = batchIdx + batchSize;
 
+      swot.state.isProcessingBatch = false;
+
       // 返回，中断循环，等待resume()调用
       return;
     }
 
-    if ([TrainingState.ABORTING, TrainingState.ABORTED, TrainingState.ENDED].includes(swot.trainingState)) {
+    if (swot.shouldStop) {
       await swot?.signalFn?.(`程序应结束`, "error", 2000);
+      swot.state.isProcessingBatch = false;
       swot.abortTraining();
       return;
     }
 
+    swot.state.isProcessingBatch = false;
+
     console.log(JSON.parse(JSON.stringify(swot.state)));
 
     await afterBatchFn?.();
-    swot.abortTraining();  /** @TODO 删除这个 */
+    // swot.abortTraining();  /** @TODO 删除这个 */
 
     // 正常情况下批次之间的延迟
     if (batchIdx < batches.length && swot.trainingState === TrainingState.RUNNING) {
       await sleep(1000);
     }
 
-  }
 
+    /** @TODO 错误处理 */
+    // 进行笔记的更新 //
+    try {
+      console.log("-----1-----");
+      // 保存先前的版本
+      const notebook = swot.getNotebook();
+      const version = swot.getNotebookVersion();
+      console.log("-----2-----");
+      await 记录版本笔记数据(notebook, version);
+      console.log("-----3-----");
+      // 创建新的版本
+      const { version: newVersion } = swot.initNewNotebookVersion();
+      console.log("-----4-----");
+      // 更新笔记
+      // await Promise.all(errorQuIds.map(async (errorQuId) => {
+      //   await 为单个错题更新笔记(swot, errorQuId);
+      // }));
+      for await (const errorQuId of errorQuIds) {
+        console.log("errorQuId", errorQuId);
+        await 为单个错题更新笔记(swot, errorQuId);
+      }
+      console.log("-----5-----");
+      // 保存当前的版本
+      await 记录版本笔记数据(swot.getNotebook(), newVersion);
+      console.log("-----6-----");
+    } catch (err) {
+      swot?.signalFn?.(`笔记更新失败`, "error", 2000);
+      console.error(err);
+      播放报错声();
+      swot.state.isProcessingBatch = false;
+      swot.abortTraining();
+      return;
+    }
 
-  // 是否全都故障了
-  if (allBugs) { swot.end("bugs"); return; }
+    if (batchAllBugs) { swot.end("batchAllBugs"); 播放随机曲谱(8); 播放报错声(); return; }
+  }  // end of batches
+
+  if (allBugs) { swot.end("allBugs"); 播放随机曲谱(8); 播放报错声(); return; }
 
   // 是否全对
   if (allCorrect) { swot.state.versionCertifyCount = (swot.state.versionCertifyCount ?? 0) + 1; }
 
-  for (const errorQuId of errorQuIds) {
-    await 为单个错题更新笔记(swot, errorQuId);
-  }
-
   swot.state.totalCount = (swot.state.totalCount ?? 0) + 1;
+  播放猫叫声();
+  await 循环总流程(swot);
+}  // end of 循环核心流程
 
-  // nextTick(async() => {
-    await 循环总流程(swot);
-  // });
-}
-
-
-export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState["nnid"]): Promise<-2|-1|0|1> {
-
-  // await swot?.signalFn?.("试做单个题目");
-  await sleep(200);
-
+export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
   const quEntry = swot.getQuEntry(quId);
   if (!quEntry) { return -1; }
-
   const quState = swot.getQuState(quId);
+  if (!quState) { return -1; }
   const quData = swot.getQuData(quId);
-  const qtBook = swot.getNotebook();
-  const noteEntries = qtBook.entries;
-
-  quData.judgeResponse = {};
-  quData.response = {};
-
-  const judgeResponseDataWrap = {
-    qtBook: qtBook,
-    question: {
-      content: quEntry.content,
-    },
-  } as any;
-
-  const responseDataWrap = {
-    note: null,
-    question: {
-      content: quEntry.content,
-    },
-  } as any;
-
+  if (!quData) { return -1; }
   try {
-    /** @TODO 做题 */
-    // 这是一项既耗时间又耗资源的操作，且一旦中断便无法恢复
+    const dataWrap = {
+      operations: quData?.errorReport?.outputData?.operations,
+      qtBook: _.cloneDeep(swot.getNotebook()),
+    };
+    笔记操作函数(dataWrap);
+    swot.setNotebook(dataWrap.qtBook);
 
-    await stage0_判断题型_Process(judgeResponseDataWrap, swot.supplierForm, ()=>{
-      quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-    });
-
-    if ([TrainingState.ABORTING, TrainingState.ABORTED, TrainingState.ENDED].includes(swot.trainingState)) {
-      await swot?.signalFn?.(`程序应结束`, "error", 2000);
-      swot.abortTraining();
-      return -2;
-    }
-
-    quData.judgeResponse.outputData = judgeResponseDataWrap.outputData;
-    if (quData.judgeResponse?.outputData==null) {
-      throw new Error("判断题型 时没有输出正确格式的数据");
-    }
-    const qtName = quData.judgeResponse?.outputData?.qtName;
-    const qtFound = noteEntries.find(it => it.name === qtName);
-    // if (qtFound==null) {
-    //   throw new Error(`没有找到题型「${qtName}」的笔记`);
-    // }
-    responseDataWrap.note = qtFound;
-
-    await stage1_根据笔记做题_Process(responseDataWrap, swot.supplierForm, ()=>{
-      quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-    });
-
-    if ([TrainingState.ABORTING, TrainingState.ABORTED, TrainingState.ENDED].includes(swot.trainingState)) {
-      await swot?.signalFn?.(`程序应结束`, "error", 2000);
-      swot.abortTraining();
-      return -2;
-    }
-
-    quData.response.outputData = responseDataWrap.outputData;
-    if (quData.response?.outputData==null) {
-      throw new Error("根据笔记做题 时没有输出正确格式的数据");
-    }
-    if (quData.response?.outputData?.answer!=quEntry?.answer) {
-      播放咕嘟声();
-      return 0;
-    }
-
-    播放叮咚声();
     return 1;
   } catch (err) {
     播放报错声();
@@ -307,62 +299,177 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
 }
 
 
-export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
+export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState["nnid"]): Promise<-2|-1|0|1> {
+  // await swot?.signalFn?.("试做单个题目");
+  await sleep(200);
+
   const quEntry = swot.getQuEntry(quId);
   if (!quEntry) { return -1; }
 
   const quState = swot.getQuState(quId);
+  quState.stateText = "预备";
+  const quData = swot.getQuData(quId);
+  const qtBook = swot.getNotebook();
+  const noteEntries = qtBook.entries;
+
+  quData.judgeResponse = {};
+  quData.response = {};
+  quData.errorReport = {};
+
+  const judgeResponseDataWrap = { qtBook: qtBook, question: { content: quEntry.content, }, } as any;
+  const responseDataWrap = { note: null, question: { content: quEntry.content, }, } as any;
 
   try {
+    quState.stateText = "判断题型中";
+    await stage0_判断题型_Process(judgeResponseDataWrap, swot.supplierForm, ()=>{
+      quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+      记录调模型时的数据({data: judgeResponseDataWrap, supplierForm: swot.supplierForm});
+    });
 
-    /** @TODO 更新笔记 */
-    // 这是一项既耗时间又耗资源的操作，且一旦中断便无法恢复
+    if (swot.shouldStop) {
+      quState.stateText = "中断";
+      await swot?.signalFn?.(`程序应结束`, "error", 2000);
+      swot.abortTraining();
+      return -2;
+    }
 
+    quData.judgeResponse.outputData = judgeResponseDataWrap.outputData;
+    if (quData.judgeResponse?.outputData==null) {
+      quState.stateText = "报错";
+      throw new Error("判断题型 时没有输出正确格式的数据");
+    }
+    const qtName = quData.judgeResponse?.outputData?.qtName;
+    const qtFound = noteEntries.find(it => it.name === qtName);
+    // if (qtFound==null) {
+    //   throw new Error(`没有找到题型「${qtName}」的笔记`);
+    // }
+    responseDataWrap.note = qtFound;
+
+    播放咔哒声();
+
+    quState.stateText = "做题中";
+    await stage1_根据笔记做题_Process(responseDataWrap, swot.supplierForm, ()=>{
+      quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+      记录调模型时的数据({data: responseDataWrap, supplierForm: swot.supplierForm});
+    });
+
+    if (swot.shouldStop) {
+      quState.stateText = "中断";
+      await swot?.signalFn?.(`程序应结束`, "error", 2000);
+      swot.abortTraining();
+      return -2;
+    }
+
+    quData.response.outputData = responseDataWrap.outputData;
+    if (quData.response?.outputData==null) {
+      quState.stateText = "报错";
+      throw new Error("根据笔记做题 时没有输出正确格式的数据");
+    }
+    if (quData.response?.outputData?.answer!=quEntry?.answer) {
+      quState.stateText = "错误分析中";
+      播放咕嘟声();
+      return 0;
+    }
+
+    quState.stateText = "正确";
+    播放叮咚声();
     return 1;
   } catch (err) {
+    quState.stateText = "报错";
+    播放报错声();
     console.log({ quEntry, quState });
     console.error(err);
     return -1;
   }
 }
 
+export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
+  const quState = swot.getQuState(quId);
+  if (!quState) return;
+  quState.trainedCountV = (quState.trainedCountV ?? 0) + 1;
+  quState.trainedCountT = (quState.trainedCountT ?? 0) + 1;
+  quState.errorCountV = (quState.errorCountV ?? 0) + 1;
+  quState.errorCountT = (quState.errorCountT ?? 0) + 1;
+  if (quState.errorCountV >= swot.versionSkipThreshold) {
+    quState.isSkipV = true;
+  }
+  if (quState.errorCountT >= swot.totalSkipThreshold) {
+    quState.isSkipT = true;
+  }
+  if (quState.isSkipV||quState.isSkipT) {return;}
+
+  if (swot.shouldStop) {
+    await swot?.signalFn?.(`程序应结束`, "error", 2000);
+    swot.abortTraining();
+    return -2;
+  }
+
+  // 制定更新笔记的计划
+  const quEntry = swot.getQuEntry(quId);
+  const quData = swot.getQuData(quId);
+  const qtBook = swot.getNotebook();
+  const noteEntries = qtBook.entries;
+  const qtName = quData.judgeResponse?.outputData?.qtName;
+  // const qtFound = noteEntries.find(it => it.name === qtName);
+  const shadow = [] as any;
+  noteEntries.forEach(it=>{
+    if (it.name === qtName) {
+      shadow.push(it);
+    } else {
+      const that = _.pick(it, ["name", "desc", "clue"]);
+      shadow.push(that);
+    }
+  });
+
+  const errorReportDataWrap = {
+    qtBook: {entries: shadow},
+    errorCase: {
+      question: quEntry,
+      errorOutput: quData.response?.outputData,
+    },
+  } as any;
+
+  quData.errorReport = {};
+  await stage2_根据错题修改笔记_Process(errorReportDataWrap, swot.supplierForm, ()=>{
+    quData.errorReport = _.pick(errorReportDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+    记录调模型时的数据({data: errorReportDataWrap, supplierForm: swot.supplierForm});
+  });
+  quState.stateText = "错误已分析";
+
+  if (swot.shouldStop) {
+    await swot?.signalFn?.(`程序应结束`, "error", 2000);
+    swot.abortTraining();
+    return -2;
+  }
+  quData.errorReport.outputData = errorReportDataWrap.outputData;
+  if (quData.errorReport?.outputData==null) {
+    播放报错声();
+    throw new Error("根据错题修改笔记 时没有输出正确格式的数据");
+  }
+
+  播放哐当声();
+}
 
 export async function 处理单个对题(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
-  const found = swot.state.quStateDict?.[quId];
-  if (!found) return;
-  found.trainedCountV = (found.trainedCountV ?? 0) + 1;
-  found.trainedCountT = (found.trainedCountT ?? 0) + 1;
-  found.correctCountV = (found.correctCountV ?? 0) + 1;
-  found.correctCountT = (found.correctCountT ?? 0) + 1;
-  if (found.trainedCountV === found.correctCountV) {
-    found.isSimpleV = found.trainedCountV >= swot.versionSimpleThreshold;
+  const quState = swot.getQuState(quId);
+  if (!quState) return;
+  quState.trainedCountV = (quState.trainedCountV ?? 0) + 1;
+  quState.trainedCountT = (quState.trainedCountT ?? 0) + 1;
+  quState.correctCountV = (quState.correctCountV ?? 0) + 1;
+  quState.correctCountT = (quState.correctCountT ?? 0) + 1;
+  if (quState.trainedCountV === quState.correctCountV) {
+    quState.isSimpleV = quState.trainedCountV >= swot.versionSimpleThreshold;
   }
-  if (found.trainedCountT === found.correctCountT) {
-    found.isSimpleT = found.trainedCountT >= swot.totalSimpleThreshold;
-  }
-}
-
-export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
-  const found = swot.state.quStateDict?.[quId];
-  if (!found) return;
-  found.trainedCountV = (found.trainedCountV ?? 0) + 1;
-  found.trainedCountT = (found.trainedCountT ?? 0) + 1;
-  found.errorCountV = (found.errorCountV ?? 0) + 1;
-  found.errorCountT = (found.errorCountT ?? 0) + 1;
-  if (found.errorCountV >= swot.versionSkipThreshold) {
-    found.isSkipV = true;
-  }
-  if (found.errorCountT >= swot.totalSkipThreshold) {
-    found.isSkipT = true;
+  if (quState.trainedCountT === quState.correctCountT) {
+    quState.isSimpleT = quState.trainedCountT >= swot.totalSimpleThreshold;
   }
 }
-
 
 
 
 
 export const defaultOptions: SWOTOptions = {
-  batchSize: 2,               // 每次并行的题目数量
+  batchSize: 5,               // 每次并行的题目数量
   maxLoopCount: 30,           // 最大循环次数
   maxVerifyCount: 20,         // 最大验证次数
   maxCertifyCount: 2,         // 最大确证次数
@@ -398,6 +505,9 @@ export class SWOT {
 
   // 训练状态相关属性
   trainingState: TrainingState = TrainingState.IDLE;  // 当前训练状态
+  get shouldStop() {
+    return [TrainingState.ABORTING, TrainingState.ABORTED, TrainingState.ENDED].includes(this.trainingState);
+  }
 
   get batchSize() { return this._options.batchSize??5; }
   get maxLoopCount() { return this._options.maxLoopCount??30; }
@@ -432,7 +542,7 @@ export class SWOT {
     return this.getQuEntry(id);
   }
   getQuState(id: QuestionTrainingState["nnid"]) {
-    if (this.state.quStateDict?.[id]==null) { this.state.quStateDict[id] = { nnid: id }; }
+    if (this.state.quStateDict?.[id]==null) { this.state.quStateDict[id] = { nnid: id, stateText: "预备" }; }
     return this.state.quStateDict[id];
   }
   getQuData(id: QuestionTrainingState["nnid"]) {
@@ -442,7 +552,29 @@ export class SWOT {
   getNotebook() {
     return this.state.notebook;
   }
-
+  setNotebook(notebook: any) {
+    this.state.notebook = notebook;
+    return this.state.notebook;
+  }
+  getNotebookVersion() {
+    return this.state.notebookVersion;
+  }
+  initNewNotebookVersion() {
+    this.state.notebookVersion = `${nanoid(6)}`;
+    // this.state.notebook = { entries: [] };
+    /** @TODO */
+    Object.values(this.state.quStateDict).forEach(it => {
+      it.trainedCountV = undefined;
+      it.correctCountV = undefined;
+      it.errorCountV = undefined;
+      it.isSimpleV = undefined;
+      it.isSkipV = undefined;
+    });
+    return {
+      version: this.state.notebookVersion,
+      notebook: this.state.notebook,
+    };
+  }
 
 
 
@@ -481,7 +613,7 @@ export class SWOT {
       const quId = question.nnid;
       this.quDict[quId] = question;
       if (refreshState || this.state.quStateDict[quId] == null) {
-        this.state.quStateDict[quId] = { nnid: quId, };
+        this.state.quStateDict[quId] = { nnid: quId, stateText: "预备", };
       }
       if (refreshState || this.state.quDataDict[quId] == null) {
         this.state.quDataDict[quId] = { nnid: quId, };
@@ -621,9 +753,8 @@ export class SWOT {
       this.signalFn?.(`请求中止训练: ${reason}`);
       if (!this.state.isProcessingBatch) {
         // 如果当前不在处理批次中，直接完成中止
-        this.abortTraining();
+        this.abortTraining(undefined, after);
       }
-      await after?.();
       return true;
     }
     return false;
@@ -636,9 +767,9 @@ export class SWOT {
   }
 
   // 中止训练（异常结束）
-  abortTraining(reason?: string) {
+  abortTraining(reason?: string, afterEndFn?: any) {
     this.trainingState = TrainingState.ABORTED;
-    this.end(reason || "训练中止");
+    this.end(reason || "训练中止", afterEndFn);
   }
 
   // 获取当前训练状态文本
@@ -656,7 +787,7 @@ export class SWOT {
     }
   }
 
-  end(reason?: string) {
+  async end(reason?: string, afterEndFn?: any) {
     if (this.trainingState === TrainingState.ABORTING) {
       // 如果是中止状态，记录为中止
       this.state.ended = true;
@@ -664,6 +795,7 @@ export class SWOT {
       this.state.endTime = new Date().toISOString();
       this.signalFn?.(`训练已中止: ${this.state.endReason}`);
       this.trainingState = TrainingState.ABORTED;
+      await afterEndFn?.();
     } else {
       // 否则记录为正常结束
       this.state.ended = true;
@@ -671,6 +803,7 @@ export class SWOT {
       this.state.endTime = new Date().toISOString();
       this.signalFn?.(`训练已结束: ${this.state.endReason}`);
       this.trainingState = TrainingState.ENDED;
+      await afterEndFn?.();
     }
   }
 

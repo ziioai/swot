@@ -1,6 +1,6 @@
 // @unocss-include
 
-import { h as vnd, defineComponent, PropType } from 'vue';
+import { h as vnd, defineComponent, PropType, reactive } from 'vue';
 import Panel from 'primevue/panel';
 import Badge from 'primevue/badge';
 import ToolButton from '@components/shared/ToolButton';
@@ -50,25 +50,49 @@ export default defineComponent({
       return '未跳过的非简单题';
     };
 
+    const map11 = {
+      "预备": "secondary",
+      "中断": "contrast",
+      "报错": "contrast",
+      "判断题型中": "secondary",
+      "做题中": "secondary",
+      "正确": "success",
+      "错误分析中": "warn",
+      "错误已分析": "danger",
+      "太简单已跳过": "info",
+      "太困难已跳过": "info",
+      "验够了已跳过": "info",
+    } as { [key: string]: string; };
+    const map22 = {
+      "预备": "未知",
+      "中断": "未知",
+      "报错": "未知",
+      "判断题型中": "未知",
+      "做题中": "未知",
+      "正确": "正确",
+      "错误分析中": "错误",
+      "错误已分析": "错误",
+      "太简单已跳过": "跳过",
+      "太困难已跳过": "跳过",
+      "验够了已跳过": "跳过",
+    } as { [key: string]: string; };
+
+    const appData = reactive({
+      collapsed: false,
+    });
+
     return () => 
       vnd(Panel, {
-        // header: `[${props.idx??" "}] ${props.question.nnid}`,
         toggleable: true,
+        collapsed: appData.collapsed || ![
+          "判断题型中", "做题中", "错误分析中", "错误已分析",
+        ].includes(props?.trainingState?.stateText),
       }, {
         header: () => vnd("div", { class: "stack-h items-center" }, [
           vnd("div", { class: "font-bold" }, [`[${props.idx??" "}] ${props.question.nnid}`]),
           vnd(Badge, {
-            value: props?.state??"预备",
-            severity: ({
-              "预备": "secondary",
-              "中断": "contrast",
-              "做题中": "secondary",
-              "正确": "success",
-              "错误分析中": "warn",
-              "错误已分析": "danger",
-              "太简单已跳过": "info",
-              "太困难已跳过": "info",
-            })[props?.state??"预备"]??"secondary",
+            value: props?.trainingState?.stateText??"预备",
+            severity: map11[props?.trainingState?.stateText??"预备"]??"secondary",
             class: "ml-2"
           }),
         ]),
@@ -79,7 +103,7 @@ export default defineComponent({
           vnd("div", { class: []}, [`题面字段`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
           ]}, [
             JSON.stringify(props.question.content, null, 2),
           ]),
@@ -94,7 +118,7 @@ export default defineComponent({
             vnd("div", { class: []}, [`解释字段`]),
             vnd("div", { class: [
               "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-              "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+              "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
             ]}, [
               JSON.stringify(props.question.explain, null, 2),
             ]),
@@ -103,7 +127,7 @@ export default defineComponent({
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`题型判断`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
           ]}, [
             props?.judgeResponse?.outputData==null&&
             JSON.stringify(props?.judgeResponse??null),
@@ -113,7 +137,7 @@ export default defineComponent({
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`作答`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
           ]}, [
             props?.response?.outputData==null&&
             JSON.stringify(props?.response??null),
@@ -144,35 +168,19 @@ export default defineComponent({
           vnd("div", { class: ["mt-2 stack-h-center"]}, [
             vnd("div", { class: ["font-bold opacity-80"]}, [`正误：`]),
             vnd(Badge, {
-              value: ({
-                "预备": "未知",
-                "中断": "未知",
-                "做题中": "未知",
-                "正确": "正确",
-                "错误分析中": "错误",
-                "错误已分析": "错误",
-                "太简单已跳过": "跳过",
-                "太困难已跳过": "跳过",
-              })[props?.state??"未知"]??"未知",
-              severity: ({
-                "预备": "secondary",
-                "中断": "contrast",
-                "做题中": "secondary",
-                "正确": "success",
-                "错误分析中": "warn",
-                "错误已分析": "danger",
-                "太简单已跳过": "info",
-                "太困难已跳过": "info",
-              })[props?.state??"预备"]??"secondary",
+              value: map22[props?.trainingState?.stateText??"未知"]??"未知",
+              severity: map11[props?.trainingState?.stateText??"预备"]??"secondary",
             }),
           ]),
 
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`错误分析`]),
           vnd("div", { class: [
             "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+            "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
           ]}, [
-            JSON.stringify(props?.errorReport??null, null, 2),
+            props?.errorReport?.outputData==null&&
+            JSON.stringify(props?.errorReport??null),
+            JSON.stringify(props?.errorReport?.outputData??null, null, 2),
           ]),
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [
             vnd(ToolButton, {
