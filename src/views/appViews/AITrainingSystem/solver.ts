@@ -377,7 +377,7 @@ export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
   lines.push("====[笔记]====");
   lines.push(JSON.stringify(dataWrap?.qtBook??{entries:[]}));
   lines.push("====[题目、正误答案、解析]====");
-  lines.push(dataWrap?.errorCase==null?"":JSON.stringify(dataWrap?.errorCase??[]));
+  lines.push(dataWrap?.errorCase==null?"（无内容）":JSON.stringify(dataWrap?.errorCase??[]));
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
 }
@@ -388,6 +388,70 @@ export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: 
   );
   return that;
 }
+
+
+
+// stage4 合并对笔记的修改
+
+export const stage4_合并对笔记的修改_prompt = `
+### 任务描述
+总任务：把不同的笔记修改计划合并成单独一份笔记修改计划。
+0、你将看到若干名做题专家对于一份答题笔记的修改计划。专家们的工作是并行的，所以可能存在重复。
+1、你要评估来自不同专家的笔记修改计划之间的共性和差异。
+2、尤其注意如果有专家要创建新的题型，要看看其他专家是否也想创建类似的题型，但使用了不同的题型名称。
+3、你需要把所有专家的修改计划合并成一份新的笔记修改计划，覆盖他们所提到的所有修改，但去除了实际含义有重复的部分。
+
+### 关于笔记
+${笔记介绍}
+
+### 笔记操作
+${笔记操作介绍}
+
+### user是谁
+user并不是通常意义上的人类用户，而是一个数据接口，也是你的助理，
+它会为你提供现有的笔记和专家们的修改计划（并行）。
+
+### 你的回应
+你应该回复一个标注的JSON对象（不带其他任何内容），符合以下接口定义：
+\`\`\`TypeScript
+interface YourResponse {
+  /** 你的分析和大致的合并思路。 */
+  analyze: string;
+  /** 经过你合并之后的修改计划。 */
+  operations?: {
+    method: string;  // 如 "CREATE_QT" 等，是计划对笔记执行的操作。
+    args: {[key: string]: any};  // 计划对笔记执行的操作的参数，参见 笔记操作 一节。
+  }[];
+}
+\`\`\`
+
+
+
+`.trim();
+export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
+  const lines = [];
+  lines.push("====[笔记]====");
+  lines.push(JSON.stringify(dataWrap?.qtBook??{entries:[]}));
+  lines.push("====[并行修改计划]====");
+  lines.push(dataWrap?.opPlans==null?"（无内容）":JSON.stringify(dataWrap?.opPlans??[]));
+  lines.push("====[请按要求回应]====");
+  return lines.join("\n");
+}
+export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any) {
+  const that = await 进一步抽象的标准化处理函数<CR, TT>(
+    stage4_合并对笔记的修改_prompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+  );
+  return that;
+};
+
+
+
+
+
+
+
+
+
 
 
 

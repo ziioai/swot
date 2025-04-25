@@ -70,6 +70,7 @@ export default defineComponent({
               "quStateDict",
               "quDataDict",
               "notebook",
+              "notebookEditPlan",
             ]), null, 2),
           ]),
           vnd("div", { class: [

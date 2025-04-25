@@ -24,6 +24,7 @@ export interface SWOTState {
 
   notebook: {entries: any[]};  // 笔记本
   notebookVersion: string;  // 笔记本版本
+  notebookEditPlan: any;  // 笔记本编辑计划
 
   ended?: boolean;     // 是否结束
   endReason?: string;  // 结束原因

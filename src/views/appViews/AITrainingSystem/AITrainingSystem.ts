@@ -1,6 +1,6 @@
 // @unocss-include
 
-import { h as vnd, defineComponent, reactive, computed, onMounted } from 'vue';
+import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
@@ -119,6 +119,9 @@ export default defineComponent({
     // /** lifecycle **/ //
     onMounted(async ()=>{
       await loadAppData();
+    });
+    onUnmounted(async ()=>{
+      await saveAppData();
     });
 
     const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);
@@ -299,6 +302,7 @@ export default defineComponent({
               }),
               vnd(NoteHistoryPanel, {
                 note: appData.trainer?.state?.notebook??null,
+                notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
                 version: appData.trainer?.state?.notebookVersion,
                 onSaveNote: () => {
                   toast.add({ severity: "info", summary: "UI演示", detail: "笔记保存", life: 1000 });
