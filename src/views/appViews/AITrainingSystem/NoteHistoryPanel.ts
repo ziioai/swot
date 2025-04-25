@@ -64,7 +64,10 @@ export default defineComponent({
             }),
             vnd(ToolButton, { label: "复制", icon: "pi pi-copy", class: "mr-0.5rem",
               onClick: () => {
-                clipboard.copy(JSON.stringify(props?.note??null, null, 2));
+                clipboard.copy(JSON.stringify({
+                  version: props?.version??null,
+                  notebook:props?.note??null,
+                }, null, 2));
               },
             }),
           ]),

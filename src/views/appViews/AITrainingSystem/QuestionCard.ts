@@ -57,8 +57,12 @@ export default defineComponent({
       "判断题型中": "secondary",
       "做题中": "secondary",
       "正确": "success",
-      "错误分析中": "warn",
-      "错误已分析": "danger",
+
+      "错误待分析": "contrast",
+      "错误分析中": "secondary",
+      "错误已分析": "warn",
+      "错误未分析": "danger",
+
       "太简单已跳过": "success",
       "太困难已跳过": "danger",
       "练够了已跳过": "info",
@@ -71,8 +75,12 @@ export default defineComponent({
       "判断题型中": "未知",
       "做题中": "未知",
       "正确": "正确",
+
+      "错误待分析": "错误",
       "错误分析中": "错误",
       "错误已分析": "错误",
+      "错误未分析": "错误",
+
       "太简单已跳过": "跳过",
       "太困难已跳过": "跳过",
       "练够了已跳过": "跳过",

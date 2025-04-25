@@ -39,6 +39,7 @@ import {
   stage2_根据错题修改笔记_Process,
   stage4_合并对笔记的修改_Process,
   笔记操作函数,
+  promptVersion,
 } from "./solver";
 
 
@@ -86,22 +87,10 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
   // 所有【未跳过、非简单、未达最大验证次数】的题
   const questionStates = [] as QuestionTrainingState[];
   Object.values(swot.state.quStateDict ?? {}).forEach(it => {
-    if (it.isSimpleV || it.isSimpleT) {
-      it.stateText = "太简单已跳过";
-      return false;
-    }
-    if (it.isSkipV || it.isSkipT) {
-      it.stateText = "太困难已跳过";
-      return false;
-    }
-    if ((it.trainedCountT ?? 0) >= swot.maxVerifyCount) {
-      it.stateText = "练够了已跳过";
-      return false;
-    }
-    if ((it.correctCountV ?? 0) >= swot.maxCertifyCount) {
-      it.stateText = "验够了已跳过";
-      return false;
-    }
+    if (it.isSimpleV || it.isSimpleT) { it.stateText = "太简单已跳过"; return false; }
+    if (it.isSkipV || it.isSkipT) { it.stateText = "太困难已跳过"; return false; }
+    if ((it.trainedCountT ?? 0) >= swot.maxVerifyCount) { it.stateText = "练够了已跳过"; return false; }
+    if ((it.correctCountV ?? 0) >= swot.maxCertifyCount) { it.stateText = "验够了已跳过"; return false; }
     questionStates.push(it);
     return true;
   });
@@ -111,15 +100,32 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
     if (swot.state.versionCertifyCount??0 >= swot.maxCertifyCount) {
       swot.end("all questions reached max verify/certify count"); 播放喇叭式胜利音效(); return;
     }
-    /** @TODO 否则要再做 */
+    /** @TODO 否则要再做 但是怎么做 ? 这种情况应该不会发生吧 */
+    if (swot.state.versionCertifyCount==null) { swot.state.versionCertifyCount = 0; }
+    swot.state.versionCertifyCount += 1;  // ??? 这是干嘛 ???
   }
+
+  // const restMaxTrainedCount = _.max(questionStates.map(it => it.trainedCountT ?? 0)) ?? 0;
+  // const restMinTrainedCount = _.min(questionStates.map(it => it.trainedCountT ?? 0)) ?? 0;
 
   const quIds = questionStates.map(it => it.nnid);
 
-  await 循环核心流程(swot, quIds, afterBatchFn);
+  await 循环核心流程(
+    swot,
+    quIds,
+    // {max: restMaxTrainedCount, min: restMinTrainedCount,},
+    afterBatchFn,
+  );
 }
 
-export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingState["nnid"][], afterBatchFn?: any) {
+export async function 循环核心流程(
+  swot: SWOT,
+  quIds: QuestionTrainingState["nnid"][],
+  // {max: restMaxTrainedCount, min: restMinTrainedCount}: { max: number, min: number, },
+  afterBatchFn?: any,
+) {
+
+  swot.修正做题初始状态();
 
   /** @TODO 如果有还未更新的笔记 需要更新 */
 
@@ -127,6 +133,16 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
   // let allBugs = true;
   // let allCorrect = true;
   // const errorQuIds = [] as QuestionTrainingState["nnid"][];
+
+  // 按照 trainedCountT 从小到大排序
+  quEntries.sort((aa, bb) => {
+    const aState = swot.getQuState(aa.nnid);
+    const bState = swot.getQuState(bb.nnid);
+    const aCount = aState.trainedCountT ?? 0;
+    const bCount = bState.trainedCountT ?? 0;
+    return aCount - bCount;
+  });
+  quIds = quEntries.map(it => it.nnid);
 
   // Process questions in batches according to batchSize
   const batchSize = swot.batchSize;
@@ -140,7 +156,7 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
     entries: QuestionEntry[],
     ids: QuestionTrainingState["nnid"][]
   }>;
-  
+
   for (let i = 0; i < quEntries.length; i += batchSize) {
     batches.push({
       batchIndex: i,
@@ -149,10 +165,15 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
     });
   }
 
-  // 从上次暂停的位置恢复或从头开始
-  const startBatchIndex = swot.state.lastBatchIndex??0;
+  // // 从上次暂停的位置恢复或从头开始
+  // const startBatchIndex = ([
+  //   TrainingState.PAUSED,
+  //   TrainingState.ABORTED,
+  //   TrainingState.RUNNING,
+  // ].includes(swot.trainingState))?(swot.state.lastBatchIndex??0):0;
+  const startBatchIndex = 0;  /** @TODO 其实就是说这个参数没用了 */
 
-  await swot?.signalFn?.(`循环核心流程 开始，\n有${quEntries.length}题，\n共${batches.length}个批次，\n从批次[${startBatchIndex}]开始`, "info", 2000);
+  await swot?.signalFn?.(`循环核心流程 开始，\n有${quEntries.length}题，\n共${batches.length}个批次，\n从批次[${startBatchIndex}]开始`, "info", 10000);
 
   /** @TODO 代码模块化 */
   // Process questions in batches
@@ -172,7 +193,7 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
     // 设置正在处理批次标志
     swot.state.isProcessingBatch = true;
     // 批次处理开始前告知用户
-    await swot?.signalFn?.(`批次 [${batchIdx+1} of ${batches.length}] 开始`, "info", 2000);
+    await swot?.signalFn?.(`批次 [${batchIdx+1} of ${batches.length}] 开始`, "info", 10000);
     const batch = batches[batchIdx];
     const batchEntries = batch.entries;
     const batchIds = batch.ids;
@@ -304,7 +325,7 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
       });
       swot.state.notebookEditPlan.outputData = dataWrap.outputData;
       播放男人说话声();
-      记录调模型时的数据({promptVersion: "伪代码（v1）", version: swot.getNotebookVersion(), data: dataWrap, supplierForm: swot.supplierForm, type: "合并对笔记的修改", time: Date.now(),});
+      记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: dataWrap, supplierForm: swot.supplierForm, type: "合并对笔记的修改", time: Date.now(),});
       await sleep(200);
     } else {
       swot.state.notebookEditPlan = {
@@ -381,7 +402,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     await stage0_判断题型_Process(judgeResponseDataWrap, swot.supplierForm, ()=>{
       quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
     });
-    记录调模型时的数据({promptVersion: "伪代码（v1）", version: swot.getNotebookVersion(), data: judgeResponseDataWrap, supplierForm: swot.supplierForm, type: "judgeResponse", time: Date.now(),});
+    记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: judgeResponseDataWrap, supplierForm: swot.supplierForm, type: "judgeResponse", time: Date.now(),});
 
     if (swot.shouldStop) {
       quState.stateText = "中断";
@@ -408,7 +429,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     await stage1_根据笔记做题_Process(responseDataWrap, swot.supplierForm, ()=>{
       quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
     });
-    记录调模型时的数据({promptVersion: "伪代码（v1）", version: swot.getNotebookVersion(), data: responseDataWrap, supplierForm: swot.supplierForm, type: "response", time: Date.now(),});
+    记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: responseDataWrap, supplierForm: swot.supplierForm, type: "response", time: Date.now(),});
 
     if (swot.shouldStop) {
       quState.stateText = "中断";
@@ -423,7 +444,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
       throw new Error("根据笔记做题 时没有输出正确格式的数据");
     }
     if (quData.response?.outputData?.answer!=quEntry?.answer) {
-      quState.stateText = "错误分析中";
+      quState.stateText = "错误待分析";
       播放咕嘟声();
       return 0;
     }
@@ -486,18 +507,17 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
     },
   } as any;
 
+  await swot?.signalFn?.(`错误分析中[${quEntry.nnid}]`, "warn", 3000);
   quData.errorReport = {};
+  quState.stateText = "错误分析中";
   await stage2_根据错题修改笔记_Process(errorReportDataWrap, swot.supplierForm, ()=>{
     quData.errorReport = _.pick(errorReportDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
   });
-  记录调模型时的数据({promptVersion: "伪代码（v1）", version: swot.getNotebookVersion(), data: errorReportDataWrap, supplierForm: swot.supplierForm, type: "errorReport", time: Date.now(),});
+  await swot?.signalFn?.(`错误已分析了吗[${quEntry.nnid}]`, "warn", 3000);
+  记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: errorReportDataWrap, supplierForm: swot.supplierForm, type: "errorReport", time: Date.now(),});
   quState.stateText = "错误已分析";
+  await swot?.signalFn?.(`错误已分析[${quEntry.nnid}]`, "warn", 3000);
 
-  if (swot.shouldStop) {
-    await swot?.signalFn?.(`程序应结束`, "error", 2000);
-    swot.abortTraining();
-    return -2;
-  }
   quData.errorReport.outputData = errorReportDataWrap.outputData;
   if (quData.errorReport?.outputData==null) {
     播放报错声();
@@ -636,6 +656,14 @@ export class SWOT {
     };
   }
 
+
+
+  修正做题初始状态() {
+    Object.values(this.state.quStateDict).forEach(it => {
+      if (it.stateText=="错误待分析") {it.stateText="错误未分析";}
+      if (it.stateText=="错误分析中") {it.stateText="错误未分析";}
+    });
+  }
 
 
 

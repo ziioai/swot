@@ -11,6 +11,8 @@ const produce = (data: any, fn: any) => {
   return data;
 };
 
+export const promptVersion = "伪代码测试版（v1.2）";
+
 export const 笔记介绍 = `
 你的笔记以 JSON 格式记录和呈现，遵循名为 \`QTBook\` 的接口定义：
 \`\`\`TypeScript
@@ -18,7 +20,7 @@ interface QTBook { entries: QTEntry[]; }
 interface QTEntry {
   name: string;  // 题型名称，记录你对这个题型的命名。
   desc: string;  // 题型描述，记录你对这个题型的描述。
-  clue: string;  // 题型识别线索，记录你将如何把一道题目识别为这个题型，也包括如何排除其他题型。
+  clue: string;  // 题型识别线索，记录你将如何把一道题目识别为这个题型，也包括如何排除其他题型。注意不要仅考虑题面表述，还要考虑实际做题步骤和关注点的差异。
   steps: string[];  // 解题步骤，记录你解题的步骤，越靠前的越优先处理；这些步骤是js函数形式的伪代码，并且经常以查询知识库（KDB）的方式来实现，以往的知识库查询结果会被记录在datums字段中；这些步骤应该具有通用性，而不应该仅适用于极为特定的情形。
   datums: KDBDatum[];  // 数据记录，记录你在查询知识库时所查找到的具体数据，这些数据应该满足：①与具体题目无关，②足够具体，能够帮助你在解题时进行推理，③可以被复用到其他题目中。对于极为特定的情形，可以通过datums来记录，而不是通过steps来记录。
   tips: string[];  // 重要提示，记录你认为在解这类题时尤为需要注意的事项，越靠前的越重要。
@@ -55,11 +57,11 @@ export const 笔记操作介绍 = `
 - \`INSERT_STEP_BEFORE(name:string, refStep:string, newStep:string)\`：在名为name的题型的steps中，找到refStep步骤，在其之前插入一个新的步骤newStep。
 - \`MODIFY_QT(name:string, newQt:QTEntry)\`：将名为name的题型整个重写，修改为新的name, desc, clue, steps和tips等信息。
 - \`MODIFY_QT_KV(name:string, key:(keyof QTEntry), value:any)\`：将名为name的题型的某个字段修改为指定的值（包括name字段本身）。（可以通过此方式对steps和tips进行重新排序）
+- \`DELETE_QT(name:string)\`：删除名为name的题型。（危险操作，谨慎考虑）
 
 【特别提醒】如果你发觉现有的解题步骤和提示与当前题目有较大出入，希望做很多修改，那么你应该考虑创建一种新的题型，而不是对原有题型的笔记做大幅度修改。**因为很多题型看似相似，实际上却有很大不同。**在你意识到这种情况时，你还应该修改原本题型的名称、描述和线索等信息，以便更好地反映出它们之间的差异。
 `.trim();
 
-// - \`DELETE_QT(name:string)\`：删除名为name的题型。
 
 
 
@@ -90,7 +92,11 @@ export function 笔记操作函数(dataWrap: any) {
       }
 
       else if (op.method === "DELETE_QT") {
-        draft.entries = (draft?.entries??[]).filter((it: any) => it.name !== op.args.name);
+        // draft.entries = (draft?.entries??[]).filter((it: any) => it.name !== op.args.name);
+        const idx = (draft?.entries??[]).findIndex((it: any) => it.name === op.args.name);
+        if (idx) {
+          draft.entries[idx].deleted = true;
+        }
       }
       else if (op.method === "CREATE_QT") {
         draft.entries.push(op.args?.qt??op.args);
@@ -262,8 +268,8 @@ export function stage0_判断题型_InputGenerator(dataWrap: any) {
   const lines = [];
   lines.push("====[题型体系]====");
 
-  const entries = (dataWrap?.qtBook??{entries:[]}).entries;
-  const descs = entries.map((entry: any) => _.pick(entry, ["name", "desc", "clue"]));
+  const entries = (dataWrap?.qtBook??{entries:[]}).entries as any[];
+  const descs = entries.filter((it)=>!it.deleted).map((entry) => _.pick(entry, ["name", "desc", "clue"]));
 
   lines.push(JSON.stringify(descs));
 
@@ -360,11 +366,19 @@ interface YourResponse {
   typeMatched: boolean;  // 现有题型描述与当前题目是否足够匹配
   errorAnalyze: string;  // 你对错误答案的分析，描述你认为错误的原因和改进方向。
   noteAnalyze: string;  // 你对目前笔记可改进之处的分析，包括增补、除冗、除错等。
+
+  wrongChosenType: boolean;  // 是不是因为选择了错误的题型导致的错误（需要通过改进题型的name、desc或clue）
+
   unclearQuestion: boolean;  // 是不是因为题目的表述不够清楚导致的错误（需要通过完善笔记来提示后人）
   ambiguousQuestion: boolean;  // 是不是因为题目的表述存在歧义导致的错误（需要通过完善笔记来提示后人）
+
   dogmaticNote: boolean;  // 笔记的描述是否过于死板，导致无法灵活应对题目变化（需要做相应的修改）
+
+  tooBoardQType: boolean;  // 现有题型是否过于宽泛，导致混淆了不同的情形，比如clue太依赖字面形式，而没有根据题目实际内容来区分（需要创建新的题型，并修改旧题型的name、desc或clue以作区分）
+
   weirdExplain: boolean;  // 题目正确答案的解释是否令你不解
   newTypeNeeded: boolean;  // 是否需要创建新的题型
+
   operations?: {
     method: string;  // 如 "CREATE_QT" 等，是你计划对笔记执行的操作。
     args: {[key: string]: any};  // 你计划对笔记执行的操作的参数，参见 笔记操作 一节。
