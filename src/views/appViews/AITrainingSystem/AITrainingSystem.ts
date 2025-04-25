@@ -1,5 +1,6 @@
 // @unocss-include
 
+import { saveAs } from 'file-saver';
 import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Panel from 'primevue/panel';
@@ -89,6 +90,20 @@ export default defineComponent({
       await save("trainer", json);
       console.log("json", json);
       console.log("appData.trainer", appData.trainer);
+    };
+    const exportTrainerData = async () => {
+      if (!appData?.trainer?.isSWOT) {return;}
+      const json = appData.trainer.toJSON(false);
+      const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
+      const fileName = `SWOT_Trainer_${new Date().toISOString()}.json`;
+      saveAs(blob, fileName);
+      toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
+    };
+    const exportQuestions = async () => {
+      const blob = new Blob([JSON.stringify(appData.questions)], { type: 'application/json' });
+      const fileName = `SWOT_Questions_${new Date().toISOString()}.json`;
+      saveAs(blob, fileName);
+      toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
     };
     const loadAppData = async () => {
       appData.trainer = new SWOT();
@@ -220,6 +235,8 @@ export default defineComponent({
                 vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
                 vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
                 vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
+                vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-play", onClick: exportTrainerData, }),
+                vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
               ]),
             ]),
           ],

@@ -63,7 +63,7 @@ export default defineComponent({
       "错误已分析": "warn",
       "错误未分析": "danger",
 
-      "太简单已跳过": "success",
+      "太简单已跳过": "info",
       "太困难已跳过": "danger",
       "练够了已跳过": "info",
       "验够了已跳过": "success",
