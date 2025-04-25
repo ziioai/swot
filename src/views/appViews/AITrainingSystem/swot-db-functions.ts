@@ -40,7 +40,8 @@ export const getChatRecords = async (offset: number = 0, limit: number = 10) => 
   return records;
 };
 export const 记录调模型时的数据 = async (data: any) => {
-  await saveChatRecord({key: nanoid(), data});
+  const result = await saveChatRecord({key: nanoid(12), data});
+  return result;
 };
 
 export const saveQtBookBackup = async (item: Record<string, any>) => {

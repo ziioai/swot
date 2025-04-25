@@ -93,7 +93,11 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
       it.stateText = "太困难已跳过";
       return false;
     }
-    if (it.correctCountV ?? 0 >= swot.maxVerifyCount) {
+    if ((it.trainedCountT ?? 0) >= swot.maxVerifyCount) {
+      it.stateText = "练够了已跳过";
+      return false;
+    }
+    if ((it.correctCountV ?? 0) >= swot.maxCertifyCount) {
       it.stateText = "验够了已跳过";
       return false;
     }
@@ -102,7 +106,12 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
   });
 
   // 是否都达到最大验证次数或最大确证次数
-  if (!questionStates.length) { swot.end("all questions reached max verify/certify count"); 播放喇叭式胜利音效(); return; }
+  if (!questionStates.length) {
+    if (swot.state.versionCertifyCount??0 >= swot.maxCertifyCount) {
+      swot.end("all questions reached max verify/certify count"); 播放喇叭式胜利音效(); return;
+    }
+    /** @TODO 否则要再做 */
+  }
 
   const quIds = questionStates.map(it => it.nnid);
 
@@ -177,19 +186,23 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
         allBugs = false;
         batchAllBugs = false;
         await 处理单个对题(swot, quId);
+        return;
       } else if (result === 0) {
         allBugs = false;
         batchAllBugs = false;
         allCorrect = false;
         await 处理单个错题(swot, quId);
         errorQuIds.push(quId);
+        return;
       } else if (result === -1) {
         allCorrect = false;
         /** @TODO 可能要完善不知道什么 */
+        return;
       } else if (result === -2) {
         // 比如中止了
         allCorrect = false;
         /** @TODO 可能要完善不知道什么 */
+        return;
       }
     }));
 
@@ -270,6 +283,7 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
   if (allCorrect) { swot.state.versionCertifyCount = (swot.state.versionCertifyCount ?? 0) + 1; }
 
   swot.state.totalCount = (swot.state.totalCount ?? 0) + 1;
+  swot.state.versionCount = (swot.state.versionCount ?? 0) + 1;
   播放猫叫声();
   await 循环总流程(swot);
 }  // end of 循环核心流程
@@ -323,7 +337,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     quState.stateText = "判断题型中";
     await stage0_判断题型_Process(judgeResponseDataWrap, swot.supplierForm, ()=>{
       quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-      记录调模型时的数据({data: judgeResponseDataWrap, supplierForm: swot.supplierForm});
+      记录调模型时的数据({version: swot.getNotebookVersion(), data: judgeResponseDataWrap, supplierForm: swot.supplierForm, type: "judgeResponse", time: Date.now(),});
     });
 
     if (swot.shouldStop) {
@@ -350,7 +364,7 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     quState.stateText = "做题中";
     await stage1_根据笔记做题_Process(responseDataWrap, swot.supplierForm, ()=>{
       quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-      记录调模型时的数据({data: responseDataWrap, supplierForm: swot.supplierForm});
+      记录调模型时的数据({version: swot.getNotebookVersion(), data: responseDataWrap, supplierForm: swot.supplierForm, type: "response", time: Date.now(),});
     });
 
     if (swot.shouldStop) {
@@ -425,14 +439,14 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
     qtBook: {entries: shadow},
     errorCase: {
       question: quEntry,
-      errorOutput: quData.response?.outputData,
+      errorOutput: _.omit(quData.response?.outputData, ["didFollow", "reflection", "noteAdvice"]),
     },
   } as any;
 
   quData.errorReport = {};
   await stage2_根据错题修改笔记_Process(errorReportDataWrap, swot.supplierForm, ()=>{
     quData.errorReport = _.pick(errorReportDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-    记录调模型时的数据({data: errorReportDataWrap, supplierForm: swot.supplierForm});
+    记录调模型时的数据({version: swot.getNotebookVersion(), data: errorReportDataWrap, supplierForm: swot.supplierForm, type: "errorReport", time: Date.now(),});
   });
   quState.stateText = "错误已分析";
 
@@ -563,6 +577,8 @@ export class SWOT {
     this.state.notebookVersion = `${nanoid(6)}`;
     // this.state.notebook = { entries: [] };
     /** @TODO */
+    this.state.versionCount = 0;
+    this.state.versionCertifyCount = 0;
     Object.values(this.state.quStateDict).forEach(it => {
       it.trainedCountV = undefined;
       it.correctCountV = undefined;

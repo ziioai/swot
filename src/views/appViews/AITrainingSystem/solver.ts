@@ -359,6 +359,7 @@ interface YourResponse {
   glance: string;  // 简要描述你对错误情况的第一印象。
   typeMatched: boolean;  // 现有题型描述与当前题目是否足够匹配
   errorAnalyze: string;  // 你对错误答案的分析，描述你认为错误的原因和改进方向。
+  noteAnalyze: string;  // 你对目前笔记可改进之处的分析，包括增补、除冗、除错等。
   unclearQuestion: boolean;  // 是不是因为题目的表述不够清楚导致的错误（需要通过完善笔记来提示后人）
   ambiguousQuestion: boolean;  // 是不是因为题目的表述存在歧义导致的错误（需要通过完善笔记来提示后人）
   dogmaticNote: boolean;  // 笔记的描述是否过于死板，导致无法灵活应对题目变化（需要做相应的修改）

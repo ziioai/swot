@@ -140,7 +140,7 @@ export default defineComponent({
           onClick: () => emit('continue-training'),
         }),
         
-        ["训练中", "准备暂停", "已暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
+        ["已暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
           label: "停止", icon: "pi pi-stop", class: "w-full",
           onClick: () => emit('stop-training'),
         }),

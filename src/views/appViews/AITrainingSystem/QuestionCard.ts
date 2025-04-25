@@ -59,9 +59,10 @@ export default defineComponent({
       "正确": "success",
       "错误分析中": "warn",
       "错误已分析": "danger",
-      "太简单已跳过": "info",
-      "太困难已跳过": "info",
-      "验够了已跳过": "info",
+      "太简单已跳过": "success",
+      "太困难已跳过": "danger",
+      "练够了已跳过": "info",
+      "验够了已跳过": "success",
     } as { [key: string]: string; };
     const map22 = {
       "预备": "未知",
@@ -74,6 +75,7 @@ export default defineComponent({
       "错误已分析": "错误",
       "太简单已跳过": "跳过",
       "太困难已跳过": "跳过",
+      "练够了已跳过": "跳过",
       "验够了已跳过": "跳过",
     } as { [key: string]: string; };
 
@@ -85,7 +87,7 @@ export default defineComponent({
       vnd(Panel, {
         toggleable: true,
         collapsed: appData.collapsed || ![
-          "判断题型中", "做题中", "错误分析中", "错误已分析",
+          "判断题型中", "做题中", "错误分析中", "==错误已分析",
         ].includes(props?.trainingState?.stateText),
       }, {
         header: () => vnd("div", { class: "stack-h items-center" }, [
