@@ -212,7 +212,7 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
       swot.signalFn?.("训练已暂停，等待恢复");
 
       // 记录下一个要处理的批次索引
-      swot.state.lastBatchIndex = batchIdx + batchSize;
+      swot.state.lastBatchIndex = batchIdx + 1;
 
       swot.state.isProcessingBatch = false;
 
@@ -285,7 +285,7 @@ export async function 循环核心流程(swot: SWOT, quIds: QuestionTrainingStat
   swot.state.totalCount = (swot.state.totalCount ?? 0) + 1;
   swot.state.versionCount = (swot.state.versionCount ?? 0) + 1;
   播放猫叫声();
-  await 循环总流程(swot);
+  await 循环总流程(swot, afterBatchFn);
 }  // end of 循环核心流程
 
 export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
