@@ -78,6 +78,8 @@ export const 思路 = `
 
 
 export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
+  console.log("循环总流程", swot?.state?.notebook?.entries?.length);
+
   const totalCount = swot.state.totalCount ?? 0;
   const maxLoopCount = swot.maxLoopCount;
 
@@ -109,6 +111,8 @@ export async function 循环总流程(swot: SWOT, afterBatchFn?: any) {
   // const restMinTrainedCount = _.min(questionStates.map(it => it.trainedCountT ?? 0)) ?? 0;
 
   const quIds = questionStates.map(it => it.nnid);
+
+  console.log(swot?.state?.notebook?.entries?.length);
 
   await 循环核心流程(
     swot,
@@ -706,7 +710,17 @@ export class SWOT {
   }
 
   resetState() {
+    // console.log("resetState", this?.state?.notebook?.entries?.length);
+    const lastEntries = this?.state?.notebook?.entries;
+    const lastVersion = this?.state?.notebookVersion;
+
     this.state = _.cloneDeep(defaultState) ?? {};
+
+    if (this?.options?.practiceOnlyMode) {
+      this.state.notebook = { entries: lastEntries ?? [] };
+      this.state.notebookVersion = lastVersion ?? "";
+    }
+
     this.state.quCount = this.quEntries.length;
     this.loadQuEntries(this.quEntries, true);
   }
@@ -779,6 +793,7 @@ export class SWOT {
 
 
   async start(afterBatchFn?: any) {
+    // console.log("start", this?.state?.notebook?.entries?.length);
     // 只有在空闲、已结束或已中止状态下才能开始训练
     if (this.trainingState === TrainingState.IDLE || this.trainingState === TrainingState.ENDED || this.trainingState === TrainingState.ABORTED) {
       this.trainingState = TrainingState.RUNNING;
@@ -788,6 +803,7 @@ export class SWOT {
   }
 
   async restart(afterBatchFn?: any) {
+    // console.log("restart", this?.state?.notebook?.entries?.length);
     this.resetStateManually();
     this.state.startTime = new Date().toISOString();
     this.trainingState = TrainingState.RUNNING;
@@ -795,6 +811,7 @@ export class SWOT {
   }
 
   async resetStateManually() {
+    // console.log("resetStateManually", this?.state?.notebook?.entries?.length);
     this.resetState();
     this.state.quCount = this.quEntries.length;
     this.state.ended = false;
@@ -807,6 +824,7 @@ export class SWOT {
   }
 
   async continue(afterBatchFn?: any) {
+    // console.log("continue", this?.state?.notebook?.entries?.length);
     if (this.trainingState === TrainingState.ENDED) {
       // this.signalFn?.("训练已结束，无法继续");
       this.trainingState = TrainingState.RUNNING;
