@@ -62,6 +62,7 @@ export default defineComponent({
       "错误分析中": "secondary",
       "错误已分析": "warn",
       "错误未分析": "danger",
+      "错误（仅做题模式）": "danger",
 
       "太简单已跳过": "info",
       "太困难已跳过": "danger",
@@ -80,6 +81,7 @@ export default defineComponent({
       "错误分析中": "错误",
       "错误已分析": "错误",
       "错误未分析": "错误",
+      "错误（仅做题模式）": "错误",
 
       "太简单已跳过": "跳过",
       "太困难已跳过": "跳过",

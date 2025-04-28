@@ -9,6 +9,7 @@ import TrainingControlPanel from './TrainingControlPanel';
 import QuestionCard from './QuestionCard';
 import NoteHistoryPanel from './NoteHistoryPanel';
 import MemoBoard from './MemoBoard';
+import AccuracyPanel from './components/AccuracyPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -46,7 +47,7 @@ import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
 
 export default defineComponent({
   name: "AITrainingSystem",
-  components: { TrainingControlPanel, QuestionCard, NoteHistoryPanel },
+  components: { TrainingControlPanel, QuestionCard, NoteHistoryPanel, AccuracyPanel },
   setup() {
     const toast = useToast();
 
@@ -282,27 +283,34 @@ export default defineComponent({
         ]),
 
         vnd("div", { class: "my-1.5rem! grid grid-cols-1 md:grid-cols-12 gap-4" }, [
-          vnd(Panel, {
-            header: "训练控制",
-            toggleable: true,
-            class: ["col-span-1 md:col-span-6 xl:col-span-5", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-          }, {
-            default: () => vnd(TrainingControlPanel, {
-              options: appData.trainer?.options,
+          vnd("div", { class: "col-span-1 md:col-span-6 xl:col-span-5 grid grid-cols-1 gap-4" }, [
+            vnd(Panel, {
+              header: "训练控制",
+              toggleable: true,
+              class: ["bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+            }, {
+              default: () => vnd(TrainingControlPanel, {
+                options: appData.trainer?.options,
+                state: appData.trainer?.state,
+                isTraining: appData.trainer?.trainingState === TrainingState.RUNNING,
+                isPaused: appData.trainer?.trainingState === TrainingState.PAUSED,
+                isPreparingPause: appData.trainer?.trainingState === TrainingState.PREPARING_PAUSE,
+                trainingStateText: trainingStateText.value,
+                onStartTraining: startTraining,
+                onContinueTraining: continueTraining,
+                onPauseTraining: pauseTraining,
+                onCancelPause: cancelPauseRequest,
+                onStopTraining: stopTraining,
+                onResetTraining: resetTraining,
+                'onUpdate:options': updateOptions,
+              })
+            }),
+            
+            // 添加正确率统计面板
+            vnd(AccuracyPanel, {
               state: appData.trainer?.state,
-              isTraining: appData.trainer?.trainingState === TrainingState.RUNNING,
-              isPaused: appData.trainer?.trainingState === TrainingState.PAUSED,
-              isPreparingPause: appData.trainer?.trainingState === TrainingState.PREPARING_PAUSE,
-              trainingStateText: trainingStateText.value,
-              onStartTraining: startTraining,
-              onContinueTraining: continueTraining,
-              onPauseTraining: pauseTraining,
-              onCancelPause: cancelPauseRequest,
-              onStopTraining: stopTraining,
-              onResetTraining: resetTraining,
-              'onUpdate:options': updateOptions,
             })
-          }),
+          ]),
         
           vnd(Panel, {
             header: "题目笔记",
