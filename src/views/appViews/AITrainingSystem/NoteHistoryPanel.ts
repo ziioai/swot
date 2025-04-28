@@ -1,5 +1,6 @@
 // @unocss-include
 
+import _ from 'lodash';
 import clipboard from "clipboard";
 import { h as vnd, defineComponent, PropType, } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
@@ -31,7 +32,32 @@ export default defineComponent({
           "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
         ],}, [
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`【${entry?.name}】`]),
-          JSON.stringify(entry??null, null, 2),
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`name,desc,clue`]),
+          JSON.stringify(_.pick(entry??null, ["name", "desc", "clue"]), null, 2),
+
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`steps`]),
+          vnd("div", { class: [
+            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",
+          ]}, [ JSON.stringify(entry?.steps??null, null, 2), ]),
+
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`tips`]),
+          vnd("div", { class: [
+            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",
+          ]}, [ JSON.stringify(entry?.tips??null, null, 2), ]),
+
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`tools`]),
+          ((entry?.tools??[])as any[]).map((it,idx)=>vnd("div", {
+            class: [ "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",],
+            key: `[${idx}]${it?.name}`,
+          }, [ JSON.stringify(it), ])),
+
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`datums`]),
+          ((entry?.datums??[])as any[]).map((it,idx)=>vnd("div", {
+            class: [ "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",],
+            key: `[${idx}][${it?.idx}][${it?.query}]`,
+          }, [ JSON.stringify(it), ])),
+
+          // JSON.stringify(entry??null, null, 2),
         ])),
 
       ]);
@@ -54,8 +80,8 @@ export default defineComponent({
               JSON.stringify(props?.notebookEditPlan?.outputData??null, null, 2),
             ]),
           ]),
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`笔记内容`]),
           vnd("div", {class: ["overflow-auto", "max-h-80vh"]}, [
-            vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`笔记内容`]),
             make(),
           ]),
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [

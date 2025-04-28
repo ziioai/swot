@@ -12,7 +12,7 @@ import {
   播放叮咚声,
   播放咕嘟声,
   播放咔哒声,
-  // 播放坠落声,
+  播放坠落声,
   播放报错声,
   播放哐当声,
   播放喇叭式胜利音效,
@@ -128,6 +128,7 @@ export async function 循环核心流程(
   swot.修正做题初始状态();
 
   /** @TODO 如果有还未更新的笔记 需要更新 */
+  await 执行笔记的更新操作(swot);
 
   const quEntries = quIds.map(id => swot.getQuEntry(id));
   // let allBugs = true;
@@ -180,6 +181,7 @@ export async function 循环核心流程(
   for (let batchIdx = startBatchIndex; batchIdx < batches.length; batchIdx++) {
     const batchErrorQuIds = [] as QuestionTrainingState["nnid"][];
     let batchAllBugs = true;
+    let batchAllCorrect = true;
 
     // 记录当前批次索引，用于恢复
     swot.state.lastBatchIndex = batchIdx;
@@ -214,21 +216,63 @@ export async function 循环核心流程(
         allBugs = false;
         batchAllBugs = false;
         allCorrect = false;
+        batchAllCorrect = false;
         await 处理单个错题(swot, quId);
         errorQuIds.push(quId);
         batchErrorQuIds.push(quId);
         return;
       } else if (result === -1) {
         allCorrect = false;
+        batchAllCorrect = false;
         /** @TODO 可能要完善不知道什么 */
         return;
       } else if (result === -2) {
         // 比如中止了
         allCorrect = false;
+        batchAllCorrect = false;
         /** @TODO 可能要完善不知道什么 */
         return;
       }
     }));
+
+    console.log(JSON.parse(JSON.stringify(swot.state)));
+
+    // // 正常情况下批次之间的延迟
+    // if (batchIdx < batches.length && swot.trainingState === TrainingState.RUNNING) {
+    //   await sleep(200);
+    // }
+
+    // 进行笔记的更新 //
+    if (!batchAllCorrect) {
+      try {
+        // 保存先前的版本
+        const notebook = swot.getNotebook();
+        const version = swot.getNotebookVersion();
+        await 记录版本笔记数据(notebook, version);
+        // 创建新的版本
+        const { version: newVersion } = swot.initNewNotebookVersion();
+
+        // for await (const errorQuId of batchErrorQuIds) {
+        //   console.log("errorQuId", errorQuId);
+        //   await 为单个错题更新笔记(swot, errorQuId);
+        // }
+        await 合并笔记修改计划并更新笔记(swot, batchErrorQuIds);
+
+        // 保存当前的版本
+        await 记录版本笔记数据(swot.getNotebook(), newVersion);
+      } catch (err) {
+        swot?.signalFn?.(`笔记更新失败`, "error", 2000);
+        console.error(err);
+        播放报错声();
+        swot.state.isProcessingBatch = false;
+        swot.abortTraining();
+        return;
+      }
+    }
+
+    await afterBatchFn?.();
+
+    swot.state.isProcessingBatch = false;
 
     // 批次处理后检查是否需要暂停
     if (swot.trainingState === TrainingState.PREPARING_PAUSE) {
@@ -250,46 +294,6 @@ export async function 循环核心流程(
       return;
     }
 
-    swot.state.isProcessingBatch = false;
-
-    console.log(JSON.parse(JSON.stringify(swot.state)));
-
-    await afterBatchFn?.();
-    // swot.abortTraining();  /** @TODO 删除这个 */
-
-    // 正常情况下批次之间的延迟
-    if (batchIdx < batches.length && swot.trainingState === TrainingState.RUNNING) {
-      await sleep(1000);
-    }
-
-
-    /** @TODO 错误处理 */
-    // 进行笔记的更新 //
-    try {
-      // 保存先前的版本
-      const notebook = swot.getNotebook();
-      const version = swot.getNotebookVersion();
-      await 记录版本笔记数据(notebook, version);
-      // 创建新的版本
-      const { version: newVersion } = swot.initNewNotebookVersion();
-
-      // for await (const errorQuId of batchErrorQuIds) {
-      //   console.log("errorQuId", errorQuId);
-      //   await 为单个错题更新笔记(swot, errorQuId);
-      // }
-      await 合并笔记修改计划并更新笔记(swot, batchErrorQuIds);
-
-      // 保存当前的版本
-      await 记录版本笔记数据(swot.getNotebook(), newVersion);
-    } catch (err) {
-      swot?.signalFn?.(`笔记更新失败`, "error", 2000);
-      console.error(err);
-      播放报错声();
-      swot.state.isProcessingBatch = false;
-      swot.abortTraining();
-      return;
-    }
-
     if (batchAllBugs) { swot.end("batchAllBugs"); 播放随机曲谱(8); 播放报错声(); return; }
   }  // end of batches
 
@@ -305,6 +309,7 @@ export async function 循环核心流程(
 }  // end of 循环核心流程
 
 export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds: QuestionTrainingState["nnid"][]) {
+  播放男人说话声();
   const opPlans = [] as any[];
   for (const quId of quIds) {
     const quData = swot.getQuData(quId);
@@ -324,7 +329,7 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
         swot.state.notebookEditPlan = _.pick(dataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
       });
       swot.state.notebookEditPlan.outputData = dataWrap.outputData;
-      播放男人说话声();
+      播放坠落声();
       记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: dataWrap, supplierForm: swot.supplierForm, type: "合并对笔记的修改", time: Date.now(),});
       await sleep(200);
     } else {
@@ -333,16 +338,7 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
       };
     }
 
-    const dataWrap2 = {
-      operations: swot.state.notebookEditPlan?.outputData?.operations,
-      qtBook: _.cloneDeep(swot.getNotebook()),
-    };
-    笔记操作函数(dataWrap2);
-    swot.setNotebook(dataWrap2.qtBook);
-    await sleep(3_000);
-    播放女人说Good声();
-
-    swot.state.notebookEditPlan = {};
+    await 执行笔记的更新操作(swot);
 
     return 1;
   } catch (err) {
@@ -350,6 +346,20 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
     console.error(err);
     return -1;
   }
+}
+
+export async function 执行笔记的更新操作(swot: SWOT) {
+  if (swot.state.notebookEditPlan?.outputData?.operations==null) {return;}
+  const dataWrap2 = {
+    operations: swot.state.notebookEditPlan?.outputData?.operations,
+    qtBook: _.cloneDeep(swot.getNotebook()),
+  };
+  笔记操作函数(dataWrap2);
+  swot.setNotebook(dataWrap2.qtBook);
+  await sleep(3_0);
+  swot.state.notebookEditPlan = {};
+  await sleep(1_00);
+  播放女人说Good声();
 }
 
 export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrainingState["nnid"]) {
@@ -416,11 +426,11 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
       quState.stateText = "报错";
       throw new Error("判断题型 时没有输出正确格式的数据");
     }
-    const qtName = quData.judgeResponse?.outputData?.qtName;
+    const qtName = quData.judgeResponse?.outputData?.name ?? quData.judgeResponse?.outputData?.qtName;
     const qtFound = noteEntries.find(it => it.name === qtName);
-    // if (qtFound==null) {
-    //   throw new Error(`没有找到题型「${qtName}」的笔记`);
-    // }
+    if (qtFound==null) {
+      await swot?.signalFn?.(`没有找到题型「${qtName}」的笔记`, "warn", 5000);
+    }
     responseDataWrap.note = qtFound;
 
     播放咔哒声();
@@ -443,7 +453,12 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
       quState.stateText = "报错";
       throw new Error("根据笔记做题 时没有输出正确格式的数据");
     }
-    if (quData.response?.outputData?.answer!=quEntry?.answer) {
+
+    const jsonA = JSON.stringify(quEntry?.answer);
+    const jsonB = JSON.stringify(quData.response?.outputData?.answer);
+
+    // (quEntry?.answer!=quData.response?.outputData?.answer)
+    if ((jsonA!=jsonB)&&(quEntry?.answer!=quData.response?.outputData?.answer)) {
       quState.stateText = "错误待分析";
       播放咕嘟声();
       return 0;
@@ -547,13 +562,13 @@ export async function 处理单个对题(swot: SWOT, quId: QuestionTrainingState
 
 export const defaultOptions: SWOTOptions = {
   batchSize: 5,               // 每次并行的题目数量
-  maxLoopCount: 30,           // 最大循环次数
+  maxLoopCount: 16,           // 最大循环次数
   maxVerifyCount: 20,         // 最大验证次数
   maxCertifyCount: 2,         // 最大确证次数
   versionSimpleThreshold: 2,  // 版本简单阈值
   totalSimpleThreshold: 4,    // 总体简单阈值
-  versionSkipThreshold: 5,    // 版本难题阈值
-  totalSkipThreshold: 10,     // 总体难题阈值
+  versionSkipThreshold: 6,    // 版本难题阈值
+  totalSkipThreshold: 12,     // 总体难题阈值
 };
 export const defaultState: SWOTState = {
   quCount: 0,              // 题目数量
@@ -782,7 +797,9 @@ export class SWOT {
 
   async continue(afterBatchFn?: any) {
     if (this.trainingState === TrainingState.ENDED) {
-      this.signalFn?.("训练已结束，无法继续");
+      // this.signalFn?.("训练已结束，无法继续");
+      this.trainingState = TrainingState.RUNNING;
+      this.signalFn?.("训练本已结束，现在重新继续");
       return;
     }
 
@@ -825,7 +842,7 @@ export class SWOT {
 
   // 恢复训练
   resume(afterBatchFn?: any) {
-    if (this.trainingState === TrainingState.PAUSED || this.trainingState === TrainingState.ABORTED) {
+    if ([TrainingState.PAUSED, TrainingState.ABORTED, TrainingState.ENDED].includes(this.trainingState)) {
       this.signalFn?.("恢复训练");
       this.continue(afterBatchFn);
       return true;

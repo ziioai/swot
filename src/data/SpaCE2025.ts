@@ -71,9 +71,9 @@ export const SpaCE2025_Demo_Data_3 = [
 ];
 
 export const SpaCE2025_Demo_Data = [
-  ...SpaCE2025_Demo_Data_1,
+  // ...SpaCE2025_Demo_Data_1,
   ...SpaCE2025_Demo_Data_2,
-  ...SpaCE2025_Demo_Data_3,
+  // ...SpaCE2025_Demo_Data_3,
 ];
 
 export const SpaCE2025_Demo_Data_Standardized = SpaCE2025_Demo_Data.map((it: any)=>{

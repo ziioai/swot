@@ -131,12 +131,7 @@ export default defineComponent({
           onClick: () => emit('cancel-pause'),
         }),
         
-        ["已暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
-          label: "继续", icon: "pi pi-play", class: "w-full",
-          onClick: () => emit('continue-training'),
-        }),
-
-        ["已中止"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
+        ["已暂停", "已中止", "已结束"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
           label: "继续", icon: "pi pi-play", class: "w-full",
           onClick: () => emit('continue-training'),
         }),

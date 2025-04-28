@@ -239,7 +239,7 @@ export async function 进一步抽象的标准化处理函数<CR, TT>(
   await 一般处理函数模板<CR, TT>(
     dataWrap, supplierForm, 系统提示词, 制作输入的函数,
     theTempData,
-    Object.assign({ max_tokens: modelName=="free:QwQ-32B"?8000:3000,
+    Object.assign({ max_tokens: modelName=="free:QwQ-32B"?8000:4000,
       // presence_penalty: 0.06,
       // temperature: 0.7,
       model: modelName,
