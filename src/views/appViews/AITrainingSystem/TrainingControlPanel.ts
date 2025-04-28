@@ -1,3 +1,4 @@
+// filepath: /Users/dude/__ROOT__/__CODE__/__GITME__/swot/src/views/appViews/AITrainingSystem/TrainingControlPanel.ts
 // @unocss-include
 
 import _ from 'lodash';
@@ -10,6 +11,7 @@ import Panel from 'primevue/panel';
 // import Card from 'primevue/card';
 import Divider from 'primevue/divider';
 import NumberInputField from './components/NumberInputField';
+import Checkbox from 'primevue/checkbox';
 
 import { type TrainingStateText } from './types';
 
@@ -44,6 +46,9 @@ export default defineComponent({
       emit('update:options', { [key]: value });
     };
 
+    const updateBooleanOption = (key: keyof SWOTOptions, value: boolean) => {
+      emit('update:options', { [key]: value });
+    };
 
     function optionNumberInput(label: string, optionKey: keyof SWOTOptions, description?: (value: number) => string) {
       return vnd(NumberInputField, {
@@ -177,6 +182,22 @@ export default defineComponent({
         collapsed: true,
       }, {
         default: () => vnd("div", { class: "flex flex-wrap gap-4" }, [
+          // 仅做题模式切换开关
+          vnd("div", { class: "flex-auto mb-2 field-checkbox" }, [
+            vnd("div", { class: "flex items-center gap-2" }, [
+              vnd(Checkbox, {
+                id: "practiceOnlyMode",
+                modelValue: props?.options?.practiceOnlyMode ?? false,
+                binary: true,
+                'onUpdate:modelValue': (value: boolean) => updateBooleanOption('practiceOnlyMode', value)
+              }),
+              vnd("label", { class: "font-medium cursor-pointer", for: "practiceOnlyMode" }, "仅做题模式（不更新笔记）")
+            ]),
+            vnd("p", { class: "text-xs opacity-60 mt-1 ml-4" }, "开启后只进行题目练习，不会对错题进行分析和更新笔记，节省资源和时间。")
+          ]),
+          
+          vnd(Divider),
+          
           optionNumberInput( "并发数", "batchSize",
             value => `每次同时做 ${value} 道题。`
           ),
@@ -187,7 +208,7 @@ export default defineComponent({
             value => `理想情况下，我们的训练目标是让模型能根据笔记把所有训练题都做对，但有可能模型反复修改笔记仍然无法达成这个目标，因此我们设置它最多把训练过程重复 ${value} 遍，避免无限循环。`
           ),
           optionNumberInput( "最大确证次数", "maxCertifyCount",
-            value => `理想情况下，我们的训练目标是让模型能根据笔记把所有训练题都做对，但是只做对1次可能并不能让人放心，所以我们要进行“确证”，即每道题要做对 ${value} 次，才算是真的通过。`
+            value => `理想情况下，我们的训练目标是让模型能根据笔记把所有训练题都做对，但是只做对1次可能并不能让人放心，所以我们要进行"确证"，即每道题要做对 ${value} 次，才算是真的通过。`
           ),
         ])
       }),

@@ -243,7 +243,7 @@ export async function 循环核心流程(
     // }
 
     // 进行笔记的更新 //
-    if (!batchAllCorrect) {
+    if (!batchAllCorrect && !swot.practiceOnlyMode) {
       try {
         // 保存先前的版本
         const notebook = swot.getNotebook();
@@ -268,6 +268,8 @@ export async function 循环核心流程(
         swot.abortTraining();
         return;
       }
+    } else if (!batchAllCorrect && swot.practiceOnlyMode) {
+      await swot?.signalFn?.(`仅做题模式：跳过笔记更新`, "info", 2000);
     }
 
     await afterBatchFn?.();
@@ -497,6 +499,13 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
     return -2;
   }
 
+  // 如果是仅做题模式，跳过错题分析
+  if (swot.practiceOnlyMode) {
+    quState.stateText = "错误（仅做题模式）";
+    播放咕嘟声();
+    return;
+  }
+
   // 制定更新笔记的计划
   const quEntry = swot.getQuEntry(quId);
   const quData = swot.getQuData(quId);
@@ -569,6 +578,7 @@ export const defaultOptions: SWOTOptions = {
   totalSimpleThreshold: 4,    // 总体简单阈值
   versionSkipThreshold: 6,    // 版本难题阈值
   totalSkipThreshold: 12,     // 总体难题阈值
+  practiceOnlyMode: false,    // 仅做题模式（不更新笔记）
 };
 export const defaultState: SWOTState = {
   quCount: 0,              // 题目数量
@@ -610,6 +620,7 @@ export class SWOT {
   get totalSimpleThreshold() { return this._options.totalSimpleThreshold??4; }
   get versionSkipThreshold() { return this._options.versionSkipThreshold??5; }
   get totalSkipThreshold() { return this._options.totalSkipThreshold??10; }
+  get practiceOnlyMode() { return this._options.practiceOnlyMode??false; }
 
 
   isSWOT: boolean = true;

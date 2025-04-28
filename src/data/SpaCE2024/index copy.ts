@@ -1,14 +1,14 @@
 
 import _ from 'lodash';
 
-import train2024String from './SpaCE2024_dev_answer.jsonl?raw';
+import train2024String from './SpaCE2024_train.jsonl?raw';
 
 export const train2024 =
 train2024String.split('\n')
 .filter(line => line.trim() !== '')
 .map(line => JSON.parse(line));
 
-const step = Math.floor(train2024.length/200);
+const step = Math.floor(train2024.length/60);
 
 const train2024Samples_ = [] as any[];
 for (let i = 0; i < train2024.length; i += step) {

@@ -10,6 +10,8 @@ export interface SWOTOptions {
   totalSimpleThreshold?: number;    // 总体简单阈值 : 某题在全程中每次都做对且达 xx 次，则标记为【总体简单题】
   versionSkipThreshold?: number;    // 版本难题阈值 : 某题在版本中累计做错 xx 次，则标记为【版本跳过题】
   totalSkipThreshold?: number;      // 总体难题阈值 : 某题在全程中累计做出 xx 次，则标记为【总体跳过题】
+  
+  practiceOnlyMode?: boolean;       // 仅做题模式（不更新笔记）
 };
 export interface SWOTState {
   quCount?: number;              // 题目数量
@@ -91,6 +93,7 @@ export type QuStateText =
 "错误待分析" |
 "错误未分析" |
 "错误已分析" |
+"错误（仅做题模式）" |
 "太简单已跳过" |
 "太困难已跳过" |
 "练够了已跳过" |
