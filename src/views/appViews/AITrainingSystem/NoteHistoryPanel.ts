@@ -1,107 +1,156 @@
 // @unocss-include
 
 import _ from 'lodash';
-import clipboard from "clipboard";
-import { h as vnd, defineComponent, PropType, } from 'vue';
+import { h as vnd, defineComponent, PropType, ref, onMounted } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
-// import Badge from 'primevue/badge';
 import Panel from 'primevue/panel';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Paginator from 'primevue/paginator';
+import { getQtBookBackups, getQtBookBackupsCount } from './swot-db-functions';
 
 export default defineComponent({
   name: "NoteHistoryPanel",
   props: {
-    version: { type: String, required: false, },
-    note: {
-      type: Object as PropType<any | null>,
-      required: false
-    },
-    notebookEditPlan: {
-      type: Object as PropType<any | null>,
-      required: false
-    },
+    currentVersion: { type: String, required: false },
   },
-  emits: ['save-note'],
+  emits: ['select-version'],
   setup(props, { emit }) {
+    const backups = ref<any[]>([]);
+    const loading = ref(true);
+    const totalRecords = ref(0);
+    const first = ref(0);
+    const rows = ref(5);
+    
+    // Load notebook backups with pagination
+    const loadBackups = async () => {
+      loading.value = true;
+      try {
+        const result = await getQtBookBackups(first.value, rows.value);
+        backups.value = result || [];
+        
+        // Get actual total count for pagination
+        if (first.value === 0) {
+          // Only update total on first page load or reload
+          const count = await getQtBookBackupsCount();
+          totalRecords.value = count;
+        }
+      } catch (error) {
+        console.error("Failed to load notebook backups:", error);
+      } finally {
+        loading.value = false;
+      }
+    };
+    
+    // Handle pagination
+    const onPageChange = (event: { first: number, rows: number, page: number, pageCount: number }) => {
+      first.value = event.first;
+      rows.value = event.rows;
+      loadBackups();
+    };
+    
+    // Reload backups
+    const reload = () => {
+      first.value = 0;
+      loadBackups();
+    };
+    
+    // Select a version
+    const selectVersion = (backup: any) => {
+      emit('select-version', backup);
+    };
+
+    // Load a version
+    const loadVersion = (backup: any) => {
+      if (backup && backup.data && backup.data.notebook) {
+        emit('select-version', backup);
+      }
+    };
+    
+    onMounted(() => {
+      loadBackups();
+    });
+
+    // // Format timestamp for display
+    // const formatTimestamp = (id: number) => {
+    //   if (!id) return 'Unknown';
+    //   const date = new Date(id);
+    //   return date.toLocaleString();
+    // };
 
     return () => {
-
-      const make = () => vnd("div", { class: [ "stack-v" ] }, [
-
-        (props?.note?.entries as any[])?.map((entry, idx) => vnd("div", {key: `[${idx}]${entry?.name}`, class: [
-          "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-          "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
-        ],}, [
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`【${entry?.name}】`]),
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`name,desc,clue`]),
-          JSON.stringify(_.pick(entry??null, ["name", "desc", "clue"]), null, 2),
-
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`steps`]),
-          vnd("div", { class: [
-            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",
-          ]}, [ JSON.stringify(entry?.steps??null, null, 2), ]),
-
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`tips`]),
-          vnd("div", { class: [
-            "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",
-          ]}, [ JSON.stringify(entry?.tips??null, null, 2), ]),
-
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`tools`]),
-          ((entry?.tools??[])as any[]).map((it,idx)=>vnd("div", {
-            class: [ "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",],
-            key: `[${idx}]${it?.name}`,
-          }, [ JSON.stringify(it), ])),
-
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`datums`]),
-          ((entry?.datums??[])as any[]).map((it,idx)=>vnd("div", {
-            class: [ "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",],
-            key: `[${idx}][${it?.idx}][${it?.query}]`,
-          }, [ JSON.stringify(it), ])),
-
-          // JSON.stringify(entry??null, null, 2),
-        ])),
-
-      ]);
-
       return vnd(Panel, {
         toggleable: true,
+        collapsed: false,
       }, {
         header: () => vnd("div", { class: "stack-h items-center" }, [
-          vnd("div", { class: "font-bold" }, [props?.version??"???"]),
+          vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
         ]),
         default: () => vnd("div", {class: []}, [
-          vnd("div", {class: []}, [
-            vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`笔记修改计划`]),
-            vnd("div", { class: [
-              "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-              "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%", "max-h-12rem",
-            ]}, [
-              props?.notebookEditPlan?.outputData==null&&
-              JSON.stringify(props?.notebookEditPlan??null),
-              JSON.stringify(props?.notebookEditPlan?.outputData??null, null, 2),
-            ]),
-          ]),
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`笔记内容`]),
-          vnd("div", {class: ["overflow-auto", "max-h-80vh"]}, [
-            make(),
-          ]),
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [
-            vnd(ToolButton, { label: "手动保存版本", icon: "pi pi-save", class: "mr-0.5rem",
-              onClick: () => emit('save-note'),
-            }),
-            vnd(ToolButton, { label: "复制", icon: "pi pi-copy", class: "mr-0.5rem",
-              onClick: () => {
-                clipboard.copy(JSON.stringify({
-                  version: props?.version??null,
-                  notebook:props?.note??null,
-                }, null, 2));
-              },
+          vnd("div", { class: ["stack-h mb-2"] }, [
+            vnd(ToolButton, { 
+              label: "刷新", 
+              icon: "pi pi-refresh", 
+              class: "mr-0.5rem",
+              loading: loading.value,
+              onClick: reload 
             }),
           ]),
-        ]),
+          vnd(DataTable, {
+            value: backups.value,
+            loading: loading.value,
+            paginator: false,
+            rows: rows.value,
+            scrollable: true,
+            scrollHeight: "200px",
+            class: "w-100%",
+            selectionMode: "single",
+            dataKey: "id",
+          }, {
+            default: () => [
+              vnd(Column, { 
+                field: "key", 
+                header: "版本标识",
+                sortable: true,
+              }),
+              vnd(Column, { 
+                field: "id", 
+                header: "编号",
+                sortable: true,
+                body: (rowData: any) => `${(rowData.id)}`,
+              }),
+              vnd(Column, { 
+                header: "操作",
+                body: (rowData: any) => {
+                  const isCurrentVersion = rowData.key === props.currentVersion;
+                  return vnd("div", { class: "stack-h" }, [
+                    vnd(ToolButton, {
+                      icon: "pi pi-eye",
+                      class: isCurrentVersion ? "p-button-success" : "",
+                      tooltip: isCurrentVersion ? "当前显示版本" : "显示此版本",
+                      onClick: () => selectVersion(rowData)
+                    }),
+                    vnd(ToolButton, {
+                      icon: "pi pi-arrow-right-arrow-left",
+                      tooltip: "加载此版本到当前状态",
+                      class: "ml-2",
+                      onClick: () => loadVersion(rowData)
+                    })
+                  ]);
+                }
+              }),
+            ]
+          }),
+          vnd(Paginator, {
+            first: first.value,
+            rows: rows.value,
+            totalRecords: totalRecords.value,
+            rowsPerPageOptions: [5, 10, 20],
+            template: 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown',
+            onPage: onPageChange
+          })
+        ])
       });
-
-
-
     };
   }
 });

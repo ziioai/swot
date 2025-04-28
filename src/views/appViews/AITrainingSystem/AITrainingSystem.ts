@@ -7,6 +7,7 @@ import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
 import TrainingControlPanel from './TrainingControlPanel';
 import QuestionCard from './QuestionCard';
+import CurrentNotePanel from './CurrentNotePanel';
 import NoteHistoryPanel from './NoteHistoryPanel';
 import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
@@ -47,7 +48,7 @@ import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
 
 export default defineComponent({
   name: "AITrainingSystem",
-  components: { TrainingControlPanel, QuestionCard, NoteHistoryPanel, AccuracyPanel },
+  components: { TrainingControlPanel, QuestionCard, CurrentNotePanel, AccuracyPanel },
   setup() {
     const toast = useToast();
 
@@ -326,11 +327,37 @@ export default defineComponent({
                 `.trim()),
               }),
               vnd(NoteHistoryPanel, {
+                class: "w-100%",
+                currentVersion: appData.trainer?.state?.notebookVersion,
+                onSelectVersion: (backup: any) => {
+                  if (!appData.trainer) return;
+                  toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
+                  if (backup?.data?.notebook) {
+                    appData.trainer.state.notebook = backup.data.notebook;
+                    appData.trainer.state.notebookVersion = backup.key;
+                  }
+                },
+              }),
+              vnd(CurrentNotePanel, {
+                class: "w-100%",
                 note: appData.trainer?.state?.notebook??null,
                 notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
                 version: appData.trainer?.state?.notebookVersion,
                 onSaveNote: () => {
-                  toast.add({ severity: "info", summary: "UI演示", detail: "笔记保存", life: 1000 });
+                  if (!appData.trainer?.state?.notebook) return;
+                  import('./swot-db-functions').then(({ 记录版本笔记数据 }) => {
+                    记录版本笔记数据({
+                      notebook: appData.trainer?.state?.notebook,
+                      notebookVersion: appData.trainer?.state?.notebookVersion,
+                    }, appData.trainer?.state?.notebookVersion)
+                    .then(() => {
+                      toast.add({ severity: "success", summary: "笔记保存", detail: "笔记版本已保存", life: 1000 });
+                    })
+                    .catch((err) => {
+                      console.error("保存笔记失败:", err);
+                      toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                    });
+                  });
                 },
               }),
             ]),
