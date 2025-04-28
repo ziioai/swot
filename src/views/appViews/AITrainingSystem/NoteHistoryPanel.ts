@@ -1,11 +1,9 @@
 // @unocss-include
 
 import _ from 'lodash';
-import { h as vnd, defineComponent, PropType, ref, onMounted } from 'vue';
+import { h as vnd, defineComponent, ref, onMounted } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
 import Panel from 'primevue/panel';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import Paginator from 'primevue/paginator';
 import { getQtBookBackups, getQtBookBackupsCount } from './swot-db-functions';
 
@@ -15,7 +13,7 @@ export default defineComponent({
     currentVersion: { type: String, required: false },
   },
   emits: ['select-version'],
-  setup(props, { emit }) {
+  setup(_props, { emit }) {
     const backups = ref<any[]>([]);
     const loading = ref(true);
     const totalRecords = ref(0);
@@ -54,29 +52,15 @@ export default defineComponent({
       first.value = 0;
       loadBackups();
     };
-    
-    // Select a version
-    const selectVersion = (backup: any) => {
-      emit('select-version', backup);
-    };
 
     // Load a version
     const loadVersion = (backup: any) => {
-      if (backup && backup.data && backup.data.notebook) {
-        emit('select-version', backup);
-      }
+      emit('select-version', backup);
     };
     
     onMounted(() => {
       loadBackups();
     });
-
-    // // Format timestamp for display
-    // const formatTimestamp = (id: number) => {
-    //   if (!id) return 'Unknown';
-    //   const date = new Date(id);
-    //   return date.toLocaleString();
-    // };
 
     return () => {
       return vnd(Panel, {
@@ -86,7 +70,8 @@ export default defineComponent({
         header: () => vnd("div", { class: "stack-h items-center" }, [
           vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
         ]),
-        default: () => vnd("div", {class: []}, [
+        default: () => vnd("div", { class: [] }, [
+          // Refresh button
           vnd("div", { class: ["stack-h mb-2"] }, [
             vnd(ToolButton, { 
               label: "刷新", 
@@ -96,58 +81,49 @@ export default defineComponent({
               onClick: reload 
             }),
           ]),
-          vnd(DataTable, {
-            value: backups.value,
-            loading: loading.value,
-            paginator: false,
-            rows: rows.value,
-            scrollable: true,
-            scrollHeight: "200px",
-            class: "w-100%",
-            selectionMode: "single",
-            dataKey: "id",
-          }, {
-            default: () => [
-              vnd(Column, { 
-                field: "key", 
-                header: "版本标识",
-                sortable: true,
-              }),
-              vnd(Column, { 
-                field: "id", 
-                header: "编号",
-                sortable: true,
-                body: (rowData: any) => `${(rowData.id)}`,
-              }),
-              vnd(Column, { 
-                header: "操作",
-                body: (rowData: any) => {
-                  const isCurrentVersion = rowData.key === props.currentVersion;
-                  return vnd("div", { class: "stack-h" }, [
-                    vnd(ToolButton, {
-                      icon: "pi pi-eye",
-                      class: isCurrentVersion ? "p-button-success" : "",
-                      tooltip: isCurrentVersion ? "当前显示版本" : "显示此版本",
-                      onClick: () => selectVersion(rowData)
-                    }),
+          
+          // Loading indicator
+          loading.value && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
+          
+          // Simple custom table implementation
+          !loading.value && vnd("div", { class: "border-1 border-gray-200 rounded overflow-hidden" }, [
+            // Table header
+            vnd("div", { class: "flex bg-gray-100 p-2 font-bold border-b-1" }, [
+              vnd("div", { class: "flex-1" }, ["编号"]),
+              vnd("div", { class: "flex-1" }, ["版本标识"]),
+              vnd("div", { class: "flex-1 text-center" }, ["操作"]),
+            ]),
+            
+            // Table body
+            backups.value.length === 0 ? 
+              vnd("div", { class: "p-4 text-center text-gray-500" }, ["没有历史记录"]) :
+              backups.value.map(item => 
+                vnd("div", { 
+                  key: item.id,
+                  class: "flex p-3 border-b-1 hover:bg-gray-50 items-center"
+                }, [
+                  vnd("div", { class: "flex-1" }, [`${item.id}`]),
+                  vnd("div", { class: "flex-1" }, [item.key]),
+                  vnd("div", { class: "flex-1 flex justify-center gap-2" }, [
                     vnd(ToolButton, {
                       icon: "pi pi-arrow-right-arrow-left",
-                      tooltip: "加载此版本到当前状态",
-                      class: "ml-2",
-                      onClick: () => loadVersion(rowData)
+                      tip: "加载此版本到当前状态",
+                      onClick: () => loadVersion(item)
                     })
-                  ]);
-                }
-              }),
-            ]
-          }),
+                  ])
+                ])
+              )
+          ]),
+          
+          // Paginator
           vnd(Paginator, {
             first: first.value,
             rows: rows.value,
             totalRecords: totalRecords.value,
             rowsPerPageOptions: [5, 10, 20],
             template: 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown',
-            onPage: onPageChange
+            onPage: onPageChange,
+            class: "mt-2"
           })
         ])
       });

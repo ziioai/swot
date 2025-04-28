@@ -331,10 +331,13 @@ export default defineComponent({
                 currentVersion: appData.trainer?.state?.notebookVersion,
                 onSelectVersion: (backup: any) => {
                   if (!appData.trainer) return;
-                  toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
-                  if (backup?.data?.notebook) {
-                    appData.trainer.state.notebook = backup.data.notebook;
+                  console.log("准备加载笔记版本", backup);
+                  if (backup?.data?.entries?.length) {
+                    toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
+                    appData.trainer.state.notebook = backup.data;
                     appData.trainer.state.notebookVersion = backup.key;
+                  } else {
+                    toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
                   }
                 },
               }),
