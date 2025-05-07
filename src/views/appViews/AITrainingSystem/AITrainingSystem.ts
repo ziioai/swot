@@ -318,19 +318,13 @@ export default defineComponent({
           ]),
         
           vnd(Panel, {
-            header: "题目笔记（支持手动编辑）",
+            header: "题目笔记",
             toggleable: true,
             class: ["col-span-1 md:col-span-6 xl:col-span-7", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
           }, {
             default: () => vnd("div", {
               class: "stack-v",
             }, [
-              vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
-- 查看最新版笔记
-- 查看历史版本的笔记
-- 手动编辑笔记内容
-                `.trim()),
-              }),
               vnd(NoteHistoryPanel, {
                 class: "w-100%",
                 currentVersion: appData.trainer?.state?.notebookVersion,

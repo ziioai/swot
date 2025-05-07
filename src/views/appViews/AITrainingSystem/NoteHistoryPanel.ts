@@ -21,15 +21,14 @@ export default defineComponent({
     const rows = ref(5);
     
     // Load notebook backups with pagination
-    const loadBackups = async () => {
+    const loadBackups = async (updateTotalCount = true) => {
       loading.value = true;
       try {
         const result = await getQtBookBackups(first.value, rows.value);
         backups.value = result || [];
         
-        // Get actual total count for pagination
-        if (first.value === 0) {
-          // Only update total on first page load or reload
+        // Get total count for pagination if needed
+        if (updateTotalCount) {
           const count = await getQtBookBackupsCount();
           totalRecords.value = count;
         }
@@ -44,13 +43,34 @@ export default defineComponent({
     const onPageChange = (event: { first: number, rows: number, page: number, pageCount: number }) => {
       first.value = event.first;
       rows.value = event.rows;
-      loadBackups();
+      loadBackups(false); // Don't update total count when just changing pages
     };
     
     // Reload backups
-    const reload = () => {
-      first.value = 0;
-      loadBackups();
+    const reload = async () => {
+      loading.value = true;
+      try {
+        // Get the new total count first
+        const count = await getQtBookBackupsCount();
+        totalRecords.value = count;
+        
+        // Check if current page is out of range after reload
+        const currentPage = Math.floor(first.value / rows.value);
+        const totalPages = Math.ceil(count / rows.value);
+        
+        if (count === 0) {
+          first.value = 0; // If no records, go to first page
+        } else if (currentPage >= totalPages) {
+          // If current page exceeds available pages, go to last page
+          first.value = (totalPages - 1) * rows.value;
+        }
+        // Otherwise keep the current page (first value remains unchanged)
+        
+        loadBackups(false); // Don't update total count again
+      } catch (error) {
+        console.error("Failed to reload notebook backups:", error);
+        loadBackups(true); // Still try to load even if count check failed, and get the count
+      }
     };
 
     // Load a version
