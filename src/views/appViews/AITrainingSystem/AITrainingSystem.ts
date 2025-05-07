@@ -1,6 +1,7 @@
 // @unocss-include
 
 import { saveAs } from 'file-saver';
+import { nanoid } from 'nanoid';
 import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Panel from 'primevue/panel';
@@ -11,6 +12,7 @@ import CurrentNotePanel from './CurrentNotePanel';
 import NoteHistoryPanel from './NoteHistoryPanel';
 import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
+import NotebookEditor from './NotebookEditor';
 import {
   SWOTOptions,
   // SWOTState,
@@ -24,6 +26,7 @@ import {
 import {
   save,
   load,
+  记录版本笔记数据,
 } from "./swot-db-functions";
 
 import renderMarkdown from '@utils/md';
@@ -315,7 +318,7 @@ export default defineComponent({
           ]),
         
           vnd(Panel, {
-            header: "题目笔记",
+            header: "题目笔记（支持手动编辑）",
             toggleable: true,
             class: ["col-span-1 md:col-span-6 xl:col-span-7", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
           }, {
@@ -325,6 +328,7 @@ export default defineComponent({
               vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
 - 查看最新版笔记
 - 查看历史版本的笔记
+- 手动编辑笔记内容
                 `.trim()),
               }),
               vnd(NoteHistoryPanel, {
@@ -347,21 +351,62 @@ export default defineComponent({
                 note: appData.trainer?.state?.notebook??null,
                 notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
                 version: appData.trainer?.state?.notebookVersion,
-                onSaveNote: () => {
+                onSaveNote: async () => {
                   if (!appData.trainer?.state?.notebook) return;
-                  import('./swot-db-functions').then(({ 记录版本笔记数据 }) => {
-                    记录版本笔记数据({
-                      notebook: appData.trainer?.state?.notebook,
-                      notebookVersion: appData.trainer?.state?.notebookVersion,
-                    }, appData.trainer?.state?.notebookVersion)
-                    .then(() => {
-                      toast.add({ severity: "success", summary: "笔记保存", detail: "笔记版本已保存", life: 1000 });
-                    })
-                    .catch((err) => {
-                      console.error("保存笔记失败:", err);
-                      toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                  try {
+                    // 强制更新版本标识（6位nanoid）
+                    const newVersionId = nanoid(6);
+                    appData.trainer.state.notebookVersion = newVersionId;
+                    
+                    await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                    toast.add({ 
+                      severity: "success", 
+                      summary: "笔记保存", 
+                      detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                      life: 2000 
                     });
-                  });
+                  } catch (err: any) {
+                    console.error("保存笔记失败:", err);
+                    toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                  }
+                },
+              }),
+              vnd(NotebookEditor, {
+                class: "w-100% mb-4",
+                notebook: appData.trainer?.state?.notebook??null,
+                version: appData.trainer?.state?.notebookVersion,
+                "onUpdate:notebook": (newNotebook: any) => {
+                  if (appData.trainer) {
+                    appData.trainer.state.notebook = newNotebook;
+                    // 强制更新版本标识（6位nanoid）
+                    const newVersionId = nanoid(6);
+                    appData.trainer.state.notebookVersion = newVersionId;
+                    toast.add({ 
+                      severity: "info", 
+                      summary: "笔记已更新", 
+                      detail: `新版本标识: ${newVersionId}`, 
+                      life: 2000 
+                    });
+                  }
+                },
+                onSave: async () => {
+                  if (!appData.trainer?.state?.notebook) return;
+                  try {
+                    // 强制更新版本标识（6位nanoid）
+                    const newVersionId = nanoid(6);
+                    appData.trainer.state.notebookVersion = newVersionId;
+                    
+                    await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                    toast.add({ 
+                      severity: "success", 
+                      summary: "笔记保存", 
+                      detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                      life: 2000 
+                    });
+                  } catch (err: any) {
+                    console.error("保存笔记失败:", err);
+                    toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                  }
                 },
               }),
             ]),

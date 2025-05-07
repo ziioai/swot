@@ -5,7 +5,7 @@ import { h as vnd, defineComponent, ref, onMounted } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
 import Panel from 'primevue/panel';
 import Paginator from 'primevue/paginator';
-import { getQtBookBackups, getQtBookBackupsCount } from './swot-db-functions';
+import { getQtBookBackups, getQtBookBackupsCount, deleteQtBookBackup } from './swot-db-functions';
 
 export default defineComponent({
   name: "NoteHistoryPanel",
@@ -58,6 +58,36 @@ export default defineComponent({
       emit('select-version', backup);
     };
     
+    // Delete a version
+    const deleteVersion = async (backup: any) => {
+      if (confirm(`确定要删除版本 ${backup.key} 吗？`)) {
+        try {
+          await deleteQtBookBackup(backup.id);
+          reload(); // Refresh the list after deletion
+        } catch (error) {
+          console.error("Failed to delete backup:", error);
+        }
+      }
+    };
+    
+    // 获取笔记中的题型名称列表
+    const getQuestionTypes = (backup: any) => {
+      if (!backup?.data?.entries) return '无题型';
+      
+      const types = backup.data.entries
+        .filter((entry: any) => !entry.deleted) // 排除已删除的条目
+        .map((entry: any) => entry.name)
+        .join(', ');
+      
+      return types || '无题型';
+    };
+    
+    // 获取JSON字符数
+    const getJsonCharCount = (backup: any) => {
+      if (!backup?.data) return 0;
+      return JSON.stringify(backup.data).length;
+    };
+    
     onMounted(() => {
       loadBackups();
     });
@@ -91,6 +121,7 @@ export default defineComponent({
             vnd("div", { class: "flex bg-gray-100 p-2 font-bold border-b-1" }, [
               vnd("div", { class: "flex-1" }, ["编号"]),
               vnd("div", { class: "flex-1" }, ["版本标识"]),
+              vnd("div", { class: "flex-1" }, ["题型与字符数"]),
               vnd("div", { class: "flex-1 text-center" }, ["操作"]),
             ]),
             
@@ -104,11 +135,21 @@ export default defineComponent({
                 }, [
                   vnd("div", { class: "flex-1" }, [`${item.id}`]),
                   vnd("div", { class: "flex-1" }, [item.key]),
+                  vnd("div", { class: "flex-1" }, [
+                    vnd("div", { class: "text-sm whitespace-normal" }, [`题型: ${getQuestionTypes(item)}`]),
+                    vnd("div", { class: "text-xs text-gray-500" }, [`字符数: ${getJsonCharCount(item)}`])
+                  ]),
                   vnd("div", { class: "flex-1 flex justify-center gap-2" }, [
                     vnd(ToolButton, {
                       icon: "pi pi-arrow-right-arrow-left",
                       tip: "加载此版本到当前状态",
                       onClick: () => loadVersion(item)
+                    }),
+                    vnd(ToolButton, {
+                      icon: "pi pi-trash",
+                      tip: "删除此版本",
+                      class: "p-button-danger",
+                      onClick: () => deleteVersion(item)
                     })
                   ])
                 ])

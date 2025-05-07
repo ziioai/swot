@@ -364,7 +364,7 @@ export function stage0_判断题型_InputGenerator(dataWrap: any) {
   const lines = [];
   lines.push("====[题型体系]====");
 
-  const entries = (dataWrap?.qtBook??{entries:[]}).entries as any[];
+  const entries = _.clone((dataWrap?.qtBook?.entries??[]).filter((it: any)=>!it.deleted)) as any[];
   const descs = entries.filter((it)=>!it.deleted).map((entry) => _.pick(entry, ["name", "desc", "clue"]));
 
   lines.push(JSON.stringify(descs));
@@ -499,7 +499,7 @@ interface YourResponse {
 `.trim();
 export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
 
-  const entries = _.clone(dataWrap?.qtBook?.entries??[]) as any[];
+  const entries = _.clone((dataWrap?.qtBook?.entries??[]).filter((it: any)=>!it.deleted)) as any[];
   entries.forEach((it) => {
     if (it?.steps?.length) { it.stepsNum = it.steps.length; }
     if (it?.tools?.length) { it.toolsNum = it.tools.length; }
@@ -583,7 +583,7 @@ interface YourResponse {
 `.trim();
 export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
 
-  const entries = _.clone(dataWrap?.qtBook?.entries??[]) as any[];
+  const entries = _.clone((dataWrap?.qtBook?.entries??[]).filter((it: any)=>!it.deleted)) as any[];
   entries.forEach((it) => {
     if (it?.steps?.length) { it.stepsNum = it.steps.length; }
     if (it?.tools?.length) { it.toolsNum = it.tools.length; }

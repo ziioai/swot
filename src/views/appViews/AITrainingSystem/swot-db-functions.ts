@@ -58,6 +58,11 @@ export const getQtBookBackupsCount = async () => {
   return count;
 }
 
+export const deleteQtBookBackup = async (id: number) => {
+  await db.qtBookBackups.delete(id);
+  return true;
+}
+
 export const 记录版本笔记数据 = async (data: any, version?: string) => {
   version = version ?? data?.version ?? data?.notebookVersion ?? nanoid();
   const found = await db.qtBookBackups.get({key: version});
