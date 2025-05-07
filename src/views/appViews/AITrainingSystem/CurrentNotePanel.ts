@@ -28,10 +28,22 @@ export default defineComponent({
       const make = () => vnd("div", { class: [ "stack-v" ] }, [
 
         (props?.note?.entries as any[])?.map((entry, idx) => vnd("div", {key: `[${idx}]${entry?.name}`, class: [
-          "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto",
-          "bg-zinc-100/75!", "dark:bg-zinc-800/75!", "w-100%",
+          "p-panel p-0.5rem", "flex-auto whitespace-pre-wrap overflow-auto", "w-100%",
+          entry?.deleted ? "bg-red-100/75! border-l-4 border-l-red-500" : "bg-zinc-100/75! dark:bg-zinc-800/75!",
         ],}, [
-          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`【${entry?.name}】`]),
+          vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [
+            // 已删除条目添加垃圾桶图标
+            entry?.deleted && vnd("i", { 
+              class: "pi pi-trash mr-2 text-red-500"
+            }),
+            vnd("span", { 
+              class: entry?.deleted ? "line-through text-red-600" : ""
+            }, [`【${entry?.name}】`]),
+            // 已删除标识
+            entry?.deleted && vnd("span", { 
+              class: "ml-2 text-xs bg-red-100 text-red-600 py-0.5 px-1 rounded"
+            }, ["已删除"]),
+          ]),
           vnd("div", { class: ["mt-2 font-bold opacity-80"]}, [`name,desc,clue`]),
           JSON.stringify(_.pick(entry??null, ["name", "desc", "clue"]), null, 2),
 
