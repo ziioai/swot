@@ -42,7 +42,8 @@ import {
   SWOT,
   // defaultOptions, defaultState,
 } from './swot-trainer';
-import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
+// import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
+import { FIE2025_Training_Data_Standardized } from '@data/FIE2025';
 
 
 
@@ -76,7 +77,7 @@ export default defineComponent({
     });
 
     const 加载训练题集 = () => {
-      appData.questions = SpaCE2024_Demo_Data_Standardized;
+      appData.questions = FIE2025_Training_Data_Standardized;
       // toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
       // save("questions", appData.questions);
       // console.log("appData.questions", appData.questions);
