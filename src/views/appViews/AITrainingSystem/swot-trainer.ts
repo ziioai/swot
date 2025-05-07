@@ -766,7 +766,7 @@ export class SWOT {
       trainingState: this.trainingState,
     };
   }
-  fromJSON(json: any, falseRefreshState = false) {
+  fromJSON(json: any, forceRefreshState = false) {
     this.loadOptions(json._options);
     this.loadState(json.state);
     if ([
@@ -787,7 +787,7 @@ export class SWOT {
       this.state.quDataDict = {};
       refreshState = true;
     }
-    this.loadQuEntries(json.quEntries, falseRefreshState||refreshState);
+    this.loadQuEntries(json.quEntries, forceRefreshState||refreshState);
   }
 
 

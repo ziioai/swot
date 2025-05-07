@@ -2,7 +2,7 @@
 
 import { saveAs } from 'file-saver';
 import { nanoid } from 'nanoid';
-import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
@@ -13,6 +13,7 @@ import NoteHistoryPanel from './NoteHistoryPanel';
 import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
+import FileUploadDialog from './components/FileUploadDialog';
 import {
   SWOTOptions,
   // SWOTState,
@@ -207,6 +208,58 @@ export default defineComponent({
 
     const analyzeError = () => toast.add({ severity: "info", summary: "UI演示", detail: "错误分析点击", life: 1000 });
 
+    // Function removed - replaced by handleFileUploaded
+    // Show/hide file upload dialog for importing trainer data
+    const showImportDialog = ref(false);
+    
+    // Handle importing trainer data from a JSON file
+    const handleFileUploaded = async (fileData: { name: string, content: string | ArrayBuffer | null, file: File }) => {
+      try {
+        if (!fileData.content || typeof fileData.content !== 'string') {
+          toast.add({ severity: "error", summary: "导入失败", detail: "文件内容无效", life: 3000 });
+          return;
+        }
+
+        const jsonData = JSON.parse(fileData.content);
+        if (!jsonData) {
+          toast.add({ severity: "error", summary: "导入失败", detail: "无法解析 JSON 数据", life: 3000 });
+          return;
+        }
+
+        if (!appData.trainer) {
+          appData.trainer = new SWOT();
+        }
+        
+        appData.trainer.fromJSON(jsonData);
+        await save("trainer", appData.trainer.toJSON(false));
+
+        /** @TODO 要结合读取题库数据的操作来控制 */
+        appData.trainer.loadQuEntries(appData.questions, false);
+        
+        // Generate a new version ID for the notebook if present
+        if (appData.trainer?.state?.notebook) {
+          const newVersionId = nanoid(6);
+          appData.trainer.state.notebookVersion = newVersionId;
+          await 记录版本笔记数据(appData.trainer.state.notebook, newVersionId);
+        }
+        
+        toast.add({ 
+          severity: "success", 
+          summary: "导入成功", 
+          detail: `成功导入训练器数据，来自文件: ${fileData.name}`, 
+          life: 3000 
+        });
+      } catch (error: any) {
+        console.error("导入数据失败:", error);
+        toast.add({ 
+          severity: "error", 
+          summary: "导入失败", 
+          detail: error.message || "导入训练器数据时发生错误", 
+          life: 3000 
+        });
+      }
+    };
+
 
 
 
@@ -241,7 +294,8 @@ export default defineComponent({
                 vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
                 vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
                 vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
-                vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-play", onClick: exportTrainerData, }),
+                vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
+                vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
                 vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
               ]),
             ]),
@@ -430,6 +484,14 @@ export default defineComponent({
               })
             ),
           ]),
+        }),
+
+        vnd(FileUploadDialog, {
+          visible: showImportDialog.value,
+          'onUpdate:visible': (value: boolean) => showImportDialog.value = value,
+          title: "导入训练器数据",
+          acceptedFileTypes: "application/json",
+          onFileUploaded: handleFileUploaded,
         }),
 
       ]);
