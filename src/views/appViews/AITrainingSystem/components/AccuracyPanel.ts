@@ -1,9 +1,8 @@
-// filepath: /Users/dude/__ROOT__/__CODE__/__GITME__/swot/src/views/appViews/AITrainingSystem/components/AccuracyPanel.ts
 // @unocss-include
 
 import _ from 'lodash';
 import { h as vnd, defineComponent, PropType, computed } from 'vue';
-import { QuestionTrainingState, SWOTState } from '../types';
+import { SWOTState } from '../types';
 import Panel from 'primevue/panel';
 import Divider from 'primevue/divider';
 
@@ -16,20 +15,24 @@ export default defineComponent({
     },
   },
   setup(props) {
-    // 计算总体做题数据
+    // 计算总体做题数据（最新结果）
     const totalStats = computed(() => {
       if (!props.state?.quStateDict) return { total: 0, correct: 0, incorrect: 0, rate: 0 };
       
       const states = Object.values(props.state.quStateDict);
       
-      // 总题目数
-      const total = states.reduce((sum, state) => sum + (state.trainedCountT ?? 0), 0);
+      // 题目总数（即不同的题目数量）
+      const total = states.length;
       
-      // 正确题目数
-      const correct = states.reduce((sum, state) => sum + (state.correctCountT ?? 0), 0);
+      // 根据最后一次答题结果计算正确和错误的题目数
+      const correct = states.filter(state => {
+        // 如果题目至少做过一次，且正确次数比错误次数多，视为最后一次做对了
+        return (state.trainedCountT || 0) > 0 && 
+               (state.correctCountT || 0) > (state.trainedCountT || 0) - (state.correctCountT || 0);
+      }).length;
       
       // 错误题目数
-      const incorrect = states.reduce((sum, state) => sum + (state.errorCountT ?? 0), 0);
+      const incorrect = total - correct;
       
       // 正确率
       const rate = total > 0 ? (correct / total * 100) : 0;
@@ -37,22 +40,27 @@ export default defineComponent({
       return { total, correct, incorrect, rate };
     });
 
-    // 计算当前版本做题数据
+    // 计算当前版本做题数据（最新结果）
     const versionStats = computed(() => {
       if (!props.state?.quStateDict) return { total: 0, correct: 0, incorrect: 0, rate: 0 };
       
       const states = Object.values(props.state.quStateDict);
       
-      // 当前版本总题目数
-      const total = states.reduce((sum, state) => sum + (state.trainedCountV ?? 0), 0);
+      // 在当前版本中做过的题目数
+      const trainedQuestions = states.filter(state => (state.trainedCountV || 0) > 0);
+      const total = trainedQuestions.length;
       
-      // 当前版本正确题目数
-      const correct = states.reduce((sum, state) => sum + (state.correctCountV ?? 0), 0);
+      // 根据最后一次答题结果计算正确和错误的题目数
+      const correct = states.filter(state => {
+        // 如果题目在当前版本至少做过一次，且正确次数比错误次数多，视为最后一次做对了
+        return (state.trainedCountV || 0) > 0 && 
+               (state.correctCountV || 0) > (state.trainedCountV || 0) - (state.correctCountV || 0);
+      }).length;
       
-      // 当前版本错误题目数
-      const incorrect = states.reduce((sum, state) => sum + (state.errorCountV ?? 0), 0);
+      // 错误题目数
+      const incorrect = total - correct;
       
-      // 当前版本正确率
+      // 正确率
       const rate = total > 0 ? (correct / total * 100) : 0;
       
       return { total, correct, incorrect, rate };
@@ -111,9 +119,9 @@ export default defineComponent({
         vnd("div", { class: "mb-2" }, [
           vnd("h3", { class: "text-md font-medium mb-2" }, "总体统计"),
           vnd("div", { class: "flex gap-2" }, [
-            renderStatItem("累计练习", totalStats.value.total, "题", "所有题目的总练习次数"),
-            renderStatItem("总体正确", totalStats.value.correct, "题", "所有题目回答正确的总次数"),
-            renderStatItem("正确率", totalStats.value.rate.toFixed(1), "%", "总体正确率")
+            renderStatItem("题目总数", totalStats.value.total, "题", "题库中的题目总数"),
+            renderStatItem("最新正确", totalStats.value.correct, "题", "按最新答题结果计算的正确题目数"),
+            renderStatItem("正确率", totalStats.value.rate.toFixed(1), "%", "按最新答题结果计算的正确率")
           ])
         ]),
         
@@ -123,9 +131,9 @@ export default defineComponent({
         vnd("div", { class: "mb-2" }, [
           vnd("h3", { class: "text-md font-medium mb-2" }, "当前版本统计"),
           vnd("div", { class: "flex gap-2" }, [
-            renderStatItem("版本练习", versionStats.value.total, "题", "当前笔记版本下的练习次数"),
-            renderStatItem("版本正确", versionStats.value.correct, "题", "当前笔记版本下回答正确的次数"),
-            renderStatItem("版本正确率", versionStats.value.rate.toFixed(1), "%", "当前版本正确率")
+            renderStatItem("做过题目", versionStats.value.total, "题", "当前笔记版本下做过的题目数"),
+            renderStatItem("最新正确", versionStats.value.correct, "题", "按最新答题结果计算的版本正确题目数"),
+            renderStatItem("版本正确率", versionStats.value.rate.toFixed(1), "%", "按最新答题结果计算的版本正确率")
           ])
         ]),
         
