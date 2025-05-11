@@ -15,7 +15,11 @@ import {
   stage1_根据笔记做题_prompt, 
   stage2_根据错题修改笔记_prompt, 
   stage4_合并对笔记的修改_prompt,
-  promptVersion
+  笔记介绍,
+  笔记操作介绍,
+  promptVersion,
+  NOTE_DESC_TOKEN,
+  NOTE_OPS_TOKEN
 } from './solver';
 
 export interface PromptTemplates {
@@ -24,6 +28,8 @@ export interface PromptTemplates {
   stage1_根据笔记做题: string;
   stage2_根据错题修改笔记: string;
   stage4_合并对笔记的修改: string;
+  笔记介绍: string;
+  笔记操作介绍: string;
   [key: string]: string;
 }
 
@@ -34,6 +40,8 @@ export function getPromptTemplates(templates: PromptTemplates) {
     stage1_根据笔记做题_prompt: templates.stage1_根据笔记做题,
     stage2_根据错题修改笔记_prompt: templates.stage2_根据错题修改笔记,
     stage4_合并对笔记的修改_prompt: templates.stage4_合并对笔记的修改,
+    笔记介绍: templates.笔记介绍,
+    笔记操作介绍: templates.笔记操作介绍,
     promptVersion: templates.version
   };
 }
@@ -56,7 +64,9 @@ export default defineComponent({
       stage0_判断题型: stage0_判断题型_prompt || "",
       stage1_根据笔记做题: stage1_根据笔记做题_prompt || "",
       stage2_根据错题修改笔记: stage2_根据错题修改笔记_prompt || "",
-      stage4_合并对笔记的修改: stage4_合并对笔记的修改_prompt || ""
+      stage4_合并对笔记的修改: stage4_合并对笔记的修改_prompt || "",
+      笔记介绍: 笔记介绍 || "",
+      笔记操作介绍: 笔记操作介绍 || ""
     });
     
     // Load saved templates if available
@@ -83,6 +93,8 @@ export default defineComponent({
       promptTemplates.stage1_根据笔记做题 = stage1_根据笔记做题_prompt;
       promptTemplates.stage2_根据错题修改笔记 = stage2_根据错题修改笔记_prompt;
       promptTemplates.stage4_合并对笔记的修改 = stage4_合并对笔记的修改_prompt;
+      promptTemplates.笔记介绍 = 笔记介绍;
+      promptTemplates.笔记操作介绍 = 笔记操作介绍;
       
       emit('update:templates', _.cloneDeep(promptTemplates));
       toast.add({ 
@@ -143,6 +155,38 @@ export default defineComponent({
                 onClick: saveTemplates
               })
             ])
+          ])
+        ])
+      }),
+      
+      // 笔记介绍和笔记操作介绍 panel
+      vnd(Panel, { 
+        header: "笔记介绍和操作介绍",
+        toggleable: true,
+        class: ["w-full my-1.5rem!", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+      }, {
+        default: () => vnd("div", { class: "stack-v gap-4" }, [
+          vnd("div", { class: "stack-v gap-2" }, [
+            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+              `笔记介绍内容，在模板中可用 ${NOTE_DESC_TOKEN} 替换标记引用。这是笔记格式的定义说明。`),
+            vnd(Textarea, {
+              modelValue: promptTemplates.笔记介绍,
+              'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍', v),
+              rows: 10,
+              class: "w-full font-mono text-sm",
+              autoResize: true
+            })
+          ]),
+          vnd("div", { class: "stack-v gap-2 mt-4" }, [
+            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+              `笔记操作介绍内容，在模板中可用 ${NOTE_OPS_TOKEN} 替换标记引用。这是笔记操作方法的说明。`),
+            vnd(Textarea, {
+              modelValue: promptTemplates.笔记操作介绍,
+              'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍', v),
+              rows: 10,
+              class: "w-full font-mono text-sm",
+              autoResize: true
+            })
           ])
         ])
       }),

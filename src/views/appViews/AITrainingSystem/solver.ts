@@ -13,6 +13,22 @@ const produce = (data: any, fn: any) => {
 
 export const promptVersion = "相对认真（v1.7.3）";
 
+// 定义替换标记
+export const NOTE_DESC_TOKEN = "【【【笔记介绍】】】";
+export const NOTE_OPS_TOKEN = "【【【笔记操作介绍】】】";
+
+// 替换函数：用于将模板中的标记替换为实际内容
+export function replaceTemplateTokens(template: string, noteDesc?: string, noteOps?: string): string {
+  let result = template;
+  if (noteDesc) {
+    result = result.replace(new RegExp(NOTE_DESC_TOKEN, 'g'), noteDesc);
+  }
+  if (noteOps) {
+    result = result.replace(new RegExp(NOTE_OPS_TOKEN, 'g'), noteOps);
+  }
+  return result;
+}
+
 export const 笔记介绍 = `
 你的笔记以 JSON 格式记录和呈现，遵循名为 \`QTBook\` 的接口定义：
 \`\`\`TypeScript
@@ -455,10 +471,10 @@ export const stage2_根据错题修改笔记_prompt = `
 笔记修改的重点应该是对题型的区分，以及围绕解题步骤的完善。
 
 ### 关于笔记
-${笔记介绍}
+${NOTE_DESC_TOKEN}
 
 ### 笔记操作
-${笔记操作介绍}
+${NOTE_OPS_TOKEN}
 
 ### user是谁
 user并不是通常意义上的人类用户，而是一个数据接口，也是你的助理，
@@ -516,9 +532,13 @@ export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 }
 
-export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
+export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string, customNoteDesc?: string, customNoteOps?: string) {
+  const finalPrompt = customPrompt 
+    ? replaceTemplateTokens(customPrompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍)
+    : replaceTemplateTokens(stage2_根据错题修改笔记_prompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍);
+    
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    customPrompt || stage2_根据错题修改笔记_prompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    finalPrompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 }
@@ -538,10 +558,10 @@ export const stage4_合并对笔记的修改_prompt = `
 5、如果笔记的格式或风格混乱或不一致，你需要自己额外制定修改计划进行整理。
 
 ### 关于笔记
-${笔记介绍}
+${NOTE_DESC_TOKEN}
 
 ### 笔记操作
-${笔记操作介绍}
+${NOTE_OPS_TOKEN}
 
 ### user是谁
 user并不是通常意义上的人类用户，而是一个数据接口，也是你的助理，
@@ -599,9 +619,13 @@ export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
 }
-export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
+export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string, customNoteDesc?: string, customNoteOps?: string) {
+  const finalPrompt = customPrompt 
+    ? replaceTemplateTokens(customPrompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍)
+    : replaceTemplateTokens(stage4_合并对笔记的修改_prompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍);
+    
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    customPrompt || stage4_合并对笔记的修改_prompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    finalPrompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 };
