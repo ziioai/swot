@@ -6,10 +6,16 @@ import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted, 
 import { useToast } from 'primevue/usetoast';
 import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
+import Tabs from 'primevue/tabs';
+import TabList from 'primevue/tablist';
+import Tab from 'primevue/tab';
+import TabPanels from 'primevue/tabpanels';
+import TabPanel from 'primevue/tabpanel';
 import TrainingControlPanel from './TrainingControlPanel';
 import QuestionCard from './QuestionCard';
 import CurrentNotePanel from './CurrentNotePanel';
 import NoteHistoryPanel from './NoteHistoryPanel';
+import StorageInfoPanel from './StorageInfoPanel';
 import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
@@ -269,223 +275,286 @@ export default defineComponent({
 
 
 
+    // 添加一个激活的标签状态
+    const activeTabIndex = ref(0);
+
     return () =>
       vnd("div", { class: "container mx-auto px-4 py-6" }, [
-
-        vnd(Panel, {
-          header: "SWOT: self-prompt training",
-          toggleable: true,
-          collapsed: true,
-          class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+        vnd(Tabs, {
+          // 使用PrimeVue Tabs组件
+          value: activeTabIndex.value,
+          'onUpdate:value': (index: number) => activeTabIndex.value = index,
         }, {
           default: () => [
-            vnd(MemoBoard),
-          ],
-        }),
+            vnd(TabList, { class: "mb-3" }, {
+              default: () => [
+                vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明与调试" }),
+                vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
+                vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
+                vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
+                vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => "笔记历史" }),
+                vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => "存储管理" }),
+              ]
+            }),
+            
+            vnd(TabPanels, {}, {
+              default: () => [
+                // 标签页1: 训练和做题功能
+                vnd(TabPanel, { value: 0 }, {
+                  default: () => [
+                    // 训练控制和正确率统计
+                    vnd("div", { class: "my-1.5rem! grid grid-cols-1 md:grid-cols-12 gap-4" }, [
+                      vnd("div", { class: "col-span-1 md:col-span-6 xl:col-span-5 grid grid-cols-1 gap-4" }, [
+                        vnd(Panel, {
+                          header: "训练控制",
+                          toggleable: true,
+                          class: ["bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                        }, {
+                          default: () => vnd(TrainingControlPanel, {
+                            options: appData.trainer?.options,
+                            state: appData.trainer?.state,
+                            isTraining: appData.trainer?.trainingState === TrainingState.RUNNING,
+                            isPaused: appData.trainer?.trainingState === TrainingState.PAUSED,
+                            isPreparingPause: appData.trainer?.trainingState === TrainingState.PREPARING_PAUSE,
+                            trainingStateText: trainingStateText.value,
+                            onStartTraining: startTraining,
+                            onContinueTraining: continueTraining,
+                            onPauseTraining: pauseTraining,
+                            onCancelPause: cancelPauseRequest,
+                            onStopTraining: stopTraining,
+                            onResetTraining: resetTraining,
+                            'onUpdate:options': updateOptions,
+                          })
+                        }),
+                        
+                        // 添加正确率统计面板
+                        vnd(AccuracyPanel, {
+                          state: appData.trainer?.state,
+                        })
+                      ]),
 
-        vnd(Panel, {
-          header: "DEBUG",
-          toggleable: true,
-          class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-        }, {
-          default: () => [
-            vnd("div", {class: "stack-v"}, [
-              vnd("div", {class: "stack-h"}, [
-                vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
-                vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
-                vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
-                vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
-                vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
-                vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
-              ]),
-            ]),
-          ],
-        }),
+                      // 当前笔记
+                      vnd(Panel, {
+                        header: "题目笔记",
+                        toggleable: true,
+                        class: ["col-span-1 md:col-span-6 xl:col-span-7", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                      }, {
+                        default: () => vnd("div", {
+                          class: "stack-v",
+                        }, [
+                          vnd(CurrentNotePanel, {
+                            class: "w-100%",
+                            note: appData.trainer?.state?.notebook??null,
+                            notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
+                            version: appData.trainer?.state?.notebookVersion,
+                            onSaveNote: async () => {
+                              if (!appData.trainer?.state?.notebook) return;
+                              try {
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                
+                                await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                                toast.add({ 
+                                  severity: "success", 
+                                  summary: "笔记保存", 
+                                  detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              } catch (err: any) {
+                                console.error("保存笔记失败:", err);
+                                toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                              }
+                            },
+                          }),
+                          vnd(NotebookEditor, {
+                            class: "w-100% mb-4",
+                            notebook: appData.trainer?.state?.notebook??null,
+                            version: appData.trainer?.state?.notebookVersion,
+                            "onUpdate:notebook": (newNotebook: any) => {
+                              if (appData.trainer) {
+                                appData.trainer.state.notebook = newNotebook;
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                toast.add({ 
+                                  severity: "info", 
+                                  summary: "笔记已更新", 
+                                  detail: `新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              }
+                            },
+                            onSave: async () => {
+                              if (!appData.trainer?.state?.notebook) return;
+                              try {
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                
+                                await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                                toast.add({ 
+                                  severity: "success", 
+                                  summary: "笔记保存", 
+                                  detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              } catch (err: any) {
+                                console.error("保存笔记失败:", err);
+                                toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                              }
+                            },
+                          }),
+                        ]),
+                      }),
+                    ]),
+                    
+                    // 本次循环的答题情况
+                    vnd(Panel, {
+                      header: "本次循环的答题情况",
+                      toggleable: true,
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => vnd("div", {
+                        class: ["stack-h"],
+                      }, [
+                        (appData.trainer?.quEntries??[]).map((question, idx) =>
+                          vnd(QuestionCard, {
+                            idx,
+                            class: "w-100% md:max-w-48% xl:max-w-32%",
+                            key: question.nnid,
+                            question: question,
+                            judgeResponse: (quDataDict.value?.[question.nnid]?.judgeResponse),
+                            response: (quDataDict.value?.[question.nnid]?.response),
+                            errorReport: (quDataDict.value?.[question.nnid]?.errorReport),
+                            trainingState: (quStateDict.value?.[question.nnid]!),
+                            state: "未知",
+                            onAnalyzeError: analyzeError,
+                          })
+                        ),
+                      ]),
+                    }),
+                  ],
+                }),
 
-        vnd("div", { class: "my-1.5rem! grid grid-cols-1 md:grid-cols-2 gap-4" }, [
-          vnd(Panel, {
-            header: "题库配置",
-            toggleable: true,
-            class: ["col-span-1", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-          }, {
-            default: () => vnd("div", {
-              class: "stack-v",
-            }, [
-              vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
+                // 标签页2: 笔记历史版本
+                vnd(TabPanel, { value: 1 }, {
+                  default: () => [
+                    vnd(Panel, {
+                      header: "笔记历史版本",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => vnd(NoteHistoryPanel, {
+                        class: "w-100%",
+                        currentVersion: appData.trainer?.state?.notebookVersion,
+                        onSelectVersion: (backup: any) => {
+                          if (!appData.trainer) return;
+                          console.log("准备加载笔记版本", backup);
+                          if (backup?.data?.entries?.length) {
+                            toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
+                            appData.trainer.state.notebook = backup.data;
+                            appData.trainer.state.notebookVersion = backup.key;
+                          } else {
+                            toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
+                          }
+                        },
+                      }),
+                    }),
+                  ],
+                }),
+
+                // 标签页3: 提示词配置
+                vnd(TabPanel, { value: 2 }, {
+                  default: () => [
+                    vnd(Panel, {
+                      header: "提示词配置",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => vnd("div", {
+                        class: "stack-v",
+                      }, [
+                        vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
+暂不开发，提示词写在代码里
+                        `.trim()),
+                        }),
+                      ]),
+                    }),
+                  ],
+                }),
+
+                // 标签页4: 题库配置
+                vnd(TabPanel, { value: 3 }, {
+                  default: () => [
+                    vnd(Panel, {
+                      header: "题库配置",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => vnd("div", {
+                        class: "stack-v",
+                      }, [
+                        vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
 暂不开发，数据写在代码里
 
 - 训练集：用于训练
 - 开发集：训练好之后用开发集测试性能
 - 测试集：输出答案，用于提交
-                `.trim()),
-              }),
-              vnd("div", {class: "stack-h"}, [
-                vnd(ToolButton, { label: "加载训练题集", icon: "pi pi-play", class: "mr-0.5rem", onClick: 加载训练题集, }),
-              ]),
-            ]),
-          }),
+                        `.trim()),
+                        }),
+                        vnd("div", {class: "stack-h"}, [
+                          vnd(ToolButton, { label: "加载训练题集", icon: "pi pi-play", class: "mr-0.5rem", onClick: 加载训练题集, }),
+                        ]),
+                      ]),
+                    }),
+                  ],
+                }),
 
-          vnd(Panel, {
-            header: "提示词配置",
-            toggleable: true,
-            class: ["col-span-1", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-          }, {
-            default: () => vnd("div", {
-              class: "stack-v",
-            }, [
-              vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
-暂不开发，提示词写在代码里
-                `.trim()),
-              }),
-            ]),
-          }),
-        ]),
+                // 标签页5: 说明和调试
+                vnd(TabPanel, { value: 4 }, {
+                  default: () => [
+                    // MemoBoard
+                    vnd(Panel, {
+                      header: "SWOT: self-prompt training",
+                      toggleable: true,
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => [
+                        vnd(MemoBoard),
+                      ],
+                    }),
 
-        vnd("div", { class: "my-1.5rem! grid grid-cols-1 md:grid-cols-12 gap-4" }, [
-          vnd("div", { class: "col-span-1 md:col-span-6 xl:col-span-5 grid grid-cols-1 gap-4" }, [
-            vnd(Panel, {
-              header: "训练控制",
-              toggleable: true,
-              class: ["bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-            }, {
-              default: () => vnd(TrainingControlPanel, {
-                options: appData.trainer?.options,
-                state: appData.trainer?.state,
-                isTraining: appData.trainer?.trainingState === TrainingState.RUNNING,
-                isPaused: appData.trainer?.trainingState === TrainingState.PAUSED,
-                isPreparingPause: appData.trainer?.trainingState === TrainingState.PREPARING_PAUSE,
-                trainingStateText: trainingStateText.value,
-                onStartTraining: startTraining,
-                onContinueTraining: continueTraining,
-                onPauseTraining: pauseTraining,
-                onCancelPause: cancelPauseRequest,
-                onStopTraining: stopTraining,
-                onResetTraining: resetTraining,
-                'onUpdate:options': updateOptions,
-              })
+                    // DEBUG
+                    vnd(Panel, {
+                      header: "DEBUG",
+                      toggleable: true,
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => [
+                        vnd("div", {class: "stack-v"}, [
+                          vnd("div", {class: "stack-h"}, [
+                            vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
+                            vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
+                            vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
+                            vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
+                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
+                            vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
+                          ]),
+                        ]),
+                      ],
+                    }),
+                  ],
+                }),
+
+                // 标签页6: 存储管理
+                vnd(TabPanel, { value: 5 }, {
+                  default: () => [
+                    vnd(StorageInfoPanel, {
+                      class: "w-100%",
+                    }),
+                  ],
+                }),
+              ],
             }),
-            
-            // 添加正确率统计面板
-            vnd(AccuracyPanel, {
-              state: appData.trainer?.state,
-            })
-          ]),
-        
-          vnd(Panel, {
-            header: "题目笔记",
-            toggleable: true,
-            class: ["col-span-1 md:col-span-6 xl:col-span-7", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-          }, {
-            default: () => vnd("div", {
-              class: "stack-v",
-            }, [
-              vnd(NoteHistoryPanel, {
-                class: "w-100%",
-                currentVersion: appData.trainer?.state?.notebookVersion,
-                onSelectVersion: (backup: any) => {
-                  if (!appData.trainer) return;
-                  console.log("准备加载笔记版本", backup);
-                  if (backup?.data?.entries?.length) {
-                    toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
-                    appData.trainer.state.notebook = backup.data;
-                    appData.trainer.state.notebookVersion = backup.key;
-                  } else {
-                    toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
-                  }
-                },
-              }),
-              vnd(CurrentNotePanel, {
-                class: "w-100%",
-                note: appData.trainer?.state?.notebook??null,
-                notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
-                version: appData.trainer?.state?.notebookVersion,
-                onSaveNote: async () => {
-                  if (!appData.trainer?.state?.notebook) return;
-                  try {
-                    // 强制更新版本标识（6位nanoid）
-                    const newVersionId = nanoid(6);
-                    appData.trainer.state.notebookVersion = newVersionId;
-                    
-                    await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
-                    toast.add({ 
-                      severity: "success", 
-                      summary: "笔记保存", 
-                      detail: `笔记已保存，新版本标识: ${newVersionId}`, 
-                      life: 2000 
-                    });
-                  } catch (err: any) {
-                    console.error("保存笔记失败:", err);
-                    toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
-                  }
-                },
-              }),
-              vnd(NotebookEditor, {
-                class: "w-100% mb-4",
-                notebook: appData.trainer?.state?.notebook??null,
-                version: appData.trainer?.state?.notebookVersion,
-                "onUpdate:notebook": (newNotebook: any) => {
-                  if (appData.trainer) {
-                    appData.trainer.state.notebook = newNotebook;
-                    // 强制更新版本标识（6位nanoid）
-                    const newVersionId = nanoid(6);
-                    appData.trainer.state.notebookVersion = newVersionId;
-                    toast.add({ 
-                      severity: "info", 
-                      summary: "笔记已更新", 
-                      detail: `新版本标识: ${newVersionId}`, 
-                      life: 2000 
-                    });
-                  }
-                },
-                onSave: async () => {
-                  if (!appData.trainer?.state?.notebook) return;
-                  try {
-                    // 强制更新版本标识（6位nanoid）
-                    const newVersionId = nanoid(6);
-                    appData.trainer.state.notebookVersion = newVersionId;
-                    
-                    await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
-                    toast.add({ 
-                      severity: "success", 
-                      summary: "笔记保存", 
-                      detail: `笔记已保存，新版本标识: ${newVersionId}`, 
-                      life: 2000 
-                    });
-                  } catch (err: any) {
-                    console.error("保存笔记失败:", err);
-                    toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
-                  }
-                },
-              }),
-            ]),
-          }),
-        ]),
-
-        vnd(Panel, {
-          header: "本次循环的答题情况",
-          toggleable: true,
-          class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-        }, {
-          default: () => vnd("div", {
-            class: ["stack-h"],
-          }, [
-            (appData.trainer?.quEntries??[]).map((question, idx) =>
-              vnd(QuestionCard, {
-                idx,
-                class: "w-100% md:max-w-48% xl:max-w-32%",
-                key: question.nnid,
-                question: question,
-                judgeResponse: (quDataDict.value?.[question.nnid]?.judgeResponse),
-                response: (quDataDict.value?.[question.nnid]?.response),
-                errorReport: (quDataDict.value?.[question.nnid]?.errorReport),
-                trainingState: (quStateDict.value?.[question.nnid]!),
-                state: "未知",
-                onAnalyzeError: analyzeError,
-              })
-            ),
-          ]),
+          ],
         }),
 
+        // FileUploadDialog remains outside the tabs as it's a modal dialog
         vnd(FileUploadDialog, {
           visible: showImportDialog.value,
           'onUpdate:visible': (value: boolean) => showImportDialog.value = value,
@@ -493,7 +562,6 @@ export default defineComponent({
           acceptedFileTypes: "application/json",
           onFileUploaded: handleFileUploaded,
         }),
-
       ]);
   }
 });
