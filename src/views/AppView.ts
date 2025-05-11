@@ -250,6 +250,7 @@ const AppView = defineComponent({
               class: "bg-transparent!",
               value: currentLabelName.value,
               scrollable: true,
+              lazy: false,
             }, {
               default:()=>vnd(TabList, {
                 class: "bg-transparent!",
