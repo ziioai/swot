@@ -498,15 +498,11 @@ export default defineComponent({
                       header: "提示词模板管理",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
-                      default: () => vnd("div", {
-                        class: "stack-v",
-                      }, [
-                        vnd(PromptTemplatesPanel, {
-                          savedTemplates: appData.promptTemplates,
-                          'onUpdate:templates': updatePromptTemplates,
-                          onSave: savePromptTemplates
-                        })
-                      ]),
+                      default: () => vnd(PromptTemplatesPanel, {
+                        savedTemplates: appData.promptTemplates,
+                        'onUpdate:templates': updatePromptTemplates,
+                        onSave: savePromptTemplates
+                      }),
                     }),
                   ],
                 }),

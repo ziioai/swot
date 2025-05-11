@@ -148,9 +148,9 @@ export default defineComponent({
       }),
       
       // Prompt templates section in a responsive grid
-      vnd("div", { class: "grid grid-cols-1 lg:grid-cols-2 gap-4" }, [
+      vnd("div", { class: "w-full grid grid-cols-1 md:grid-cols-2 gap-4" }, [
         // Left column templates
-        vnd("div", { class: "stack-v gap-4" }, [
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "判断题型模板",
             toggleable: true,
@@ -189,7 +189,7 @@ export default defineComponent({
         ]),
         
         // Right column templates
-        vnd("div", { class: "stack-v gap-4" }, [
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "根据错题修改笔记模板",
             toggleable: true,
