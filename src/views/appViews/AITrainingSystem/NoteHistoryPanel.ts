@@ -20,6 +20,7 @@ export default defineComponent({
     const first = ref(0);
     const rows = ref(10);
     const storageInfo = ref<any>(null);
+    const loadingStorageInfo = ref(false); // 添加存储信息加载状态
     
     // Load notebook backups with pagination
     const loadBackups = async (updateTotalCount = true) => {
@@ -112,11 +113,14 @@ export default defineComponent({
     
     // 获取数据库大小信息
     const loadStorageInfo = async () => {
+      loadingStorageInfo.value = true; // 开始加载存储信息
       try {
         storageInfo.value = await getIDBStorageSize();
       } catch (error) {
         console.error("Failed to get storage size:", error);
         storageInfo.value = null;
+      } finally {
+        loadingStorageInfo.value = false; // 完成加载存储信息
       }
     };
 
@@ -132,8 +136,13 @@ export default defineComponent({
       }, {
         header: () => vnd("div", { class: "stack-h items-center! justify-between w-full" }, [
           vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
-          storageInfo.value && vnd("div", { class: "text-sm text-gray-500" }, [
-            `存储占用: ${storageInfo.value.total?.formatted || "获取中..."}`
+          vnd("div", { class: "text-sm text-gray-500 flex items-center" }, [
+            loadingStorageInfo.value ? 
+              vnd("span", { class: "flex items-center" }, [
+                vnd("i", { class: "pi pi-spin pi-spinner mr-1" }),
+                "存储占用: 计算中..."
+              ]) :
+              `存储占用: ${storageInfo.value?.total?.formatted || "未计算"}`
           ]),
         ]),
         default: () => vnd("div", { class: [] }, [
@@ -204,21 +213,35 @@ export default defineComponent({
           }),
           
           // Storage information section
-          storageInfo.value && vnd("div", { class: "mt-4 p-3 border-1 border-gray-200 rounded bg-gray-50" }, [
-            vnd("h4", { class: "text-md font-bold mb-2" }, ["存储空间使用情况"]),
+          (loadingStorageInfo.value || storageInfo.value) && vnd("div", { class: "mt-4 p-3 border-1 border-gray-200 rounded bg-gray-50" }, [
+            vnd("div", { class: "flex justify-between items-center mb-2" }, [
+              vnd("h4", { class: "text-md font-bold m-0" }, ["存储空间使用情况"]),
+              vnd(ToolButton, { 
+                icon: "pi pi-refresh", 
+                tip: "刷新存储信息",
+                loading: loadingStorageInfo.value,
+                onClick: loadStorageInfo 
+              }),
+            ]),
+            
+            // 加载中状态
+            loadingStorageInfo.value && vnd("div", { class: "flex items-center text-blue-500 mb-2" }, [
+              vnd("i", { class: "pi pi-spin pi-spinner mr-2" }),
+              "正在计算存储空间使用情况..."
+            ]),
             
             // 如果发生错误
-            storageInfo.value.error && vnd("div", { class: "text-red-500" }, [
+            storageInfo.value?.error && vnd("div", { class: "text-red-500" }, [
               storageInfo.value.message || "获取存储信息时发生错误"
             ]),
             
             // 如果不支持 StorageManager API
-            storageInfo.value.unsupported && vnd("div", { class: "text-orange-500 mb-2" }, [
+            storageInfo.value?.unsupported && vnd("div", { class: "text-orange-500 mb-2" }, [
               "当前浏览器不支持存储估算 API，无法获取精确存储大小"
             ]),
             
             // 总体存储信息
-            !storageInfo.value.error && vnd("div", { class: "grid grid-cols-2 gap-2" }, [
+            !loadingStorageInfo.value && storageInfo.value && !storageInfo.value.error && vnd("div", { class: "grid grid-cols-2 gap-2" }, [
               // 总体存储使用
               vnd("div", { class: "col-span-2 flex justify-between border-b-1 pb-1 mb-2" }, [
                 vnd("div", { class: "font-bold" }, ["总占用空间"]),

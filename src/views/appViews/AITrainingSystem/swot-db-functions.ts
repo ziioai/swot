@@ -63,7 +63,7 @@ export const getQtBookBackups = async (offset: number = 0, limit: number = 10) =
     // 使用复合查询减少数据传输量，只获取需要的字段
     const backups = await db.qtBookBackups
       .orderBy('id')
-      // .reverse() // 默认获取最新的备份
+      .reverse() // 默认获取最新的备份
       .offset(offset)
       .limit(limit)
       .toArray();
