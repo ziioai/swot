@@ -5,7 +5,7 @@ import { h as vnd, defineComponent, ref, onMounted } from 'vue';
 import ToolButton from '@components/shared/ToolButton';
 import Panel from 'primevue/panel';
 import Paginator from 'primevue/paginator';
-import { getQtBookBackups, getQtBookBackupsCount, deleteQtBookBackup } from './swot-db-functions';
+import { getQtBookBackups, getQtBookBackupsCount, deleteQtBookBackup, getIDBStorageSize } from './swot-db-functions';
 
 export default defineComponent({
   name: "NoteHistoryPanel",
@@ -19,6 +19,7 @@ export default defineComponent({
     const totalRecords = ref(0);
     const first = ref(0);
     const rows = ref(5);
+    const storageInfo = ref<any>(null);
     
     // Load notebook backups with pagination
     const loadBackups = async (updateTotalCount = true) => {
@@ -67,6 +68,7 @@ export default defineComponent({
         // Otherwise keep the current page (first value remains unchanged)
         
         loadBackups(false); // Don't update total count again
+        loadStorageInfo(); // Refresh storage info
       } catch (error) {
         console.error("Failed to reload notebook backups:", error);
         loadBackups(true); // Still try to load even if count check failed, and get the count
@@ -108,8 +110,19 @@ export default defineComponent({
       return JSON.stringify(backup.data).length;
     };
     
+    // 获取数据库大小信息
+    const loadStorageInfo = async () => {
+      try {
+        storageInfo.value = await getIDBStorageSize();
+      } catch (error) {
+        console.error("Failed to get storage size:", error);
+        storageInfo.value = null;
+      }
+    };
+
     onMounted(() => {
       loadBackups();
+      loadStorageInfo();
     });
 
     return () => {
@@ -117,8 +130,11 @@ export default defineComponent({
         toggleable: true,
         collapsed: false,
       }, {
-        header: () => vnd("div", { class: "stack-h items-center" }, [
+        header: () => vnd("div", { class: "stack-h items-center! justify-between! w-full" }, [
           vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
+          storageInfo.value && vnd("div", { class: "text-sm text-gray-500" }, [
+            `存储占用: ${storageInfo.value.total?.formatted || "获取中..."}`
+          ]),
         ]),
         default: () => vnd("div", { class: [] }, [
           // Refresh button
@@ -185,7 +201,63 @@ export default defineComponent({
             template: 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown',
             onPage: onPageChange,
             class: "mt-2"
-          })
+          }),
+          
+          // Storage information section
+          storageInfo.value && vnd("div", { class: "mt-4 p-3 border-1 border-gray-200 rounded bg-gray-50" }, [
+            vnd("h4", { class: "text-md font-bold mb-2" }, ["存储空间使用情况"]),
+            
+            // 如果发生错误
+            storageInfo.value.error && vnd("div", { class: "text-red-500" }, [
+              storageInfo.value.message || "获取存储信息时发生错误"
+            ]),
+            
+            // 如果不支持 StorageManager API
+            storageInfo.value.unsupported && vnd("div", { class: "text-orange-500 mb-2" }, [
+              "当前浏览器不支持存储估算 API，无法获取精确存储大小"
+            ]),
+            
+            // 总体存储信息
+            !storageInfo.value.error && vnd("div", { class: "grid grid-cols-2 gap-2" }, [
+              // 总体存储使用
+              vnd("div", { class: "col-span-2 flex justify-between border-b-1 pb-1 mb-2" }, [
+                vnd("div", { class: "font-bold" }, ["总占用空间"]),
+                vnd("div", {}, [
+                  `${storageInfo.value.total?.formatted || "未知"} / 
+                   ${storageInfo.value.total?.quota?.formatted || "未知"} 
+                   (${storageInfo.value.total?.percentUsed || "0%"})`
+                ])
+              ]),
+              
+              // 表记录数量
+              vnd("div", { class: "col-span-2 flex justify-between border-b-1 pb-1 mb-1" }, [
+                vnd("div", { class: "font-bold" }, ["数据库记录总数"]),
+                vnd("div", {}, [
+                  `${storageInfo.value.tableCounts?.total || 0} 条记录`
+                ])
+              ]),
+              
+              // 详细表信息
+              vnd("div", { class: "flex justify-between" }, [
+                vnd("div", {}, ["笔记历史版本表"]),
+                vnd("div", { class: "" }, [
+                  `${storageInfo.value.tableCounts?.qtBookBackups || 0} 条记录`
+                ])
+              ]),
+              vnd("div", { class: "flex justify-between" }, [
+                vnd("div", {}, ["聊天记录表"]),
+                vnd("div", { class: "" }, [
+                  `${storageInfo.value.tableCounts?.chatRecords || 0} 条记录`
+                ])
+              ]),
+              vnd("div", { class: "flex justify-between" }, [
+                vnd("div", {}, ["键值存储表"]),
+                vnd("div", { class: "" }, [
+                  `${storageInfo.value.tableCounts?.kvs || 0} 条记录`
+                ])
+              ])
+            ])
+          ])
         ])
       });
     };

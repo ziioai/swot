@@ -74,4 +74,88 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
   return result;
 };
 
+/**
+ * 获取 IndexedDB 数据库占用的存储空间
+ * 使用 StorageManager API 进行精确计算
+ * @returns 包含存储使用信息的对象
+ */
+export const getIDBStorageSize = async () => {
+  try {
+    // 获取表记录数量（用于显示）
+    const kvsCount = await db.kvs.count();
+    const chatRecordsCount = await db.chatRecords.count();
+    const qtBookBackupsCount = await db.qtBookBackups.count();
+
+    // 使用 StorageManager API 获取存储使用情况
+    if (navigator.storage && navigator.storage.estimate) {
+      const estimate = await navigator.storage.estimate();
+      const usageBytes = estimate.usage || 0;
+      const quotaBytes = estimate.quota || 0;
+      const percentUsed = quotaBytes ? (usageBytes / quotaBytes) * 100 : 0;
+
+      // 由于 StorageManager API 无法获取单个数据库的使用情况，
+      // 这里我们只能获取整个来源的存储使用
+      return {
+        total: {
+          bytes: usageBytes,
+          formatted: formatBytes(usageBytes),
+          percentUsed: percentUsed.toFixed(2) + "%",
+          quota: {
+            bytes: quotaBytes,
+            formatted: formatBytes(quotaBytes)
+          }
+        },
+        // 由于无法精确获取各表大小，我们仅提供记录数量
+        tableCounts: {
+          kvs: kvsCount,
+          chatRecords: chatRecordsCount,
+          qtBookBackups: qtBookBackupsCount,
+          total: kvsCount + chatRecordsCount + qtBookBackupsCount
+        }
+      };
+    } else {
+      // 浏览器不支持 StorageManager API，返回简化信息
+      return {
+        total: {
+          bytes: 0,
+          formatted: "未知 (浏览器不支持存储估算)",
+          percentUsed: "未知",
+          quota: {
+            bytes: 0,
+            formatted: "未知"
+          }
+        },
+        tableCounts: {
+          kvs: kvsCount,
+          chatRecords: chatRecordsCount,
+          qtBookBackups: qtBookBackupsCount,
+          total: kvsCount + chatRecordsCount + qtBookBackupsCount
+        },
+        unsupported: true
+      };
+    }
+  } catch (error: any) {
+    console.error("获取存储信息时出错:", error);
+    return {
+      error: true,
+      message: `获取存储信息失败: ${error?.message || "未知错误"}`
+    };
+  }
+};
+
+/**
+ * 将字节数格式化为可读性更好的字符串（KB, MB, GB）
+ * @param bytes 字节数
+ * @returns 格式化后的字符串
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 
