@@ -377,9 +377,9 @@ export function stage0_判断题型_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 };
 
-export async function stage0_判断题型_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any) {
+export async function stage0_判断题型_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    stage0_判断题型_prompt, stage0_判断题型_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    customPrompt || stage0_判断题型_prompt, stage0_判断题型_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 };
@@ -437,9 +437,9 @@ export function stage1_根据笔记做题_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 }
 
-export async function stage1_根据笔记做题_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any) {
+export async function stage1_根据笔记做题_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    stage1_根据笔记做题_prompt, stage1_根据笔记做题_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    customPrompt || stage1_根据笔记做题_prompt, stage1_根据笔记做题_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 }
@@ -516,9 +516,9 @@ export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 }
 
-export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any) {
+export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    stage2_根据错题修改笔记_prompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    customPrompt || stage2_根据错题修改笔记_prompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 }
@@ -599,9 +599,9 @@ export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
 }
-export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any) {
+export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    stage4_合并对笔记的修改_prompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
+    customPrompt || stage4_合并对笔记的修改_prompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
   );
   return that;
 };

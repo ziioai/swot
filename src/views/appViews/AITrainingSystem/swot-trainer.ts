@@ -331,12 +331,27 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
     } as any;
 
     if (opPlans?.length>1) {
-      await stage4_合并对笔记的修改_Process(dataWrap, swot.supplierForm, () => {
-        swot.state.notebookEditPlan = _.pick(dataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-      });
+      // Use custom prompts if available
+      const currentPromptVersion = swot.customPrompts?.promptVersion || promptVersion;
+      
+      await stage4_合并对笔记的修改_Process(
+        dataWrap, 
+        swot.supplierForm, 
+        () => {
+          swot.state.notebookEditPlan = _.pick(dataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+        },
+        swot.customPrompts?.stage4_合并对笔记的修改_prompt
+      );
       swot.state.notebookEditPlan.outputData = dataWrap.outputData;
       播放坠落声();
-      记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: dataWrap, supplierForm: swot.supplierForm, type: "合并对笔记的修改", time: Date.now(),});
+      记录调模型时的数据({
+        promptVersion: currentPromptVersion, 
+        version: swot.getNotebookVersion(), 
+        data: dataWrap, 
+        supplierForm: swot.supplierForm, 
+        type: "合并对笔记的修改", 
+        time: Date.now(),
+      });
       await sleep(200);
     } else {
       swot.state.notebookEditPlan = {
@@ -415,10 +430,26 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
 
   try {
     quState.stateText = "判断题型中";
-    await stage0_判断题型_Process(judgeResponseDataWrap, swot.supplierForm, ()=>{
-      quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+    
+    // Use custom prompts if available
+    const currentPromptVersion = swot.customPrompts?.promptVersion || promptVersion;
+    
+    await stage0_判断题型_Process(
+      judgeResponseDataWrap, 
+      swot.supplierForm, 
+      ()=>{
+        quData.judgeResponse = _.pick(judgeResponseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+      },
+      swot.customPrompts?.stage0_判断题型_prompt // Pass custom prompt if available
+    );
+    记录调模型时的数据({
+      promptVersion: currentPromptVersion, 
+      version: swot.getNotebookVersion(), 
+      data: judgeResponseDataWrap, 
+      supplierForm: swot.supplierForm, 
+      type: "judgeResponse", 
+      time: Date.now(),
     });
-    记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: judgeResponseDataWrap, supplierForm: swot.supplierForm, type: "judgeResponse", time: Date.now(),});
 
     if (swot.shouldStop) {
       quState.stateText = "中断";
@@ -442,10 +473,27 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     播放咔哒声();
 
     quState.stateText = "做题中";
-    await stage1_根据笔记做题_Process(responseDataWrap, swot.supplierForm, ()=>{
-      quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+    
+    // Use custom prompts if available
+    const customPrompt1 = swot.customPrompts?.stage1_根据笔记做题_prompt;
+    const customVersion = swot.customPrompts?.promptVersion || promptVersion;
+    
+    await stage1_根据笔记做题_Process(
+      responseDataWrap, 
+      swot.supplierForm, 
+      ()=>{
+        quData.response = _.pick(responseDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+      },
+      customPrompt1 // Pass custom prompt if available
+    );
+    记录调模型时的数据({
+      promptVersion: customVersion, 
+      version: swot.getNotebookVersion(), 
+      data: responseDataWrap, 
+      supplierForm: swot.supplierForm, 
+      type: "response", 
+      time: Date.now(),
     });
-    记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: responseDataWrap, supplierForm: swot.supplierForm, type: "response", time: Date.now(),});
 
     if (swot.shouldStop) {
       quState.stateText = "中断";
@@ -538,11 +586,27 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
   await swot?.signalFn?.(`错误分析中[${quEntry.nnid}]`, "warn", 3000);
   quData.errorReport = {};
   quState.stateText = "错误分析中";
-  await stage2_根据错题修改笔记_Process(errorReportDataWrap, swot.supplierForm, ()=>{
-    quData.errorReport = _.pick(errorReportDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
-  });
+  
+  // Use custom prompts if available
+  const currentPromptVersion = swot.customPrompts?.promptVersion || promptVersion;
+  
+  await stage2_根据错题修改笔记_Process(
+    errorReportDataWrap, 
+    swot.supplierForm, 
+    ()=>{
+      quData.errorReport = _.pick(errorReportDataWrap, ["processing", "thinkingSpans", "outputSpans", "outputData"]);
+    },
+    swot.customPrompts?.stage2_根据错题修改笔记_prompt
+  );
   await swot?.signalFn?.(`错误已分析了吗[${quEntry.nnid}]`, "warn", 3000);
-  记录调模型时的数据({promptVersion, version: swot.getNotebookVersion(), data: errorReportDataWrap, supplierForm: swot.supplierForm, type: "errorReport", time: Date.now(),});
+  记录调模型时的数据({
+    promptVersion: currentPromptVersion, 
+    version: swot.getNotebookVersion(), 
+    data: errorReportDataWrap, 
+    supplierForm: swot.supplierForm, 
+    type: "errorReport", 
+    time: Date.now(),
+  });
   quState.stateText = "错误已分析";
   await swot?.signalFn?.(`错误已分析[${quEntry.nnid}]`, "warn", 3000);
 
@@ -627,6 +691,15 @@ export class SWOT {
   get practiceOnlyMode() { return this._options.practiceOnlyMode??false; }
 
 
+  // Custom prompt templates
+  customPrompts: {
+    stage0_判断题型_prompt?: string;
+    stage1_根据笔记做题_prompt?: string;
+    stage2_根据错题修改笔记_prompt?: string;
+    stage4_合并对笔记的修改_prompt?: string;
+    promptVersion?: string;
+  } = {};
+
   isSWOT: boolean = true;
 
   signalFn?: any;
@@ -667,6 +740,22 @@ export class SWOT {
   }
   getNotebookVersion() {
     return this.state.notebookVersion;
+  }
+  
+  /**
+   * 更新提示词模板
+   * @param templates 新的提示词模板
+   */
+  updatePromptTemplates(templates: any): void {
+    if (!templates) return;
+    
+    this.customPrompts = {
+      stage0_判断题型_prompt: templates.stage0_判断题型 || undefined,
+      stage1_根据笔记做题_prompt: templates.stage1_根据笔记做题 || undefined,
+      stage2_根据错题修改笔记_prompt: templates.stage2_根据错题修改笔记 || undefined,
+      stage4_合并对笔记的修改_prompt: templates.stage4_合并对笔记的修改 || undefined,
+      promptVersion: templates.version || undefined
+    };
   }
   initNewNotebookVersion() {
     this.state.notebookVersion = `${nanoid(6)}`;

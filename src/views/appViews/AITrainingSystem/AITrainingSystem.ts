@@ -20,6 +20,7 @@ import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
+import PromptTemplatesPanel from './PromptTemplatesPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -47,6 +48,14 @@ import {
   suppliers,
   type SupplierDict,
 } from 'llm-utils';
+
+import {
+  stage0_判断题型_prompt,
+  stage1_根据笔记做题_prompt,
+  stage2_根据错题修改笔记_prompt,
+  stage4_合并对笔记的修改_prompt,
+  promptVersion
+} from './solver';
 
 import {
   SWOT,
@@ -81,9 +90,11 @@ export default defineComponent({
     const appData = reactive<{
       trainer?: SWOT | null;
       questions: QuestionEntry[];
+      promptTemplates: any;
     }>({
       trainer: null,
       questions: [],
+      promptTemplates: null,
     });
 
     const 加载训练题集 = () => {
@@ -103,6 +114,27 @@ export default defineComponent({
       await save("trainer", json);
       console.log("json", json);
       console.log("appData.trainer", appData.trainer);
+    };
+    
+    // Save prompt templates to localStorage
+    const savePromptTemplates = async () => {
+      await save("promptTemplates", appData.promptTemplates);
+      toast.add({ 
+        severity: "success", 
+        summary: "提示词模板已保存", 
+        detail: `保存版本: ${appData.promptTemplates?.version || '未命名'}`, 
+        life: 2000 
+      });
+    };
+    
+    // Update prompt templates
+    const updatePromptTemplates = (templates: any) => {
+      appData.promptTemplates = templates;
+      
+      // Update trainer's prompt templates if trainer exists
+      if (appData.trainer) {
+        appData.trainer.updatePromptTemplates(templates);
+      }
     };
     const exportTrainerData = async () => {
       if (!appData?.trainer?.isSWOT) {return;}
@@ -131,6 +163,30 @@ export default defineComponent({
       }
       appData.trainer.supplierForm = supplierForm;
       console.log("appData.trainer", appData.trainer);
+
+      // Load prompt templates
+      const promptTemplates = await load("promptTemplates");
+      if (promptTemplates) {
+        appData.promptTemplates = promptTemplates;
+        // Apply loaded templates to trainer
+        if (appData.trainer) {
+          appData.trainer.updatePromptTemplates(promptTemplates);
+        }
+        console.log("Loaded prompt templates:", promptTemplates);
+      } else {
+        // Initialize with default templates from solver.ts
+        appData.promptTemplates = {
+          version: promptVersion || "默认模板",
+          stage0_判断题型: stage0_判断题型_prompt,
+          stage1_根据笔记做题: stage1_根据笔记做题_prompt,
+          stage2_根据错题修改笔记: stage2_根据错题修改笔记_prompt,
+          stage4_合并对笔记的修改: stage4_合并对笔记的修改_prompt
+        };
+        // Apply default templates to trainer
+        if (appData.trainer) {
+          appData.trainer.updatePromptTemplates(appData.promptTemplates);
+        }
+      }
 
       const questions = [] as any[];  //await load("questions");
       if (questions?.length) {
@@ -439,16 +495,17 @@ export default defineComponent({
                 vnd(TabPanel, { value: 2 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: "提示词配置",
+                      header: "提示词模板管理",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => vnd("div", {
                         class: "stack-v",
                       }, [
-                        vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
-暂不开发，提示词写在代码里
-                        `.trim()),
-                        }),
+                        vnd(PromptTemplatesPanel, {
+                          savedTemplates: appData.promptTemplates,
+                          'onUpdate:templates': updatePromptTemplates,
+                          onSave: savePromptTemplates
+                        })
                       ]),
                     }),
                   ],
