@@ -297,6 +297,8 @@ export default defineComponent({
                             trainingStateText: trainingStateText.value,
                             trainer: appData.trainer,
                             'onUpdate:options': updateOptions,
+                            'onSaveData': saveAppData,
+                            'onSave-data': saveAppData,
                           })
                         }),
                         

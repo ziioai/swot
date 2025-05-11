@@ -14,7 +14,6 @@ import NumberInputField from './components/NumberInputField';
 import Checkbox from 'primevue/checkbox';
 import { SWOT } from './swot-trainer';
 import { useToast } from 'primevue/usetoast';
-import { save } from './swot-db-functions';
 
 import { type TrainingStateText } from './types';
 
@@ -58,7 +57,8 @@ export default defineComponent({
     'cancel-pause',
     'stop-training',
     'reset-training',
-    'update:options'
+    'update:options',
+    'save-data'
   ],
   setup(props, { emit }) {
     const toast = useToast();
@@ -71,21 +71,17 @@ export default defineComponent({
       emit('update:options', { [key]: value });
     };
     
-    // Save trainer data to persistent storage
-    const saveTrainerData = async () => {
-      if (!props.trainer?.isSWOT) { return; }
-      const json = props.trainer.toJSON(false);
-      await save("trainer", json);
-      console.log("json", json);
-      console.log("props.trainer", props.trainer);
+    // Emit save event to parent component
+    const emitSaveData = async () => {
+      emit('save-data');
     };
     
     // Training control functions
-    const afterBatchFn = async () => { await saveTrainerData(); };
-    const afterResetFn = async () => { await saveTrainerData(); };
-    const afterCancelPauseFn = async () => { await saveTrainerData(); };
-    const beforeStopFn = async () => { await saveTrainerData(); };
-    const afterStopFn = async () => { await saveTrainerData(); };
+    const afterBatchFn = async () => { await emitSaveData(); };
+    const afterResetFn = async () => { await emitSaveData(); };
+    const afterCancelPauseFn = async () => { await emitSaveData(); };
+    const beforeStopFn = async () => { await emitSaveData(); };
+    const afterStopFn = async () => { await emitSaveData(); };
 
     // Start the training process
     const startTraining = async () => {
