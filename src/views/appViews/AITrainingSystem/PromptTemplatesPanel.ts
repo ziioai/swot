@@ -8,7 +8,6 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 import { useToast } from 'primevue/usetoast';
-import Divider from 'primevue/divider';
 
 // Import default prompt templates
 import { 
@@ -111,111 +110,123 @@ export default defineComponent({
       emit('update:templates', _.cloneDeep(promptTemplates));
     };
 
-    return () => vnd("div", { class: "space-y-4" }, [
-      // Version info and action buttons
-      vnd("div", { class: "flex justify-between items-center" }, [
-        vnd("div", { class: "flex items-center gap-2" }, [
-          vnd("span", { class: "font-bold" }, "当前版本: "),
-          vnd(InputText, {
-            modelValue: promptTemplates.version,
-            'onUpdate:modelValue': (v: string) => updateTemplate('version', v),
-            placeholder: "版本标识",
-            class: "w-40"
+    return () => vnd("div", { class: "stack-v gap-4" }, [
+      // Version info and action buttons panel
+      vnd(Panel, { 
+        header: "提示词模板版本",
+        toggleable: true,
+        class: ["w-full my-1.5rem!", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+      }, {
+        default: () => vnd("div", { class: "stack-v gap-4" }, [
+          // Version control area
+          vnd("div", { class: "flex justify-between items-center" }, [
+            vnd("div", { class: "flex items-center gap-2" }, [
+              vnd("span", { class: "font-bold" }, "当前版本: "),
+              vnd(InputText, {
+                modelValue: promptTemplates.version,
+                'onUpdate:modelValue': (v: string) => updateTemplate('version', v),
+                placeholder: "版本标识",
+                class: "w-40"
+              })
+            ]),
+            vnd("div", { class: "stack-h gap-2" }, [
+              vnd(Button, {
+                label: "重置为默认值",
+                icon: "pi pi-refresh",
+                severity: "secondary",
+                outlined: true,
+                onClick: resetTemplates
+              }),
+              vnd(Button, {
+                label: "保存配置",
+                icon: "pi pi-save",
+                onClick: saveTemplates
+              })
+            ])
+          ])
+        ])
+      }),
+      
+      // Prompt templates section in a responsive grid
+      vnd("div", { class: "grid grid-cols-1 lg:grid-cols-2 gap-4" }, [
+        // Left column templates
+        vnd("div", { class: "stack-v gap-4" }, [
+          vnd(Panel, { 
+            header: "判断题型模板",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "用于判断当前题目是否属于现有题型中的某个题型。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.stage0_判断题型,
+                'onUpdate:modelValue': (v: string) => updateTemplate('stage0_判断题型', v),
+                rows: 10,
+                class: "w-full font-mono text-sm",
+                autoResize: true
+              })
+            ])
+          }),
+          
+          vnd(Panel, { 
+            header: "根据笔记做题模板",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "用于结合现有笔记完成题目的提示词模板。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.stage1_根据笔记做题,
+                'onUpdate:modelValue': (v: string) => updateTemplate('stage1_根据笔记做题', v),
+                rows: 10,
+                class: "w-full font-mono text-sm",
+                autoResize: true
+              })
+            ])
           })
         ]),
-        vnd("div", { class: "flex gap-2" }, [
-          vnd(Button, {
-            label: "重置为默认值",
-            icon: "pi pi-refresh",
-            severity: "secondary",
-            outlined: true,
-            onClick: resetTemplates
+        
+        // Right column templates
+        vnd("div", { class: "stack-v gap-4" }, [
+          vnd(Panel, { 
+            header: "根据错题修改笔记模板",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "用于根据错题和正确答案分析并规划笔记修改的模板。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.stage2_根据错题修改笔记,
+                'onUpdate:modelValue': (v: string) => updateTemplate('stage2_根据错题修改笔记', v),
+                rows: 10,
+                class: "w-full font-mono text-sm",
+                autoResize: true
+              })
+            ])
           }),
-          vnd(Button, {
-            label: "保存配置",
-            icon: "pi pi-save",
-            onClick: saveTemplates
+          
+          vnd(Panel, { 
+            header: "合并对笔记的修改模板",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"] 
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "用于合并不同专家对笔记的修改计划的模板。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.stage4_合并对笔记的修改,
+                'onUpdate:modelValue': (v: string) => updateTemplate('stage4_合并对笔记的修改', v),
+                rows: 10,
+                class: "w-full font-mono text-sm",
+                autoResize: true
+              })
+            ])
           })
         ])
-      ]),
-      
-      vnd(Divider),
-      
-      // Prompt templates panels
-      vnd("div", { class: "w-full space-y-4" }, [
-        vnd(Panel, { 
-          header: "判断题型模板",
-          toggleable: true,
-          class: "w-full"
-        }, {
-          default: () => vnd("div", { class: "space-y-2" }, [
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "用于判断当前题目是否属于现有题型中的某个题型。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.stage0_判断题型,
-              'onUpdate:modelValue': (v: string) => updateTemplate('stage0_判断题型', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            })
-          ])
-        }),
-        
-        vnd(Panel, { 
-          header: "根据笔记做题模板",
-          toggleable: true,
-          class: "w-full"
-        }, {
-          default: () => vnd("div", { class: "space-y-2" }, [
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "用于结合现有笔记完成题目的提示词模板。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.stage1_根据笔记做题,
-              'onUpdate:modelValue': (v: string) => updateTemplate('stage1_根据笔记做题', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            })
-          ])
-        }),
-        
-        vnd(Panel, { 
-          header: "根据错题修改笔记模板",
-          toggleable: true,
-          class: "w-full" 
-        }, {
-          default: () => vnd("div", { class: "space-y-2" }, [
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "用于根据错题和正确答案分析并规划笔记修改的模板。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.stage2_根据错题修改笔记,
-              'onUpdate:modelValue': (v: string) => updateTemplate('stage2_根据错题修改笔记', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            })
-          ])
-        }),
-        
-        vnd(Panel, { 
-          header: "合并对笔记的修改模板",
-          toggleable: true,
-          class: "w-full" 
-        }, {
-          default: () => vnd("div", { class: "space-y-2" }, [
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "用于合并不同专家对笔记的修改计划的模板。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.stage4_合并对笔记的修改,
-              'onUpdate:modelValue': (v: string) => updateTemplate('stage4_合并对笔记的修改', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            }),
-          ]),
-        }),
-
-      ]),
+      ])
     ]);
   }
 });
