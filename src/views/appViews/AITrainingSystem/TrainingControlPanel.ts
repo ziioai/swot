@@ -3,7 +3,7 @@
 
 import _ from 'lodash';
 import { h as vnd, defineComponent, PropType } from 'vue';
-import { SWOTOptions, SWOTState } from './types';
+import { SWOTOptions, SWOTState, TrainingState } from './types';
 import ToolButton from '@components/shared/ToolButton';
 // import Button from 'primevue/button';
 // import InputNumber from 'primevue/inputnumber';
@@ -12,6 +12,9 @@ import Panel from 'primevue/panel';
 import Divider from 'primevue/divider';
 import NumberInputField from './components/NumberInputField';
 import Checkbox from 'primevue/checkbox';
+import { SWOT } from './swot-trainer';
+import { useToast } from 'primevue/usetoast';
+import { save } from './swot-db-functions';
 
 import { type TrainingStateText } from './types';
 
@@ -31,6 +34,22 @@ export default defineComponent({
       type: String as PropType<TrainingStateText>,
       default: "未知状态"
     },
+    isTraining: {
+      type: Boolean,
+      default: false
+    },
+    isPaused: {
+      type: Boolean,
+      default: false
+    },
+    isPreparingPause: {
+      type: Boolean,
+      default: false
+    },
+    trainer: {
+      type: Object as PropType<SWOT | null>,
+      default: null
+    }
   },
   emits: [
     'start-training',
@@ -42,12 +61,94 @@ export default defineComponent({
     'update:options'
   ],
   setup(props, { emit }) {
+    const toast = useToast();
+    
     const updateOption = (key: keyof SWOTOptions, value: number) => {
       emit('update:options', { [key]: value });
     };
 
     const updateBooleanOption = (key: keyof SWOTOptions, value: boolean) => {
       emit('update:options', { [key]: value });
+    };
+    
+    // Save trainer data to persistent storage
+    const saveTrainerData = async () => {
+      if (!props.trainer?.isSWOT) { return; }
+      const json = props.trainer.toJSON(false);
+      await save("trainer", json);
+      console.log("json", json);
+      console.log("props.trainer", props.trainer);
+    };
+    
+    // Training control functions
+    const afterBatchFn = async () => { await saveTrainerData(); };
+    const afterResetFn = async () => { await saveTrainerData(); };
+    const afterCancelPauseFn = async () => { await saveTrainerData(); };
+    const beforeStopFn = async () => { await saveTrainerData(); };
+    const afterStopFn = async () => { await saveTrainerData(); };
+
+    // Start the training process
+    const startTraining = async () => {
+      if (!props.trainer) { 
+        emit('start-training');
+        return;
+      }
+      toast.add({ severity: "info", summary: "开始训练", detail: "已经开始训练", life: 1000 });
+      await props.trainer.start(afterBatchFn);
+    };
+    
+    // Reset the training process
+    const resetTraining = () => {
+      if (!props.trainer) { 
+        emit('reset-training');
+        return;
+      }
+      props.trainer.reset(afterResetFn);
+      toast.add({ severity: "info", summary: "重置训练", detail: "已经重置训练", life: 1000 });
+    };
+    
+    // Continue training from paused state
+    const continueTraining = async () => {
+      if (!props.trainer) { 
+        emit('continue-training');
+        return;
+      }
+      toast.add({ severity: "info", summary: "继续训练", detail: "从暂停状态恢复训练", life: 1000 });
+      await props.trainer.resume(afterBatchFn);
+    };
+    
+    // Pause the training process
+    const pauseTraining = () => {
+      if (!props.trainer) { 
+        emit('pause-training');
+        return;
+      }
+      if (props.trainer.trainingState === TrainingState.RUNNING) {
+        props.trainer.requestPause({before: beforeStopFn, after: afterStopFn});
+        toast.add({ severity: "info", summary: "准备暂停", detail: "等待当前批次完成后暂停", life: 1000 });
+      }
+    };
+    
+    // Cancel a pause request
+    const cancelPauseRequest = () => {
+      if (!props.trainer) { 
+        emit('cancel-pause');
+        return;
+      }
+      if (props.trainer.trainingState === TrainingState.PREPARING_PAUSE) {
+        props.trainer.cancelPauseRequest(afterCancelPauseFn);
+        toast.add({ severity: "info", summary: "取消暂停", detail: "已取消暂停请求", life: 1000 });
+      }
+    };
+    
+    // Stop the training process
+    const stopTraining = () => {
+      if (!props.trainer) { 
+        emit('stop-training');
+        return;
+      }
+      props.trainer.requestAbort("用户手动停止训练", {before: beforeStopFn, after: afterStopFn});
+      toast.add({ severity: "info", summary: "停止训练", detail: "正在停止训练...", life: 1000 });
     };
 
     function optionNumberInput(label: string, optionKey: keyof SWOTOptions, description?: (value: number) => string) {
@@ -122,33 +223,33 @@ export default defineComponent({
         // 控制按钮组
         ["未开始"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "primary",
           label: "开始", icon: "pi pi-play", class: "w-full",
-          onClick: () => emit('start-training'),
+          onClick: startTraining,
         }),
         
         ["训练中"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "warning",
           label: "暂停", icon: "pi pi-pause", class: "w-full",
-          onClick: () => emit('pause-training'),
+          onClick: pauseTraining,
         }),
         
         // 新增的取消暂停按钮
         ["准备暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
           label: "取消暂停", icon: "pi pi-times", class: "w-full",
-          onClick: () => emit('cancel-pause'),
+          onClick: cancelPauseRequest,
         }),
         
         ["已暂停", "已中止", "已结束"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "info",
           label: "继续", icon: "pi pi-play", class: "w-full",
-          onClick: () => emit('continue-training'),
+          onClick: continueTraining,
         }),
         
         ["已暂停"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
           label: "停止", icon: "pi pi-stop", class: "w-full",
-          onClick: () => emit('stop-training'),
+          onClick: stopTraining,
         }),
         
         ["未开始", "已暂停", "已中止", "已结束", "未知状态"].includes(props.trainingStateText) && vnd(ToolButton, { outlined: false, severity: "danger",
           label: "重置", icon: "pi pi-refresh", class: "w-full",
-          onClick: () => emit('reset-training'),
+          onClick: resetTraining,
         }),
       ]),
 

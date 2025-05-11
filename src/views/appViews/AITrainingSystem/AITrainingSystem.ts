@@ -165,52 +165,9 @@ export default defineComponent({
       return appData.trainer?.getTrainingStateText() || "未开始";
     });
 
-    const afterBatchFn = async () => { await saveAppData(); };
-    const afterResetFn = async () => { await saveAppData(); };
-    const afterCancelPauseFn = async () => { await saveAppData(); };
-    const beforeStopFn = async () => { await saveAppData(); };
-    const afterStopFn = async () => { await saveAppData(); };
+    // Callback functions have been moved to TrainingControlPanel.ts
 
-    // 训练控制函数
-    const startTraining = async () => {
-      if (!appData.trainer) { return; }
-      toast.add({ severity: "info", summary: "开始训练", detail: "已经开始训练", life: 1000 });
-      await appData.trainer.start(afterBatchFn);
-    };
-    
-    const resetTraining = () => {
-      if (!appData.trainer) { return; }
-      appData.trainer.reset(afterResetFn);
-      toast.add({ severity: "info", summary: "重置训练", detail: "已经重置训练", life: 1000 });
-    };
-    
-    const continueTraining = async () => {
-      if (!appData.trainer) { return; }
-      toast.add({ severity: "info", summary: "继续训练", detail: "从暂停状态恢复训练", life: 1000 });
-      await appData.trainer.resume(afterBatchFn);
-    };
-    
-    const pauseTraining = () => {
-      if (!appData.trainer) { return; }
-      if (appData.trainer.trainingState === TrainingState.RUNNING) {
-        appData.trainer.requestPause({before: beforeStopFn, after: afterStopFn});
-        toast.add({ severity: "info", summary: "准备暂停", detail: "等待当前批次完成后暂停", life: 1000 });
-      }
-    };
-    
-    const cancelPauseRequest = () => {
-      if (!appData.trainer) { return; }
-      if (appData.trainer.trainingState === TrainingState.PREPARING_PAUSE) {
-        appData.trainer.cancelPauseRequest(afterCancelPauseFn);
-        toast.add({ severity: "info", summary: "取消暂停", detail: "已取消暂停请求", life: 1000 });
-      }
-    };
-    
-    const stopTraining = () => {
-      if (!appData.trainer) { return; }
-      appData.trainer.requestAbort("用户手动停止训练", {before: beforeStopFn, after: afterStopFn});
-      toast.add({ severity: "info", summary: "停止训练", detail: "正在停止训练...", life: 1000 });
-    };
+    // Training control functions have been moved to TrainingControlPanel.ts
 
     const analyzeError = () => toast.add({ severity: "info", summary: "UI演示", detail: "错误分析点击", life: 1000 });
 
@@ -289,9 +246,9 @@ export default defineComponent({
             vnd(TabList, { class: "mb-3" }, {
               default: () => [
                 vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明与调试" }),
+                vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
                 vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
                 vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
-                vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
                 vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => "笔记历史" }),
                 vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => "存储管理" }),
               ]
@@ -302,6 +259,27 @@ export default defineComponent({
                 // 标签页1: 训练和做题功能
                 vnd(TabPanel, { value: 0 }, {
                   default: () => [
+
+                    // DEBUG
+                    vnd(Panel, {
+                      header: "DEBUG",
+                      toggleable: true,
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => [
+                        vnd("div", {class: "stack-v"}, [
+                          vnd("div", {class: "stack-h"}, [
+                            vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
+                            vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
+                            vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
+                            vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
+                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
+                            vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
+                          ]),
+                        ]),
+                      ],
+                    }),
+
                     // 训练控制和正确率统计
                     vnd("div", { class: "my-1.5rem! grid grid-cols-1 md:grid-cols-12 gap-4" }, [
                       vnd("div", { class: "col-span-1 md:col-span-6 xl:col-span-5 grid grid-cols-1 gap-4" }, [
@@ -317,12 +295,7 @@ export default defineComponent({
                             isPaused: appData.trainer?.trainingState === TrainingState.PAUSED,
                             isPreparingPause: appData.trainer?.trainingState === TrainingState.PREPARING_PAUSE,
                             trainingStateText: trainingStateText.value,
-                            onStartTraining: startTraining,
-                            onContinueTraining: continueTraining,
-                            onPauseTraining: pauseTraining,
-                            onCancelPause: cancelPauseRequest,
-                            onStopTraining: stopTraining,
-                            onResetTraining: resetTraining,
+                            trainer: appData.trainer,
                             'onUpdate:options': updateOptions,
                           })
                         }),
@@ -516,26 +489,6 @@ export default defineComponent({
                     }, {
                       default: () => [
                         vnd(MemoBoard),
-                      ],
-                    }),
-
-                    // DEBUG
-                    vnd(Panel, {
-                      header: "DEBUG",
-                      toggleable: true,
-                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
-                    }, {
-                      default: () => [
-                        vnd("div", {class: "stack-v"}, [
-                          vnd("div", {class: "stack-h"}, [
-                            vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
-                            vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
-                            vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
-                            vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
-                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
-                            vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
-                          ]),
-                        ]),
                       ],
                     }),
                   ],
