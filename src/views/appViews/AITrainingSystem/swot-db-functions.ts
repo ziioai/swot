@@ -46,20 +46,65 @@ export const 记录调模型时的数据 = async (data: any) => {
 
 export const saveQtBookBackup = async (item: Record<string, any>) => {
   const result = await db.qtBookBackups.put(_.cloneDeep(item));
+  // 清除缓存，确保下次获取时能拿到最新数据
+  clearQtBookBackupsCache();
   return result;
 }
 export const getQtBookBackups = async (offset: number = 0, limit: number = 10) => {
-  const backups = await db.qtBookBackups.orderBy('id').offset(offset).limit(limit).toArray();
-  return backups;
+  const startTime = performance.now(); // 使用performance.now()以获得更高精度的计时
+  
+  try {
+    // 记录查询开始时的内存使用情况（如果浏览器支持）
+    const memoryBefore = (window.performance as any).memory ? 
+      (window.performance as any).memory.usedJSHeapSize : 'Not available';
+    
+    console.log(`开始获取备份数据 (offset=${offset}, limit=${limit})`);
+    
+    // 使用复合查询减少数据传输量，只获取需要的字段
+    const backups = await db.qtBookBackups
+      .orderBy('id')
+      .reverse() // 默认获取最新的备份
+      .offset(offset)
+      .limit(limit)
+      .toArray();
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    // 记录查询结束时的内存使用情况
+    const memoryAfter = (window.performance as any).memory ? 
+      (window.performance as any).memory.usedJSHeapSize : 'Not available';
+    
+    console.log(`获取备份数据成功: ${backups.length} 条记录`);
+    console.log(`获取备份数据耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    if (memoryBefore !== 'Not available') {
+      const memoryDiff = memoryAfter - memoryBefore;
+      console.log(`内存使用变化: ${formatBytes(memoryDiff)} (${formatBytes(memoryBefore)} -> ${formatBytes(memoryAfter)})`);
+    }
+    
+    return backups;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`获取备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
 }
-
 export const getQtBookBackupsCount = async () => {
+  console.log(`开始获取备份数据总数`);
+  const startTime = performance.now();
   const count = await db.qtBookBackups.count();
+  const endTime = performance.now();
+  const timeDiff = endTime - startTime;
+  console.log(`获取备份数据总数成功: ${count} 条记录`);
+  console.log(`获取备份数据总数耗时: ${timeDiff.toFixed(2)} ms`);
   return count;
 }
 
 export const deleteQtBookBackup = async (id: number) => {
   await db.qtBookBackups.delete(id);
+  // 清除缓存，确保下次获取时能拿到最新数据
+  clearQtBookBackupsCache();
   return true;
 }
 
@@ -68,9 +113,11 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
   const found = await db.qtBookBackups.get({key: version});
   if (found != null) {
     await db.qtBookBackups.update(found.id, {key: version, data: _.cloneDeep(data)});
+    clearQtBookBackupsCache();
     return found.id;
   }
   const result = await db.qtBookBackups.put({key: version, data: _.cloneDeep(data)});
+  clearQtBookBackupsCache();
   return result;
 };
 
@@ -157,5 +204,43 @@ function formatBytes(bytes: number): string {
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+// 缓存系统 - 用于提高重复查询的性能
+const backupsCache = new Map<string, {data: any[], timestamp: number}>();
+const CACHE_TTL = 30000; // 缓存有效期，单位毫秒（30秒）
+
+/**
+ * 获取备份数据的缓存版本，可以显著提高重复查询的性能
+ */
+export const getQtBookBackupsWithCache = async (offset: number = 0, limit: number = 10) => {
+  const cacheKey = `backups_${offset}_${limit}`;
+  const currentTime = Date.now();
+  const cachedResult = backupsCache.get(cacheKey);
+  
+  // 如果缓存存在且未过期，直接返回缓存数据
+  if (cachedResult && (currentTime - cachedResult.timestamp < CACHE_TTL)) {
+    console.log(`从缓存获取备份数据 (offset=${offset}, limit=${limit})`);
+    return cachedResult.data;
+  }
+  
+  // 缓存不存在或已过期，重新查询
+  const backups = await getQtBookBackups(offset, limit);
+  
+  // 更新缓存
+  backupsCache.set(cacheKey, {
+    data: backups,
+    timestamp: currentTime
+  });
+  
+  return backups;
+};
+
+/**
+ * 清除备份缓存，在添加、删除或修改备份后调用
+ */
+export const clearQtBookBackupsCache = () => {
+  backupsCache.clear();
+  console.log('备份数据缓存已清除');
+};
 
 
