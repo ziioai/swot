@@ -63,7 +63,7 @@ export const getQtBookBackups = async (offset: number = 0, limit: number = 10) =
     // 使用复合查询减少数据传输量，只获取需要的字段
     const backups = await db.qtBookBackups
       .orderBy('id')
-      .reverse() // 默认获取最新的备份
+      // .reverse() // 默认获取最新的备份
       .offset(offset)
       .limit(limit)
       .toArray();
@@ -127,6 +127,8 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
  * @returns 包含存储使用信息的对象
  */
 export const getIDBStorageSize = async () => {
+  console.log(`开始获取存储信息`);
+  const startTime = performance.now();
   try {
     // 获取表记录数量（用于显示）
     const kvsCount = await db.kvs.count();
@@ -139,6 +141,16 @@ export const getIDBStorageSize = async () => {
       const usageBytes = estimate.usage || 0;
       const quotaBytes = estimate.quota || 0;
       const percentUsed = quotaBytes ? (usageBytes / quotaBytes) * 100 : 0;
+
+      const endTime = performance.now();
+      const timeDiff = endTime - startTime;
+      console.log(`获取存储信息成功: ${formatBytes(usageBytes)} / ${formatBytes(quotaBytes)}`);
+      console.log(`存储使用百分比: ${percentUsed.toFixed(2)}%`);
+      console.log(`KVS 表记录数: ${kvsCount}`);
+      console.log(`ChatRecords 表记录数: ${chatRecordsCount}`);
+      console.log(`QtBookBackups 表记录数: ${qtBookBackupsCount}`);
+      console.log(`总记录数: ${kvsCount + chatRecordsCount + qtBookBackupsCount}`);
+      console.log(`获取存储信息耗时: ${timeDiff.toFixed(2)} ms`);
 
       // 由于 StorageManager API 无法获取单个数据库的使用情况，
       // 这里我们只能获取整个来源的存储使用
@@ -161,6 +173,10 @@ export const getIDBStorageSize = async () => {
         }
       };
     } else {
+      const endTime = performance.now();
+      const timeDiff = endTime - startTime;
+      console.log(`获取存储信息失败: 浏览器不支持 StorageManager API`);
+      console.log(`获取存储信息耗时: ${timeDiff.toFixed(2)} ms`);
       // 浏览器不支持 StorageManager API，返回简化信息
       return {
         total: {
@@ -183,6 +199,9 @@ export const getIDBStorageSize = async () => {
     }
   } catch (error: any) {
     console.error("获取存储信息时出错:", error);
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    console.log(`获取存储信息失败，耗时 ${(timeDiff).toFixed(2)} ms`);
     return {
       error: true,
       message: `获取存储信息失败: ${error?.message || "未知错误"}`

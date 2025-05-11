@@ -18,7 +18,7 @@ export default defineComponent({
     const loading = ref(true);
     const totalRecords = ref(0);
     const first = ref(0);
-    const rows = ref(5);
+    const rows = ref(10);
     const storageInfo = ref<any>(null);
     
     // Load notebook backups with pagination
@@ -130,7 +130,7 @@ export default defineComponent({
         toggleable: true,
         collapsed: false,
       }, {
-        header: () => vnd("div", { class: "stack-h items-center! justify-between! w-full" }, [
+        header: () => vnd("div", { class: "stack-h items-center! justify-between w-full" }, [
           vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
           storageInfo.value && vnd("div", { class: "text-sm text-gray-500" }, [
             `存储占用: ${storageInfo.value.total?.formatted || "获取中..."}`
