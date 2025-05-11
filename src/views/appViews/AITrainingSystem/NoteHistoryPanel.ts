@@ -136,7 +136,7 @@ export default defineComponent({
       }, {
         header: () => vnd("div", { class: "stack-h items-center! justify-between w-full" }, [
           vnd("div", { class: "font-bold" }, ["笔记历史版本"]),
-          vnd("div", { class: "text-sm text-gray-500 flex items-center" }, [
+          vnd("div", { class: "text-sm text-gray-500 dark:text-gray-400 flex items-center" }, [
             loadingStorageInfo.value ? 
               vnd("span", { class: "flex items-center" }, [
                 vnd("i", { class: "pi pi-spin pi-spinner mr-1" }),
@@ -161,9 +161,9 @@ export default defineComponent({
           loading.value && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
           
           // Simple custom table implementation
-          !loading.value && vnd("div", { class: "border-1 border-gray-200 rounded overflow-hidden" }, [
+          !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
             // Table header
-            vnd("div", { class: "flex bg-gray-100 p-2 font-bold border-b-1" }, [
+            vnd("div", { class: "flex bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
               vnd("div", { class: "flex-1" }, ["编号"]),
               vnd("div", { class: "flex-1" }, ["版本标识"]),
               vnd("div", { class: "flex-1" }, ["题型与字符数"]),
@@ -172,17 +172,17 @@ export default defineComponent({
             
             // Table body
             backups.value.length === 0 ? 
-              vnd("div", { class: "p-4 text-center text-gray-500" }, ["没有历史记录"]) :
+              vnd("div", { class: "p-4 text-center text-gray-500 dark:text-gray-400" }, ["没有历史记录"]) :
               backups.value.map(item => 
                 vnd("div", { 
                   key: item.id,
-                  class: "flex p-3 border-b-1 hover:bg-gray-50 items-center"
+                  class: "flex p-3 border-b-1 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 items-center"
                 }, [
                   vnd("div", { class: "flex-1" }, [`${item.id}`]),
                   vnd("div", { class: "flex-1" }, [item.key]),
                   vnd("div", { class: "flex-1" }, [
                     vnd("div", { class: "text-sm whitespace-normal" }, [`题型: ${getQuestionTypes(item)}`]),
-                    vnd("div", { class: "text-xs text-gray-500" }, [`字符数: ${getJsonCharCount(item)}`])
+                    vnd("div", { class: "text-xs text-gray-500 dark:text-gray-400" }, [`字符数: ${getJsonCharCount(item)}`])
                   ]),
                   vnd("div", { class: "flex-1 flex justify-center gap-2" }, [
                     vnd(ToolButton, {
@@ -213,7 +213,7 @@ export default defineComponent({
           }),
           
           // Storage information section
-          (loadingStorageInfo.value || storageInfo.value) && vnd("div", { class: "mt-4 p-3 border-1 border-gray-200 rounded bg-gray-50" }, [
+          (loadingStorageInfo.value || storageInfo.value) && vnd("div", { class: "mt-4 p-3 border-1 border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800" }, [
             vnd("div", { class: "flex justify-between items-center mb-2" }, [
               vnd("h4", { class: "text-md font-bold m-0" }, ["存储空间使用情况"]),
               vnd(ToolButton, { 
@@ -225,25 +225,23 @@ export default defineComponent({
             ]),
             
             // 加载中状态
-            loadingStorageInfo.value && vnd("div", { class: "flex items-center text-blue-500 mb-2" }, [
+            loadingStorageInfo.value && vnd("div", { class: "flex items-center text-blue-500 dark:text-blue-400 mb-2" }, [
               vnd("i", { class: "pi pi-spin pi-spinner mr-2" }),
               "正在计算存储空间使用情况..."
             ]),
             
             // 如果发生错误
-            storageInfo.value?.error && vnd("div", { class: "text-red-500" }, [
+            storageInfo.value?.error && vnd("div", { class: "text-red-500 dark:text-red-400" }, [
               storageInfo.value.message || "获取存储信息时发生错误"
             ]),
             
             // 如果不支持 StorageManager API
-            storageInfo.value?.unsupported && vnd("div", { class: "text-orange-500 mb-2" }, [
+            storageInfo.value?.unsupported && vnd("div", { class: "text-orange-500 dark:text-orange-400 mb-2" }, [
               "当前浏览器不支持存储估算 API，无法获取精确存储大小"
-            ]),
-            
-            // 总体存储信息
+            ]),              // 总体存储信息
             !loadingStorageInfo.value && storageInfo.value && !storageInfo.value.error && vnd("div", { class: "grid grid-cols-2 gap-2" }, [
               // 总体存储使用
-              vnd("div", { class: "col-span-2 flex justify-between border-b-1 pb-1 mb-2" }, [
+              vnd("div", { class: "col-span-2 flex justify-between border-b-1 dark:border-gray-700 pb-1 mb-2" }, [
                 vnd("div", { class: "font-bold" }, ["总占用空间"]),
                 vnd("div", {}, [
                   `${storageInfo.value.total?.formatted || "未知"} / 
@@ -253,7 +251,7 @@ export default defineComponent({
               ]),
               
               // 表记录数量
-              vnd("div", { class: "col-span-2 flex justify-between border-b-1 pb-1 mb-1" }, [
+              vnd("div", { class: "col-span-2 flex justify-between border-b-1 dark:border-gray-700 pb-1 mb-1" }, [
                 vnd("div", { class: "font-bold" }, ["数据库记录总数"]),
                 vnd("div", {}, [
                   `${storageInfo.value.tableCounts?.total || 0} 条记录`
