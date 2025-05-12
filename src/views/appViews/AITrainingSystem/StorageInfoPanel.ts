@@ -4,6 +4,7 @@ import { h as vnd, defineComponent, ref, onMounted } from 'vue';
 import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
 import { getIDBStorageSize } from './swot-db-functions';
+import { sleep } from '@utils/functions';
 
 export default defineComponent({
   name: "StorageInfoPanel",
@@ -35,6 +36,7 @@ export default defineComponent({
     };
 
     onMounted(async () => {
+      await sleep(1500);
       setTimeout(async () => {
         loadStorageInfo();
       }, 1000);

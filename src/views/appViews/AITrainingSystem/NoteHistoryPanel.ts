@@ -6,6 +6,7 @@ import ToolButton from '@components/shared/ToolButton';
 import Panel from 'primevue/panel';
 import Paginator from 'primevue/paginator';
 import { getQtBookBackups, getQtBookBackupsCount, deleteQtBookBackup } from './swot-db-functions';
+import { sleep } from '@utils/functions';
 
 export default defineComponent({
   name: "NoteHistoryPanel",
@@ -131,6 +132,7 @@ export default defineComponent({
     };
 
     onMounted(async () => {
+      await sleep(1500);
       setTimeout(async () => {
         loadBackups();
       }, 1000);

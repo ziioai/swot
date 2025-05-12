@@ -8,6 +8,7 @@ import Paginator from 'primevue/paginator';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import { getChatRecords, saveChatRecord, getChatRecordsCount, deleteChatRecord } from './swot-db-functions';
+import { sleep } from '@utils/functions';
 
 export default defineComponent({
   name: "ChatRecordsPanel",
@@ -162,6 +163,7 @@ export default defineComponent({
     // };
 
     onMounted(async () => {
+      await sleep(1500);
       setTimeout(async () => {
         loadChatRecords();
       }, 1000);
