@@ -124,19 +124,11 @@ export default defineComponent({
     // Extract formatted chat content for display
     const getChatSummary = (chat: any) => {
       if (!chat?.data) return '无内容';
-      
-      // Check if this is a conversation with messages
-      if (chat.data.messages && Array.isArray(chat.data.messages)) {
-        const messageCount = chat.data.messages.length;
-        const lastMessage = chat.data.messages[messageCount - 1];
-        return `${messageCount} 条消息 | 最后: ${lastMessage?.role || '未知'} - ${(lastMessage?.content || '').substring(0, 30)}${(lastMessage?.content || '').length > 30 ? '...' : ''}`;
-      }
-      
-      // If it has a prompt and completion fields
-      if (chat.data.prompt) {
-        return `提示词: ${chat.data.prompt.substring(0, 30)}${chat.data.prompt.length > 30 ? '...' : ''}`;
-      }
-      
+      if (chat?.data?.data?.outputData) {
+        return JSON.stringify(chat.data.data.outputData).substring(0, 50) + '...';
+      };
+
+
       // Fallback to showing the structure
       const keys = Object.keys(chat.data);
       return `字段: ${keys.join(', ')}`;
@@ -148,26 +140,26 @@ export default defineComponent({
       return JSON.stringify(chat.data).length;
     };
 
-    // Format timestamp from data if available
-    const formatTimestamp = (chat: any) => {
-      if (chat?.data?.timestamp) {
-        return new Date(chat.data.timestamp).toLocaleString();
-      }
+    // // Format timestamp from data if available
+    // const formatTimestamp = (chat: any) => {
+    //   if (chat?.data?.timestamp) {
+    //     return new Date(chat.data.timestamp).toLocaleString();
+    //   }
       
-      if (chat?.data?.metadata?.created) {
-        return new Date(chat.data.metadata.created).toLocaleString();
-      }
+    //   if (chat?.data?.metadata?.created) {
+    //     return new Date(chat.data.metadata.created).toLocaleString();
+    //   }
       
-      // Try to parse from the key if it has a timestamp pattern
-      if (chat?.key?.includes('demo-')) {
-        const timestampPart = chat.key.split('demo-')[1];
-        if (!isNaN(Number(timestampPart))) {
-          return new Date(Number(timestampPart)).toLocaleString();
-        }
-      }
+    //   // Try to parse from the key if it has a timestamp pattern
+    //   if (chat?.key?.includes('demo-')) {
+    //     const timestampPart = chat.key.split('demo-')[1];
+    //     if (!isNaN(Number(timestampPart))) {
+    //       return new Date(Number(timestampPart)).toLocaleString();
+    //     }
+    //   }
       
-      return '未知时间';
-    };
+    //   return '未知时间';
+    // };
 
     onMounted(async () => {
       setTimeout(async () => {
@@ -228,11 +220,11 @@ export default defineComponent({
           // Simple custom table implementation
           !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
             // Table header
-            vnd("div", { class: "flex bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
-              vnd("div", { class: "flex-1" }, ["编号"]),
-              vnd("div", { class: "flex-1" }, ["标识"]),
-              vnd("div", { class: "flex-1" }, ["时间"]),
-              vnd("div", { class: "flex-2" }, ["内容摘要"]),
+            vnd("div", { class: "stack-h bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
+              vnd("div", { class: "flex-1 text-center" }, ["编号"]),
+              vnd("div", { class: "flex-1 text-center" }, ["标识"]),
+              // vnd("div", { class: "flex-1 text-center" }, ["时间"]),
+              vnd("div", { class: "flex-1 text-center" }, ["内容摘要"]),
               vnd("div", { class: "flex-1 text-center" }, ["操作"]),
             ]),
             
@@ -242,12 +234,12 @@ export default defineComponent({
               chatRecords.value.map(item => 
                 vnd("div", { 
                   key: item.id,
-                  class: "flex p-3 border-b-1 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 items-center"
+                  class: "stack-h p-3 border-b-1 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 items-center!"
                 }, [
-                  vnd("div", { class: "flex-1" }, [`${item.id}`]),
-                  vnd("div", { class: "flex-1" }, [item.key]),
-                  vnd("div", { class: "flex-1" }, [formatTimestamp(item)]),
-                  vnd("div", { class: "flex-2" }, [
+                  vnd("div", { class: "flex-1 text-center" }, [`${item.id}`]),
+                  vnd("div", { class: "flex-1 text-center" }, [item.key]),
+                  // vnd("div", { class: "flex-1 text-center" }, [formatTimestamp(item)]),
+                  vnd("div", { class: "flex-1" }, [
                     vnd("div", { class: "text-sm whitespace-normal" }, [getChatSummary(item)]),
                     vnd("div", { class: "text-xs text-gray-500 dark:text-gray-400" }, [`字符数: ${getJsonCharCount(item)}`])
                   ]),
@@ -296,7 +288,7 @@ export default defineComponent({
           }, {
             default: () => selectedChat.value && vnd("div", { class: "p-3" }, [
               vnd("h3", { class: "mb-2 font-bold" }, [`ID: ${selectedChat.value.id} | 标识: ${selectedChat.value.key}`]),
-              vnd("h4", { class: "mb-2 text-gray-500" }, [`时间: ${formatTimestamp(selectedChat.value)}`]),
+              // vnd("h4", { class: "mb-2 text-gray-500" }, [`时间: ${formatTimestamp(selectedChat.value)}`]),
               
               // Format messages in chat view if available
               selectedChat.value.data.messages && Array.isArray(selectedChat.value.data.messages) ?
@@ -323,8 +315,8 @@ export default defineComponent({
               // Raw JSON data
               vnd("div", {}, [
                 vnd("h4", { class: "font-bold mb-2" }, ["原始数据"]),
-                vnd("div", { class: "p-3 bg-gray-100 dark:bg-gray-800 rounded overflow-auto max-h-60vh" }, [
-                  vnd("pre", { class: "text-xs" }, [JSON.stringify(selectedChat.value.data, null, 2)])
+                vnd("div", { class: "p-3 bg-gray-100 dark:bg-gray-800 rounded ==overflow-auto ==max-h-60vh" }, [
+                  vnd("pre", { class: "text-xs overflow-auto max-h-60vh" }, [JSON.stringify(selectedChat.value.data, null, 2)])
                 ]),
               ]),
               

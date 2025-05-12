@@ -162,10 +162,10 @@ export default defineComponent({
           // Simple custom table implementation
           !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
             // Table header
-            vnd("div", { class: "flex bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
-              vnd("div", { class: "flex-1" }, ["编号"]),
-              vnd("div", { class: "flex-1" }, ["版本标识"]),
-              vnd("div", { class: "flex-1" }, ["题型与字符数"]),
+            vnd("div", { class: "stack-h bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
+              vnd("div", { class: "flex-1 text-center" }, ["编号"]),
+              vnd("div", { class: "flex-1 text-center" }, ["版本标识"]),
+              vnd("div", { class: "flex-1 text-center" }, ["题型与字符数"]),
               vnd("div", { class: "flex-1 text-center" }, ["操作"]),
             ]),
             
@@ -175,10 +175,10 @@ export default defineComponent({
               backups.value.map(item => 
                 vnd("div", { 
                   key: item.id,
-                  class: "flex p-3 border-b-1 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 items-center"
+                  class: "stack-h p-3 border-b-1 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 items-center!"
                 }, [
-                  vnd("div", { class: "flex-1" }, [`${item.id}`]),
-                  vnd("div", { class: "flex-1" }, [item.key]),
+                  vnd("div", { class: "flex-1 text-center" }, [`${item.id}`]),
+                  vnd("div", { class: "flex-1 text-center" }, [item.key]),
                   vnd("div", { class: "flex-1" }, [
                     vnd("div", { class: "text-sm whitespace-normal" }, [`题型: ${getQuestionTypes(item)}`]),
                     vnd("div", { class: "text-xs text-gray-500 dark:text-gray-400" }, [`字符数: ${getJsonCharCount(item)}`])
