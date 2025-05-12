@@ -30,6 +30,7 @@ export default defineComponent({
     const totalRecords = ref(0);
     const first = ref(0);
     const rows = ref(10);
+    const initialLoaded = ref(false);
     
     // 批量操作相关
     const showConfirmDialog = ref(false);
@@ -47,44 +48,44 @@ export default defineComponent({
     const showDetailsDialog = ref(false);
     
     // Load notebook backups with pagination
-  // 优化后的加载函数，使用 requestIdleCallback
-  const loadBackups = async (updateTotalCount = true) => {
-    if (loading.value) {
-      console.warn("[loadBackups] Loading already in progress, skipping new load request");
-      return
-    }; // 避免重复加载
-    
-    loading.value = true;
-    try {
-      // 使用 Promise 和 requestIdleCallback 在浏览器空闲时执行
-      const result = await new Promise<any[]>(resolve => {
-        window.requestIdleCallback 
-          ? window.requestIdleCallback(() => {
-              getQtBookBackups(first.value, rows.value).then(resolve);
-            }) 
-          : getQtBookBackups(first.value, rows.value).then(resolve);
-      });
+    // 优化后的加载函数，使用 requestIdleCallback
+    const loadBackups = async (updateTotalCount = true) => {
+      if (loading.value) {
+        console.warn("[loadBackups] Loading already in progress, skipping new load request");
+        return
+      }; // 避免重复加载
       
-      backups.value = result || [];
-      
-      // 同样对计数查询使用 requestIdleCallback
-      if (updateTotalCount) {
-        const count = await new Promise<number>(resolve => {
-        window.requestIdleCallback 
-          ? window.requestIdleCallback(() => {
-              getQtBookBackupsCount().then(resolve);
-            }) 
-          : getQtBookBackupsCount().then(resolve);
+      loading.value = true;
+      try {
+        // 使用 Promise 和 requestIdleCallback 在浏览器空闲时执行
+        const result = await new Promise<any[]>(resolve => {
+          window.requestIdleCallback 
+            ? window.requestIdleCallback(() => {
+                getQtBookBackups(first.value, rows.value).then(resolve);
+              }) 
+            : getQtBookBackups(first.value, rows.value).then(resolve);
         });
-        totalRecords.value = count;
+        
+        backups.value = result || [];
+        
+        // 同样对计数查询使用 requestIdleCallback
+        if (updateTotalCount) {
+          const count = await new Promise<number>(resolve => {
+          window.requestIdleCallback 
+            ? window.requestIdleCallback(() => {
+                getQtBookBackupsCount().then(resolve);
+              }) 
+            : getQtBookBackupsCount().then(resolve);
+          });
+          totalRecords.value = count;
+        }
+      } catch (error) {
+        console.error("Failed to load notebook backups:", error);
+      } finally {
+        loading.value = false;
       }
-    } catch (error) {
-      console.error("Failed to load notebook backups:", error);
-    } finally {
-      loading.value = false;
-    }
-  };
-    
+    };
+      
     // Handle pagination
     const onPageChange = (event: { first: number, rows: number, page: number, pageCount: number }) => {
       first.value = event.first;
@@ -285,7 +286,8 @@ export default defineComponent({
     onMounted(async () => {
       await sleep(1500);
       setTimeout(async () => {
-        loadBackups();
+        await loadBackups();
+        initialLoaded.value = true;
       }, 1000);
     });
 
@@ -342,10 +344,10 @@ export default defineComponent({
           ]),
           
           // Loading indicator
-          loading.value && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
+          (!initialLoaded.value || loading.value) && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
           
           // Simple custom table implementation
-          !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
+          initialLoaded.value && !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
             // Table header
             vnd("div", { class: "stack-h bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
               vnd("div", { class: "flex-1 text-center" }, ["编号"]),
@@ -400,7 +402,7 @@ export default defineComponent({
           ]),
           
           // Paginator
-          vnd(Paginator, {
+          initialLoaded.value && vnd(Paginator, {
             first: first.value,
             rows: rows.value,
             totalRecords: totalRecords.value,

@@ -32,6 +32,7 @@ export default defineComponent({
     const rows = ref(10);
     const selectedChat = ref<any>(null);
     const showChatDialog = ref(false);
+    const initialLoaded = ref(false);
     
     // 确认对话框相关状态
     const showConfirmDialog = ref(false);
@@ -193,7 +194,8 @@ export default defineComponent({
     onMounted(async () => {
       await sleep(1500);
       setTimeout(async () => {
-        loadChatRecords();
+        await loadChatRecords();
+        initialLoaded.value = true;
       }, 1000);
     });
 
@@ -361,7 +363,7 @@ export default defineComponent({
           ]),
           
           // Loading indicator
-          loading.value && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
+          (!initialLoaded.value || loading.value) && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
           
           // Batch operation progress
           batchOperationInProgress.value && vnd("div", { class: "my-2" }, [
@@ -378,7 +380,7 @@ export default defineComponent({
           ]),
           
           // Simple custom table implementation
-          !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
+          initialLoaded.value && !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
             // Table header
             vnd("div", { class: "stack-h bg-gray-100 dark:bg-gray-800 p-2 font-bold border-b-1 dark:border-gray-700" }, [
               vnd("div", { class: "flex-1 text-center" }, ["编号"]),
@@ -445,7 +447,7 @@ export default defineComponent({
           ]),
           
           // Paginator
-          vnd(Paginator, {
+          initialLoaded.value && vnd(Paginator, {
             first: first.value,
             rows: rows.value,
             totalRecords: totalRecords.value,
