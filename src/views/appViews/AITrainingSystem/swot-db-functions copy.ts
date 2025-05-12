@@ -1,12 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * SWOT数据库函数库 - 无缓存版本
- * 
- * 该版本已移除所有基于内存的缓存机制，确保在页面刷新后不会出现数据不一致问题
- * 所有操作均直接与IndexedDB交互，没有中间缓存层
- */
-
 import _ from 'lodash';
 import { nanoid } from 'nanoid';
 import * as zipson from "zipson";
@@ -54,6 +47,109 @@ export const deleteChatRecord = async (id: number) => {
   await db.chatRecords.delete(id);
   return true;
 };
+
+/**
+ * 标记或取消标记一条聊天记录
+ * @param id 聊天记录ID
+ * @param isMarked 是否标记，如果不提供则切换当前状态
+ * @returns 更新后的聊天记录对象
+ */
+export const markChatRecord = async (id: number, isMarked?: boolean) => {
+  const chat = await db.chatRecords.get(id);
+  if (!chat) {
+    throw new Error(`聊天记录 ID=${id} 不存在`);
+  }
+  
+  // 如果没有指定 isMarked，则切换当前状态
+  if (isMarked === undefined) {
+    isMarked = !chat.isMarked;
+  }
+  
+  // 更新记录
+  chat.isMarked = isMarked;
+  await db.chatRecords.put(chat);
+  
+  return chat;
+};
+
+/**
+ * 获取所有已标记的聊天记录数量
+ * @returns 已标记记录的数量
+ */
+export const getMarkedChatRecordsCount = async () => {
+  return await db.chatRecords.filter(item => item.isMarked === true).count();
+};
+
+/**
+ * 获取所有未标记的聊天记录数量
+ * @returns 未标记记录的数量
+ */
+export const getUnmarkedChatRecordsCount = async () => {
+  return await db.chatRecords.filter(item => item.isMarked !== true).count();
+};
+
+/**
+ * 批量删除已标记的聊天记录
+ * @returns 删除的记录数量
+ */
+export const deleteAllMarkedChatRecords = async () => {
+  const markedRecords = await db.chatRecords
+    .filter(item => item.isMarked === true)
+    .toArray();
+    
+  // 获取所有需要删除的ID
+  const idsToDelete = markedRecords.map(record => record.id);
+  
+  // 计数删除记录数量
+  let deletedCount = 0;
+  
+  // 分批删除，避免一次性操作太多记录
+  const batchSize = 100;
+  for (let i = 0; i < idsToDelete.length; i += batchSize) {
+    const batch = idsToDelete.slice(i, i + batchSize);
+    await Promise.all(batch.map(id => db.chatRecords.delete(id)));
+    deletedCount += batch.length;
+  }
+  
+  return deletedCount;
+};
+
+/**
+ * 批量删除未标记的聊天记录
+ * @returns 删除的记录数量
+ */
+export const deleteAllUnmarkedChatRecords = async () => {
+  const unmarkedRecords = await db.chatRecords
+    .filter(item => item.isMarked !== true)
+    .toArray();
+    
+  // 获取所有需要删除的ID
+  const idsToDelete = unmarkedRecords.map(record => record.id);
+  
+  // 计数删除记录数量
+  let deletedCount = 0;
+  
+  // 分批删除，避免一次性操作太多记录
+  const batchSize = 100;
+  for (let i = 0; i < idsToDelete.length; i += batchSize) {
+    const batch = idsToDelete.slice(i, i + batchSize);
+    await Promise.all(batch.map(id => db.chatRecords.delete(id)));
+    deletedCount += batch.length;
+  }
+  
+  return deletedCount;
+};
+
+/**
+ * 删除所有聊天记录
+ * @returns 删除的记录数量
+ */
+export const deleteAllChatRecords = async () => {
+  const count = await db.chatRecords.count();
+  await db.chatRecords.clear();
+  return count;
+};
+
 export const 记录调模型时的数据 = async (data: any) => {
   const result = await saveChatRecord({key: nanoid(12), data});
   return result;
@@ -61,6 +157,10 @@ export const 记录调模型时的数据 = async (data: any) => {
 
 export const saveQtBookBackup = async (item: Record<string, any>) => {
   const result = await db.qtBookBackups.put(_.cloneDeep(item));
+  // 清除缓存，确保下次获取时能拿到最新数据
+  clearQtBookBackupsCache();
+  // 同时使计数缓存失效
+  invalidateCountCache();
   return result;
 }
 export const getQtBookBackups = async (offset: number = 0, limit: number = 10) => {
@@ -104,16 +204,52 @@ export const getQtBookBackups = async (offset: number = 0, limit: number = 10) =
   }
 }
 export const getQtBookBackupsCount = async () => {
-  console.log(`获取备份数据计数`);
+  // 直接调用缓存版本的函数，提高性能
+  return getQtBookBackupsCountWithCache();
+}
+
+// 记录计数的缓存
+const countCache = {
+  qtBookBackups: {
+    count: 0,
+    timestamp: 0,
+    dirty: true
+  }
+};
+
+// 标记计数缓存为脏数据，在添加或删除记录后调用
+export const invalidateCountCache = () => {
+  countCache.qtBookBackups.dirty = true;
+  console.log('计数缓存已失效，下次将重新计算');
+};
+
+// 带缓存的计数函数，减少重复计数的性能开销
+export const getQtBookBackupsCountWithCache = async (maxAge: number = 30000) => {
+  console.log(`获取备份数据计数(带缓存)`);
+  const currentTime = Date.now();
+  
+  // 如果缓存有效且未过期，直接返回缓存值
+  if (!countCache.qtBookBackups.dirty && 
+      (currentTime - countCache.qtBookBackups.timestamp < maxAge)) {
+    console.log(`从缓存返回备份计数: ${countCache.qtBookBackups.count} 条记录`);
+    return countCache.qtBookBackups.count;
+  }
+
+  // 缓存无效，重新计算
   const startTime = performance.now();
   
   try {
-    // 直接获取计数，不使用缓存
+    // 使用键范围优化计数性能
     const count = await db.qtBookBackups.count();
+    
+    // 更新缓存
+    countCache.qtBookBackups.count = count;
+    countCache.qtBookBackups.timestamp = currentTime;
+    countCache.qtBookBackups.dirty = false;
     
     const endTime = performance.now();
     const timeDiff = endTime - startTime;
-    console.log(`获取备份数据计数成功: ${count} 条记录`);
+    console.log(`获取备份数据计数成功(已更新缓存): ${count} 条记录`);
     console.log(`获取备份数据计数耗时: ${timeDiff.toFixed(2)} ms`);
     
     return count;
@@ -126,6 +262,10 @@ export const getQtBookBackupsCount = async () => {
 
 export const deleteQtBookBackup = async (id: number) => {
   await db.qtBookBackups.delete(id);
+  // 清除缓存，确保下次获取时能拿到最新数据
+  clearQtBookBackupsCache();
+  // 同时使计数缓存失效
+  invalidateCountCache();
   return true;
 }
 
@@ -134,9 +274,13 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
   const found = await db.qtBookBackups.get({key: version});
   if (found != null) {
     await db.qtBookBackups.update(found.id, {key: version, data: _.cloneDeep(data)});
+    clearQtBookBackupsCache();
+    invalidateCountCache();
     return found.id;
   }
   const result = await db.qtBookBackups.put({key: version, data: _.cloneDeep(data)});
+  clearQtBookBackupsCache();
+  invalidateCountCache();
   return result;
 };
 
@@ -243,14 +387,42 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// 缓存系统 - 用于提高重复查询的性能
+const backupsCache = new Map<string, {data: any[], timestamp: number}>();
+const CACHE_TTL = 30000; // 缓存有效期，单位毫秒（30秒）
+
 /**
- * 获取备份数据的基础函数，直接访问数据库
- * 这个函数是getQtBookBackups的别名，保留此函数是为了兼容现有代码
+ * 获取备份数据的缓存版本，可以显著提高重复查询的性能
  */
-export const __getQtBookBackups = async (offset: number = 0, limit: number = 10) => {
-  console.log(`直接获取备份数据 (offset=${offset}, limit=${limit})`);
-  // 直接调用标准获取函数
-  return getQtBookBackups(offset, limit);
+export const __getQtBookBackupsWithCache = async (offset: number = 0, limit: number = 10) => {
+  const cacheKey = `backups_${offset}_${limit}`;
+  const currentTime = Date.now();
+  const cachedResult = backupsCache.get(cacheKey);
+  
+  // 如果缓存存在且未过期，直接返回缓存数据
+  if (cachedResult && (currentTime - cachedResult.timestamp < CACHE_TTL)) {
+    console.log(`从缓存获取备份数据 (offset=${offset}, limit=${limit})`);
+    return cachedResult.data;
+  }
+  
+  // 缓存不存在或已过期，重新查询
+  const backups = await getQtBookBackups(offset, limit);
+  
+  // 更新缓存
+  backupsCache.set(cacheKey, {
+    data: backups,
+    timestamp: currentTime
+  });
+  
+  return backups;
+};
+
+/**
+ * 清除备份缓存，在添加、删除或修改备份后调用
+ */
+export const clearQtBookBackupsCache = () => {
+  backupsCache.clear();
+  console.log('备份数据缓存已清除');
 };
 
 /**
@@ -643,6 +815,12 @@ export const __streamQtBookBackups = async (
  * @returns 估计的记录数
  */
 export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promise<number> => {
+  // 首先检查缓存
+  if (!countCache.qtBookBackups.dirty && 
+      (Date.now() - countCache.qtBookBackups.timestamp < CACHE_TTL)) {
+    return countCache.qtBookBackups.count;
+  }
+
   console.log(`\n开始快速估算备份数据总数 (样本大小=${sampleSize})`);
   const startTime = performance.now();
   
@@ -654,6 +832,12 @@ export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promi
     // 如果记录很少，直接返回精确计数
     if (allKeys.length <= sampleSize * 2) {
       console.log(`记录数较少，使用精确计数: ${allKeys.length}`);
+      
+      // 更新缓存
+      countCache.qtBookBackups.count = allKeys.length;
+      countCache.qtBookBackups.timestamp = Date.now();
+      countCache.qtBookBackups.dirty = false;
+      
       return allKeys.length;
     }
     
@@ -678,11 +862,16 @@ export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promi
     console.log(`快速估算备份数据总数完成: 约 ${estimatedCount} 条记录 (估计值)`);
     console.log(`快速估算耗时: ${timeDiff.toFixed(2)} ms`);
     
+    // 更新缓存
+    countCache.qtBookBackups.count = estimatedCount;
+    countCache.qtBookBackups.timestamp = Date.now();
+    countCache.qtBookBackups.dirty = false;
+    
     return estimatedCount;
   } catch (error) {
     console.error("快速估算记录数失败:", error);
     // 失败时回退到标准计数方法
-    return getQtBookBackupsCount();
+    return getQtBookBackupsCountWithCache();
   }
 }
 
@@ -693,6 +882,12 @@ export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promi
  * @returns Promise<number> 总记录数
  */
 export const getQtBookBackupsCountBySegments = async (segments: number = 10): Promise<number> => {
+  // 首先检查缓存
+  if (!countCache.qtBookBackups.dirty && 
+      (Date.now() - countCache.qtBookBackups.timestamp < CACHE_TTL)) {
+    return countCache.qtBookBackups.count;
+  }
+  
   console.log(`\n开始分段计数备份数据 (分段数=${segments})`);
   const startTime = performance.now();
   
@@ -703,6 +898,11 @@ export const getQtBookBackupsCountBySegments = async (segments: number = 10): Pr
     // 如果记录少于分段数的两倍，直接使用总数
     if (allKeys.length < segments * 2) {
       const count = allKeys.length;
+      
+      // 更新缓存
+      countCache.qtBookBackups.count = count;
+      countCache.qtBookBackups.timestamp = Date.now();
+      countCache.qtBookBackups.dirty = false;
       
       const endTime = performance.now();
       console.log(`分段计数完成 (记录较少，直接使用精确值): ${count} 条记录`);
@@ -738,6 +938,11 @@ export const getQtBookBackupsCountBySegments = async (segments: number = 10): Pr
     
     // 合计所有分段的计数结果
     const totalCount = segmentCounts.reduce((sum, count) => sum + count, 0);
+    
+    // 更新缓存
+    countCache.qtBookBackups.count = totalCount;
+    countCache.qtBookBackups.timestamp = Date.now();
+    countCache.qtBookBackups.dirty = false;
     
     const endTime = performance.now();
     const timeDiff = endTime - startTime;
