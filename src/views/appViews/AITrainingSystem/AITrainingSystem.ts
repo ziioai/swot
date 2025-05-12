@@ -89,6 +89,11 @@ export default defineComponent({
       if (supplierForm_!=null) { Object.assign(supplierForm, supplierForm_); }
     });
 
+    // UI state management - persistent across sessions
+    const uiData = reactive({
+      activeTabIndex: 0, // Default to first tab (training)
+    });
+
 
 
     const appData = reactive<{
@@ -118,6 +123,18 @@ export default defineComponent({
       await save("trainer", json);
       console.log("json", json);
       console.log("appData.trainer", appData.trainer);
+    };
+
+    // Save UI state to localStorage
+    const saveUiData = async () => {
+      await save("uiData", uiData);
+      toast.add({ 
+        severity: "success", 
+        summary: "UI状态已保存", 
+        detail: `已保存当前标签页索引: ${uiData.activeTabIndex}`, 
+        life: 1000 
+      });
+      console.log("Saved UI data:", uiData);
     };
     
     // Save prompt templates to localStorage
@@ -210,10 +227,20 @@ export default defineComponent({
     };
     // /** lifecycle **/ //
     onMounted(async ()=>{
+      
+      // Load UI data
+      const savedUiData = await load("uiData");
+      if (savedUiData) {
+        Object.assign(uiData, savedUiData);
+        console.log("Loaded UI data:", uiData);
+      }
       await loadAppData();
     });
     onUnmounted(async ()=>{
       await saveAppData();
+      
+      // Save UI data before unmounting
+      await saveUiData();
     });
 
     const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);
@@ -296,15 +323,15 @@ export default defineComponent({
 
 
 
-    // 添加一个激活的标签状态
-    const activeTabIndex = ref(0);
-
     return () =>
       vnd("div", { class: "container mx-auto px-4 py-6" }, [
         vnd(Tabs, {
           // 使用PrimeVue Tabs组件
-          value: activeTabIndex.value,
-          'onUpdate:value': (index: number) => activeTabIndex.value = index,
+          value: uiData.activeTabIndex,
+          'onUpdate:value': (index: number) => {
+            uiData.activeTabIndex = index; // Update the reactive state
+            saveUiData(); // Save UI state when switching tabs
+          },
         }, {
           default: () => [
             vnd(TabList, { class: "mb-3" }, {
@@ -336,6 +363,8 @@ export default defineComponent({
                             vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
                             vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
                             vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
+                            vnd(ToolButton, { label: "logUiData", icon: "pi pi-info", onClick: () => console.log("UI State:", uiData) }),
+                            vnd(ToolButton, { label: "saveUiData", icon: "pi pi-save", onClick: saveUiData }),
                             vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
                             vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
                             vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
