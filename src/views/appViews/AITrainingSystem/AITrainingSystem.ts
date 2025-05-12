@@ -596,7 +596,7 @@ export default defineComponent({
                     }, {
                       default: () => vnd(ChatRecordsPanel, {
                         class: "w-100%",
-                        currentChatId: null,
+                        // currentChatId: null,
                         onSelectChat: (chat: any) => {
                           console.log("选择聊天记录", chat);
                           // 后续可以添加处理选中聊天记录的逻辑
