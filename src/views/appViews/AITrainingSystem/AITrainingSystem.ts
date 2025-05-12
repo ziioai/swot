@@ -16,6 +16,7 @@ import QuestionCard from './QuestionCard';
 import CurrentNotePanel from './CurrentNotePanel';
 import NoteHistoryPanel from './NoteHistoryPanel';
 import StorageInfoPanel from './StorageInfoPanel';
+import ChatRecordsPanel from './ChatRecordsPanel';
 import MemoBoard from './MemoBoard';
 import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
@@ -73,7 +74,7 @@ import { FIE2025_Training_Data_Standardized } from '@data/FIE2025';
 
 export default defineComponent({
   name: "AITrainingSystem",
-  components: { TrainingControlPanel, QuestionCard, CurrentNotePanel, AccuracyPanel },
+  components: { TrainingControlPanel, QuestionCard, CurrentNotePanel, NoteHistoryPanel, ChatRecordsPanel, AccuracyPanel },
   setup() {
     const toast = useToast();
 
@@ -340,6 +341,7 @@ export default defineComponent({
                 vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
                 vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
                 vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => "笔记历史" }),
+                vnd(Tab, { value: 6, pt: { root: { class: 'font-bold' } } }, { default: () => "聊天记录" }),
                 vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => "存储管理" }),
               ]
             }),
@@ -585,7 +587,26 @@ export default defineComponent({
                   ],
                 }),
 
-                // 标签页6: 存储管理
+                // 标签页6: 聊天记录
+                vnd(TabPanel, { value: 6 }, {
+                  default: () => [
+                    vnd(Panel, {
+                      header: "聊天历史记录",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => vnd(ChatRecordsPanel, {
+                        class: "w-100%",
+                        currentChatId: null,
+                        onSelectChat: (chat: any) => {
+                          console.log("选择聊天记录", chat);
+                          // 后续可以添加处理选中聊天记录的逻辑
+                        },
+                      }),
+                    }),
+                  ],
+                }),
+
+                // 标签页7: 存储管理
                 vnd(TabPanel, { value: 5 }, {
                   default: () => [
                     vnd(StorageInfoPanel, {
