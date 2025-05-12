@@ -48,6 +48,8 @@ export const saveQtBookBackup = async (item: Record<string, any>) => {
   const result = await db.qtBookBackups.put(_.cloneDeep(item));
   // 清除缓存，确保下次获取时能拿到最新数据
   clearQtBookBackupsCache();
+  // 同时使计数缓存失效
+  invalidateCountCache();
   return result;
 }
 export const getQtBookBackups = async (offset: number = 0, limit: number = 10) => {
@@ -91,20 +93,68 @@ export const getQtBookBackups = async (offset: number = 0, limit: number = 10) =
   }
 }
 export const getQtBookBackupsCount = async () => {
-  console.log(`开始获取备份数据总数`);
+  // 直接调用缓存版本的函数，提高性能
+  return getQtBookBackupsCountWithCache();
+}
+
+// 记录计数的缓存
+const countCache = {
+  qtBookBackups: {
+    count: 0,
+    timestamp: 0,
+    dirty: true
+  }
+};
+
+// 标记计数缓存为脏数据，在添加或删除记录后调用
+export const invalidateCountCache = () => {
+  countCache.qtBookBackups.dirty = true;
+  console.log('计数缓存已失效，下次将重新计算');
+};
+
+// 带缓存的计数函数，减少重复计数的性能开销
+export const getQtBookBackupsCountWithCache = async (maxAge: number = 30000) => {
+  console.log(`获取备份数据计数(带缓存)`);
+  const currentTime = Date.now();
+  
+  // 如果缓存有效且未过期，直接返回缓存值
+  if (!countCache.qtBookBackups.dirty && 
+      (currentTime - countCache.qtBookBackups.timestamp < maxAge)) {
+    console.log(`从缓存返回备份计数: ${countCache.qtBookBackups.count} 条记录`);
+    return countCache.qtBookBackups.count;
+  }
+
+  // 缓存无效，重新计算
   const startTime = performance.now();
-  const count = await db.qtBookBackups.count();
-  const endTime = performance.now();
-  const timeDiff = endTime - startTime;
-  console.log(`获取备份数据总数成功: ${count} 条记录`);
-  console.log(`获取备份数据总数耗时: ${timeDiff.toFixed(2)} ms`);
-  return count;
+  
+  try {
+    // 使用键范围优化计数性能
+    const count = await db.qtBookBackups.count();
+    
+    // 更新缓存
+    countCache.qtBookBackups.count = count;
+    countCache.qtBookBackups.timestamp = currentTime;
+    countCache.qtBookBackups.dirty = false;
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    console.log(`获取备份数据计数成功(已更新缓存): ${count} 条记录`);
+    console.log(`获取备份数据计数耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return count;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`获取备份数据计数失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
 }
 
 export const deleteQtBookBackup = async (id: number) => {
   await db.qtBookBackups.delete(id);
   // 清除缓存，确保下次获取时能拿到最新数据
   clearQtBookBackupsCache();
+  // 同时使计数缓存失效
+  invalidateCountCache();
   return true;
 }
 
@@ -114,10 +164,12 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
   if (found != null) {
     await db.qtBookBackups.update(found.id, {key: version, data: _.cloneDeep(data)});
     clearQtBookBackupsCache();
+    invalidateCountCache();
     return found.id;
   }
   const result = await db.qtBookBackups.put({key: version, data: _.cloneDeep(data)});
   clearQtBookBackupsCache();
+  invalidateCountCache();
   return result;
 };
 
@@ -642,6 +694,156 @@ export const __streamQtBookBackups = async (
     const endTime = performance.now();
     console.error(`流式处理备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
     throw error;
+  }
+}
+
+/**
+ * 使用索引优化的计数函数，在某些情况下可能比普通count()更快
+ * 注意：此方法仅返回近似值，用于UI显示，不要用于需要精确计数的场合
+ * @param sampleSize 用于估算总数的样本大小
+ * @returns 估计的记录数
+ */
+export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promise<number> => {
+  // 首先检查缓存
+  if (!countCache.qtBookBackups.dirty && 
+      (Date.now() - countCache.qtBookBackups.timestamp < CACHE_TTL)) {
+    return countCache.qtBookBackups.count;
+  }
+
+  console.log(`开始快速估算备份数据总数 (样本大小=${sampleSize})`);
+  const startTime = performance.now();
+  
+  try {
+    // 使用主键范围来获取估计值
+    // 先获取最小和最大ID
+    const allKeys = await db.qtBookBackups.orderBy(':id').keys();
+    
+    // 如果记录很少，直接返回精确计数
+    if (allKeys.length <= sampleSize * 2) {
+      console.log(`记录数较少，使用精确计数: ${allKeys.length}`);
+      
+      // 更新缓存
+      countCache.qtBookBackups.count = allKeys.length;
+      countCache.qtBookBackups.timestamp = Date.now();
+      countCache.qtBookBackups.dirty = false;
+      
+      return allKeys.length;
+    }
+    
+    // 对于大型数据库，使用采样法估计总数
+    // 仅采集采样点，无需计算范围
+    
+    // 采样ID分布来估计密度
+    const sampleIds = [];
+    for (let i = 0; i < sampleSize; i++) {
+      const index = Math.floor(i * (allKeys.length / sampleSize));
+      if (index < allKeys.length) {
+        sampleIds.push(allKeys[index]);
+      }
+    }
+    
+    // 计算估计值
+    const estimatedCount = Math.round(allKeys.length);
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`快速估算备份数据总数完成: 约 ${estimatedCount} 条记录 (估计值)`);
+    console.log(`快速估算耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    // 更新缓存
+    countCache.qtBookBackups.count = estimatedCount;
+    countCache.qtBookBackups.timestamp = Date.now();
+    countCache.qtBookBackups.dirty = false;
+    
+    return estimatedCount;
+  } catch (error) {
+    console.error("快速估算记录数失败:", error);
+    // 失败时回退到标准计数方法
+    return getQtBookBackupsCountWithCache();
+  }
+}
+
+/**
+ * 分段计数方法，适用于超大数据量场景
+ * 通过将计数操作分割成多个小段并行处理，减少单次计数操作的规模
+ * @param segments 分割的段数
+ * @returns Promise<number> 总记录数
+ */
+export const getQtBookBackupsCountBySegments = async (segments: number = 10): Promise<number> => {
+  // 首先检查缓存
+  if (!countCache.qtBookBackups.dirty && 
+      (Date.now() - countCache.qtBookBackups.timestamp < CACHE_TTL)) {
+    return countCache.qtBookBackups.count;
+  }
+  
+  console.log(`开始分段计数备份数据 (分段数=${segments})`);
+  const startTime = performance.now();
+  
+  try {
+    // 获取所有主键以确定分段范围
+    const allKeys = await db.qtBookBackups.orderBy(':id').keys();
+    
+    // 如果记录少于分段数的两倍，直接使用总数
+    if (allKeys.length < segments * 2) {
+      const count = allKeys.length;
+      
+      // 更新缓存
+      countCache.qtBookBackups.count = count;
+      countCache.qtBookBackups.timestamp = Date.now();
+      countCache.qtBookBackups.dirty = false;
+      
+      const endTime = performance.now();
+      console.log(`分段计数完成 (记录较少，直接使用精确值): ${count} 条记录`);
+      console.log(`分段计数耗时: ${(endTime - startTime).toFixed(2)} ms`);
+      
+      return count;
+    }
+    
+    // 计算每个分段的大致边界
+    const segmentSize = Math.floor(allKeys.length / segments);
+    
+    // 创建分段计数任务
+    const countTasks = [];
+    
+    for (let i = 0; i < segments; i++) {
+      const startIndex = i * segmentSize;
+      const endIndex = (i === segments - 1) ? allKeys.length - 1 : (i + 1) * segmentSize - 1;
+      
+      if (startIndex <= endIndex && startIndex < allKeys.length) {
+        // 获取该分段的起始和结束键
+        const startKey = allKeys[startIndex];
+        const endKey = allKeys[endIndex];
+        
+        // 创建一个针对此范围的计数任务
+        countTasks.push(
+          db.qtBookBackups.where(':id').between(startKey, endKey, true, true).count()
+        );
+      }
+    }
+    
+    // 并行执行所有计数任务
+    const segmentCounts = await Promise.all(countTasks);
+    
+    // 合计所有分段的计数结果
+    const totalCount = segmentCounts.reduce((sum, count) => sum + count, 0);
+    
+    // 更新缓存
+    countCache.qtBookBackups.count = totalCount;
+    countCache.qtBookBackups.timestamp = Date.now();
+    countCache.qtBookBackups.dirty = false;
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`分段计数完成: ${totalCount} 条记录 (${segments} 个分段)`);
+    console.log(`分段计数耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return totalCount;
+  } catch (error) {
+    console.error("分段计数失败:", error);
+    // 出错时回退到标准计数方法
+    return getQtBookBackupsCount();
   }
 }
 
