@@ -60,7 +60,7 @@ export const getQtBookBackups = async (offset: number = 0, limit: number = 10) =
     const memoryBefore = (window.performance as any).memory ? 
       (window.performance as any).memory.usedJSHeapSize : 'Not available';
     
-    console.log(`开始获取备份数据 (offset=${offset}, limit=${limit})`);
+    console.log(`\n开始获取备份数据 (offset=${offset}, limit=${limit})`);
     
     // 使用复合查询减少数据传输量，只获取需要的字段
     const backups = await db.qtBookBackups
@@ -179,7 +179,7 @@ export const 记录版本笔记数据 = async (data: any, version?: string) => {
  * @returns 包含存储使用信息的对象
  */
 export const getIDBStorageSize = async () => {
-  console.log(`开始获取存储信息`);
+  console.log(`\n开始获取存储信息`);
   const startTime = performance.now();
   try {
     // 获取表记录数量（用于显示）
@@ -321,7 +321,7 @@ export const clearQtBookBackupsCache = () => {
 export const __getQtBookBackupsOptimized = async (offset: number = 0, limit: number = 10, 
     progressCallback?: (loaded: number, total: number) => void) => {
   const startTime = performance.now();
-  console.log(`开始优化获取备份数据 (offset=${offset}, limit=${limit})`);
+  console.log(`\n开始优化获取备份数据 (offset=${offset}, limit=${limit})`);
   
   try {
     const result: any[] = [];
@@ -391,7 +391,7 @@ export const __getQtBookBackupsProjection = async (
   limit: number = 10
 ) => {
   const startTime = performance.now();
-  console.log(`开始精简查询备份数据 (只获取字段:${fieldNames.join(',')})`);
+  console.log(`\n开始精简查询备份数据 (只获取字段:${fieldNames.join(',')})`);
   
   try {
     // 获取完整记录但手动提取指定字段
@@ -449,7 +449,7 @@ export const __getQtBookBackupsProjection = async (
  */
 export const __getQtBookBackupsLazy = async (offset: number = 0, limit: number = 10) => {
   const startTime = performance.now();
-  console.log(`开始懒加载备份数据索引 (offset=${offset}, limit=${limit})`);
+  console.log(`\n开始懒加载备份数据索引 (offset=${offset}, limit=${limit})`);
   
   try {
     // 首先只获取ID和key等基本信息
@@ -552,7 +552,7 @@ export const __processQtBookBackupsInBatches = async (
   batchSize: number = 50
 ) => {
   const startTime = performance.now();
-  console.log(`开始批处理备份数据 (批大小=${batchSize})`);
+  console.log(`\n开始批处理备份数据 (批大小=${batchSize})`);
   
   try {
     let totalProcessed = 0;
@@ -629,7 +629,7 @@ export const __streamQtBookBackups = async (
   } = options;
   
   const startTime = performance.now();
-  console.log(`开始流式处理备份数据 ${reverse ? '(倒序)' : ''}`);
+  console.log(`\n开始流式处理备份数据 ${reverse ? '(倒序)' : ''}`);
   
   try {
     let processed = 0;
@@ -710,7 +710,7 @@ export const getQtBookBackupsCountFast = async (sampleSize: number = 100): Promi
     return countCache.qtBookBackups.count;
   }
 
-  console.log(`开始快速估算备份数据总数 (样本大小=${sampleSize})`);
+  console.log(`\n开始快速估算备份数据总数 (样本大小=${sampleSize})`);
   const startTime = performance.now();
   
   try {
@@ -777,7 +777,7 @@ export const getQtBookBackupsCountBySegments = async (segments: number = 10): Pr
     return countCache.qtBookBackups.count;
   }
   
-  console.log(`开始分段计数备份数据 (分段数=${segments})`);
+  console.log(`\n开始分段计数备份数据 (分段数=${segments})`);
   const startTime = performance.now();
   
   try {
