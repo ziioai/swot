@@ -36,8 +36,16 @@ export const saveChatRecord = async (item: Record<string, any>) => {
   return result;
 };
 export const getChatRecords = async (offset: number = 0, limit: number = 10) => {
-  const records = await db.chatRecords.orderBy('id').offset(offset).limit(limit).toArray();
+  const records = await db.chatRecords.orderBy('id').reverse().offset(offset).limit(limit).toArray();
   return records;
+};
+export const getChatRecordsCount = async () => {
+  const count = await db.chatRecords.count();
+  return count;
+};
+export const deleteChatRecord = async (id: number) => {
+  await db.chatRecords.delete(id);
+  return true;
 };
 export const 记录调模型时的数据 = async (data: any) => {
   const result = await saveChatRecord({key: nanoid(12), data});
