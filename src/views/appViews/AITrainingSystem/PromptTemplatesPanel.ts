@@ -166,60 +166,66 @@ export default defineComponent({
           ])
         ])
       }),
-      
-      // 笔记介绍和笔记操作介绍 panel
-      vnd(Panel, { 
-        header: "笔记介绍和操作介绍",
-        toggleable: true,
-        class: ["w-full my-1.5rem!", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
-      }, {
-        default: () => vnd("div", { class: "stack-v gap-4" }, [
-          vnd("div", { class: "stack-v gap-2" }, [
-            vnd("div", { class: "flex items-center gap-2 mb-2" }, [
-              vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记介绍标记:"),
-              vnd(InputText, {
-                modelValue: promptTemplates.笔记介绍标记,
-                'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍标记', v),
-                placeholder: "替换标记",
-                class: "w-64 font-mono"
-              })
-            ]),
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "笔记介绍内容，在模板中可用上面定义的替换标记引用。这是笔记格式的定义说明。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.笔记介绍,
-              'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            })
-          ]),
-          vnd("div", { class: "stack-v gap-2 mt-4" }, [
-            vnd("div", { class: "flex items-center gap-2 mb-2" }, [
-              vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记操作介绍标记:"),
-              vnd(InputText, {
-                modelValue: promptTemplates.笔记操作介绍标记,
-                'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍标记', v),
-                placeholder: "替换标记",
-                class: "w-64 font-mono"
-              })
-            ]),
-            vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              "笔记操作介绍内容，在模板中可用上面定义的替换标记引用。这是笔记操作方法的说明。"),
-            vnd(Textarea, {
-              modelValue: promptTemplates.笔记操作介绍,
-              'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍', v),
-              rows: 10,
-              class: "w-full font-mono text-sm",
-              autoResize: true
-            })
-          ])
-        ])
-      }),
-      
+
       // Prompt templates section in a responsive grid
       vnd("div", { class: "w-full grid grid-cols-1 md:grid-cols-2 gap-4" }, [
-        // Left column templates
+
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
+          vnd(Panel, { 
+            header: "笔记介绍",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("div", { class: "flex items-center gap-2 mb-2" }, [
+                vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记介绍标记:"),
+                vnd(InputText, {
+                  modelValue: promptTemplates.笔记介绍标记,
+                  'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍标记', v),
+                  placeholder: "替换标记",
+                  class: "w-64 font-mono"
+                })
+              ]),
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "笔记介绍内容，在模板中可用上面定义的替换标记引用。这是笔记格式的定义说明。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.笔记介绍,
+                'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍', v),
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
+                autoResize: true
+              })
+            ])
+          }),
+        ]),
+
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
+          vnd(Panel, { 
+            header: "笔记操作介绍",
+            toggleable: true,
+            class: ["w-full", "bg-zinc-100/75!", "dark:bg-zinc-800/75!"]
+          }, {
+            default: () => vnd("div", { class: "stack-v gap-2" }, [
+              vnd("div", { class: "flex items-center gap-2 mb-2" }, [
+                vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记操作介绍标记:"),
+                vnd(InputText, {
+                  modelValue: promptTemplates.笔记操作介绍标记,
+                  'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍标记', v),
+                  placeholder: "替换标记",
+                  class: "w-64 font-mono"
+                })
+              ]),
+              vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
+                "笔记操作介绍内容，在模板中可用上面定义的替换标记引用。这是笔记操作方法的说明。"),
+              vnd(Textarea, {
+                modelValue: promptTemplates.笔记操作介绍,
+                'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍', v),
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
+                autoResize: true
+              })
+            ])
+          }),
+        ]),
+
         vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "判断题型模板",
@@ -232,13 +238,14 @@ export default defineComponent({
               vnd(Textarea, {
                 modelValue: promptTemplates.stage0_判断题型,
                 'onUpdate:modelValue': (v: string) => updateTemplate('stage0_判断题型', v),
-                rows: 10,
-                class: "w-full font-mono text-sm",
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
                 autoResize: true
               })
             ])
           }),
-          
+        ]),
+
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "根据笔记做题模板",
             toggleable: true,
@@ -250,15 +257,13 @@ export default defineComponent({
               vnd(Textarea, {
                 modelValue: promptTemplates.stage1_根据笔记做题,
                 'onUpdate:modelValue': (v: string) => updateTemplate('stage1_根据笔记做题', v),
-                rows: 10,
-                class: "w-full font-mono text-sm",
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
                 autoResize: true
               })
             ])
           })
         ]),
-        
-        // Right column templates
+
         vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "根据错题修改笔记模板",
@@ -271,13 +276,14 @@ export default defineComponent({
               vnd(Textarea, {
                 modelValue: promptTemplates.stage2_根据错题修改笔记,
                 'onUpdate:modelValue': (v: string) => updateTemplate('stage2_根据错题修改笔记', v),
-                rows: 10,
-                class: "w-full font-mono text-sm",
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
                 autoResize: true
               })
             ])
           }),
-          
+        ]),
+
+        vnd("div", { class: "col-span-1 md:col-span-1 stack-v gap-4" }, [
           vnd(Panel, { 
             header: "合并对笔记的修改模板",
             toggleable: true,
@@ -289,14 +295,14 @@ export default defineComponent({
               vnd(Textarea, {
                 modelValue: promptTemplates.stage4_合并对笔记的修改,
                 'onUpdate:modelValue': (v: string) => updateTemplate('stage4_合并对笔记的修改', v),
-                rows: 10,
-                class: "w-full font-mono text-sm",
+                class: "w-full font-mono text-sm max-h-80vh min-h-10rem",
                 autoResize: true
               })
             ])
           })
-        ])
-      ])
+        ]),
+
+      ]),
     ]);
   }
 });
