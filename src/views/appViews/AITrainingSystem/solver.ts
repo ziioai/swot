@@ -13,18 +13,33 @@ const produce = (data: any, fn: any) => {
 
 export const promptVersion = "相对认真（v1.7.3）";
 
-// 定义替换标记
-export const NOTE_DESC_TOKEN = "【【【笔记介绍】】】";
-export const NOTE_OPS_TOKEN = "【【【笔记操作介绍】】】";
+// 定义默认替换标记
+export const DEFAULT_NOTE_DESC_TOKEN = "【【【笔记介绍】】】";
+export const DEFAULT_NOTE_OPS_TOKEN = "【【【笔记操作介绍】】】";
 
-// 替换函数：用于将模板中的标记替换为实际内容
-export function replaceTemplateTokens(template: string, noteDesc?: string, noteOps?: string): string {
+// 为了保证向后兼容性，保留原有的标记常量
+export const NOTE_DESC_TOKEN = DEFAULT_NOTE_DESC_TOKEN;
+export const NOTE_OPS_TOKEN = DEFAULT_NOTE_OPS_TOKEN;
+
+// 替换函数：用于将模板中的标记替换为实际内容，支持自定义标记
+export function replaceTemplateTokens(
+  template: string, 
+  noteDesc?: string, 
+  noteOps?: string, 
+  customNoteDescToken?: string, 
+  customNoteOpsToken?: string
+): string {
   let result = template;
+  
+  // 使用自定义的标记或默认标记
+  const noteDescToken = customNoteDescToken || DEFAULT_NOTE_DESC_TOKEN;
+  const noteOpsToken = customNoteOpsToken || DEFAULT_NOTE_OPS_TOKEN;
+  
   if (noteDesc) {
-    result = result.replace(new RegExp(NOTE_DESC_TOKEN, 'g'), noteDesc);
+    result = result.replace(new RegExp(noteDescToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), noteDesc);
   }
   if (noteOps) {
-    result = result.replace(new RegExp(NOTE_OPS_TOKEN, 'g'), noteOps);
+    result = result.replace(new RegExp(noteOpsToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), noteOps);
   }
   return result;
 }
@@ -532,10 +547,31 @@ export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 }
 
-export async function stage2_根据错题修改笔记_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string, customNoteDesc?: string, customNoteOps?: string) {
+export async function stage2_根据错题修改笔记_Process<CR, TT>(
+  dataWrap: any, 
+  supplierForm: any, 
+  onAfterUpdate?: any, 
+  customPrompt?: string, 
+  customNoteDesc?: string, 
+  customNoteOps?: string,
+  customNoteDescToken?: string,
+  customNoteOpsToken?: string
+) {
   const finalPrompt = customPrompt 
-    ? replaceTemplateTokens(customPrompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍)
-    : replaceTemplateTokens(stage2_根据错题修改笔记_prompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍);
+    ? replaceTemplateTokens(
+        customPrompt, 
+        customNoteDesc || 笔记介绍, 
+        customNoteOps || 笔记操作介绍,
+        customNoteDescToken,
+        customNoteOpsToken
+      )
+    : replaceTemplateTokens(
+        stage2_根据错题修改笔记_prompt, 
+        customNoteDesc || 笔记介绍, 
+        customNoteOps || 笔记操作介绍,
+        customNoteDescToken,
+        customNoteOpsToken
+      );
     
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
     finalPrompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
@@ -619,10 +655,31 @@ export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
 }
-export async function stage4_合并对笔记的修改_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string, customNoteDesc?: string, customNoteOps?: string) {
+export async function stage4_合并对笔记的修改_Process<CR, TT>(
+  dataWrap: any, 
+  supplierForm: any, 
+  onAfterUpdate?: any, 
+  customPrompt?: string, 
+  customNoteDesc?: string, 
+  customNoteOps?: string,
+  customNoteDescToken?: string,
+  customNoteOpsToken?: string
+) {
   const finalPrompt = customPrompt 
-    ? replaceTemplateTokens(customPrompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍)
-    : replaceTemplateTokens(stage4_合并对笔记的修改_prompt, customNoteDesc || 笔记介绍, customNoteOps || 笔记操作介绍);
+    ? replaceTemplateTokens(
+        customPrompt, 
+        customNoteDesc || 笔记介绍, 
+        customNoteOps || 笔记操作介绍,
+        customNoteDescToken,
+        customNoteOpsToken
+      )
+    : replaceTemplateTokens(
+        stage4_合并对笔记的修改_prompt, 
+        customNoteDesc || 笔记介绍, 
+        customNoteOps || 笔记操作介绍,
+        customNoteDescToken,
+        customNoteOpsToken
+      );
     
   const that = await 进一步抽象的标准化处理函数<CR, TT>(
     finalPrompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,

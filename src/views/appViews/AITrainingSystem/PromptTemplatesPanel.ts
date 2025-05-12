@@ -18,8 +18,8 @@ import {
   笔记介绍,
   笔记操作介绍,
   promptVersion,
-  NOTE_DESC_TOKEN,
-  NOTE_OPS_TOKEN
+  DEFAULT_NOTE_DESC_TOKEN,
+  DEFAULT_NOTE_OPS_TOKEN
 } from './solver';
 
 export interface PromptTemplates {
@@ -30,6 +30,8 @@ export interface PromptTemplates {
   stage4_合并对笔记的修改: string;
   笔记介绍: string;
   笔记操作介绍: string;
+  笔记介绍标记: string;
+  笔记操作介绍标记: string;
   [key: string]: string;
 }
 
@@ -42,6 +44,8 @@ export function getPromptTemplates(templates: PromptTemplates) {
     stage4_合并对笔记的修改_prompt: templates.stage4_合并对笔记的修改,
     笔记介绍: templates.笔记介绍,
     笔记操作介绍: templates.笔记操作介绍,
+    笔记介绍标记: templates.笔记介绍标记,
+    笔记操作介绍标记: templates.笔记操作介绍标记,
     promptVersion: templates.version
   };
 }
@@ -66,7 +70,9 @@ export default defineComponent({
       stage2_根据错题修改笔记: stage2_根据错题修改笔记_prompt || "",
       stage4_合并对笔记的修改: stage4_合并对笔记的修改_prompt || "",
       笔记介绍: 笔记介绍 || "",
-      笔记操作介绍: 笔记操作介绍 || ""
+      笔记操作介绍: 笔记操作介绍 || "",
+      笔记介绍标记: DEFAULT_NOTE_DESC_TOKEN || "",
+      笔记操作介绍标记: DEFAULT_NOTE_OPS_TOKEN || ""
     });
     
     // Load saved templates if available
@@ -95,6 +101,8 @@ export default defineComponent({
       promptTemplates.stage4_合并对笔记的修改 = stage4_合并对笔记的修改_prompt;
       promptTemplates.笔记介绍 = 笔记介绍;
       promptTemplates.笔记操作介绍 = 笔记操作介绍;
+      promptTemplates.笔记介绍标记 = DEFAULT_NOTE_DESC_TOKEN;
+      promptTemplates.笔记操作介绍标记 = DEFAULT_NOTE_OPS_TOKEN;
       
       emit('update:templates', _.cloneDeep(promptTemplates));
       toast.add({ 
@@ -167,8 +175,17 @@ export default defineComponent({
       }, {
         default: () => vnd("div", { class: "stack-v gap-4" }, [
           vnd("div", { class: "stack-v gap-2" }, [
+            vnd("div", { class: "flex items-center gap-2 mb-2" }, [
+              vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记介绍标记:"),
+              vnd(InputText, {
+                modelValue: promptTemplates.笔记介绍标记,
+                'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍标记', v),
+                placeholder: "替换标记",
+                class: "w-64 font-mono"
+              })
+            ]),
             vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              `笔记介绍内容，在模板中可用 ${NOTE_DESC_TOKEN} 替换标记引用。这是笔记格式的定义说明。`),
+              "笔记介绍内容，在模板中可用上面定义的替换标记引用。这是笔记格式的定义说明。"),
             vnd(Textarea, {
               modelValue: promptTemplates.笔记介绍,
               'onUpdate:modelValue': (v: string) => updateTemplate('笔记介绍', v),
@@ -178,8 +195,17 @@ export default defineComponent({
             })
           ]),
           vnd("div", { class: "stack-v gap-2 mt-4" }, [
+            vnd("div", { class: "flex items-center gap-2 mb-2" }, [
+              vnd("span", { class: "text-sm text-gray-600 dark:text-gray-400" }, "笔记操作介绍标记:"),
+              vnd(InputText, {
+                modelValue: promptTemplates.笔记操作介绍标记,
+                'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍标记', v),
+                placeholder: "替换标记",
+                class: "w-64 font-mono"
+              })
+            ]),
             vnd("p", { class: "text-sm text-gray-600 dark:text-gray-400" },
-              `笔记操作介绍内容，在模板中可用 ${NOTE_OPS_TOKEN} 替换标记引用。这是笔记操作方法的说明。`),
+              "笔记操作介绍内容，在模板中可用上面定义的替换标记引用。这是笔记操作方法的说明。"),
             vnd(Textarea, {
               modelValue: promptTemplates.笔记操作介绍,
               'onUpdate:modelValue': (v: string) => updateTemplate('笔记操作介绍', v),

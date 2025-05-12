@@ -342,7 +342,9 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
         },
         swot.customPrompts?.stage4_合并对笔记的修改_prompt,
         swot.customPrompts?.笔记介绍,
-        swot.customPrompts?.笔记操作介绍
+        swot.customPrompts?.笔记操作介绍,
+        swot.customPrompts?.笔记介绍标记,
+        swot.customPrompts?.笔记操作介绍标记
       );
       swot.state.notebookEditPlan.outputData = dataWrap.outputData;
       播放坠落声();
@@ -600,7 +602,9 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
     },
     swot.customPrompts?.stage2_根据错题修改笔记_prompt,
     swot.customPrompts?.笔记介绍,
-    swot.customPrompts?.笔记操作介绍
+    swot.customPrompts?.笔记操作介绍,
+    swot.customPrompts?.笔记介绍标记,
+    swot.customPrompts?.笔记操作介绍标记
   );
   await swot?.signalFn?.(`错误已分析了吗[${quEntry.nnid}]`, "warn", 3000);
   记录调模型时的数据({
@@ -703,6 +707,8 @@ export class SWOT {
     stage4_合并对笔记的修改_prompt?: string;
     笔记介绍?: string;
     笔记操作介绍?: string;
+    笔记介绍标记?: string;
+    笔记操作介绍标记?: string;
     promptVersion?: string;
   } = {};
 
@@ -762,6 +768,8 @@ export class SWOT {
       stage4_合并对笔记的修改_prompt: templates.stage4_合并对笔记的修改 || undefined,
       笔记介绍: templates.笔记介绍 || undefined,
       笔记操作介绍: templates.笔记操作介绍 || undefined,
+      笔记介绍标记: templates.笔记介绍标记 || undefined,
+      笔记操作介绍标记: templates.笔记操作介绍标记 || undefined,
       promptVersion: templates.version || undefined
     };
   }

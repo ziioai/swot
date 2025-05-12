@@ -57,8 +57,8 @@ import {
   笔记介绍,
   笔记操作介绍,
   promptVersion,
-  // NOTE_DESC_TOKEN,
-  // NOTE_OPS_TOKEN
+  DEFAULT_NOTE_DESC_TOKEN,
+  DEFAULT_NOTE_OPS_TOKEN
 } from './solver';
 
 import {
@@ -186,7 +186,9 @@ export default defineComponent({
           stage2_根据错题修改笔记: stage2_根据错题修改笔记_prompt,
           stage4_合并对笔记的修改: stage4_合并对笔记的修改_prompt,
           笔记介绍: 笔记介绍,
-          笔记操作介绍: 笔记操作介绍
+          笔记操作介绍: 笔记操作介绍,
+          笔记介绍标记: DEFAULT_NOTE_DESC_TOKEN,
+          笔记操作介绍标记: DEFAULT_NOTE_OPS_TOKEN
         };
         // Apply default templates to trainer
         if (appData.trainer) {
