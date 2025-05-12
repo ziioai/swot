@@ -13,10 +13,18 @@ import * as zipson from "zipson";
 import Dexie, { Table } from 'dexie';
 
 const ddb = new Dexie('DB-of-SWOT-Demo');
+// 初始版本定义
 ddb.version(1).stores({
   kvs: '++id, &key, value',
   chatRecords: '++id, &key',
   qtBookBackups: '++id, &key',
+});
+
+// 升级版本2，添加isMarked字段索引
+ddb.version(2).stores({
+  kvs: '++id, &key, value',
+  chatRecords: '++id, &key, isMarked', // 添加isMarked字段索引
+  qtBookBackups: '++id, &key, isMarked', // 添加isMarked字段索引
 });
 
 export default ddb;
@@ -786,6 +794,38 @@ export const updateChatRecordMark = async (id: number, isMarked: boolean) => {
 };
 
 /**
+ * 更新笔记备份的标记状态
+ * @param id 笔记备份的ID
+ * @param isMarked 是否标记
+ * @returns 更新后的笔记备份ID
+ */
+export const updateQtBookBackupMark = async (id: number, isMarked: boolean) => {
+  console.log(`更新笔记备份标记状态: ID=${id}, isMarked=${isMarked}`);
+  const startTime = performance.now();
+  
+  try {
+    // 获取现有记录
+    const record = await db.qtBookBackups.get(id);
+    if (!record) {
+      console.error(`笔记备份不存在: ID=${id}`);
+      return null;
+    }
+    
+    // 更新标记状态
+    await db.qtBookBackups.update(id, { isMarked });
+    
+    const endTime = performance.now();
+    console.log(`更新笔记备份标记状态成功: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+    
+    return id;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`更新笔记备份标记状态失败: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+};
+
+/**
  * 批量删除聊天记录 - 针对大数据量优化
  * 使用分批处理和游标，避免一次性加载所有数据到内存中
  * @param condition 删除条件，可以是一个过滤函数或特定属性值
@@ -920,6 +960,140 @@ export const batchDeleteChatRecords = async (
 };
 
 /**
+ * 批量删除笔记备份记录 - 针对大数据量优化
+ * 使用分批处理和游标，避免一次性加载所有数据到内存中
+ * @param condition 删除条件，可以是一个过滤函数或特定属性值
+ * @param options 批处理选项
+ * @returns 删除的记录数量
+ */
+export const batchDeleteQtBookBackups = async (
+  condition: ((record: any) => boolean) | { isMarked?: boolean },
+  options: {
+    batchSize?: number;  // 每批处理的记录数
+    progressCallback?: (processed: number, total: number) => void;  // 进度回调
+  } = {}
+) => {
+  const { 
+    batchSize = 100,  // 默认每批100条记录
+    progressCallback 
+  } = options;
+  
+  console.log(`开始批量删除笔记备份: 条件=`, condition, `批大小=${batchSize}`);
+  const startTime = performance.now();
+  
+  try {
+    // 获取总记录数用于进度报告
+    const totalCount = await db.qtBookBackups.count();
+    if (totalCount === 0) {
+      console.log('数据库中无笔记备份记录，无需删除');
+      return 0;
+    }
+    
+    let totalDeleted = 0;
+    let processedCount = 0;
+    let lastReportTime = Date.now();
+    
+    // 处理isMarked条件的特殊情况
+    if (typeof condition !== 'function' && 'isMarked' in condition) {
+      const isMarked = condition.isMarked;
+      let recordsToDelete: any[] = [];
+      
+      // 创建一个查询过滤器，直接在数据库层过滤
+      // 注意：Dexie的where查询对undefined值有限制，所以我们需要分情况处理
+      if (isMarked === true) {
+        // 查找被标记的记录
+        recordsToDelete = await db.qtBookBackups.filter(record => record.isMarked === true).toArray();
+      } else {
+        // 查找未标记的记录或isMarked字段不存在的记录
+        recordsToDelete = await db.qtBookBackups.filter(record => record.isMarked !== true).toArray();
+      }
+      
+      // 如果没有匹配的记录，直接返回
+      if (recordsToDelete.length === 0) {
+        console.log(`没有找到符合条件(isMarked=${isMarked})的笔记备份记录，无需删除`);
+        return 0;
+      }
+      
+      // 获取要删除的ID列表
+      const idsToDelete = recordsToDelete.map(record => record.id);
+      
+      // 分批删除
+      for (let i = 0; i < idsToDelete.length; i += batchSize) {
+        const batchIds = idsToDelete.slice(i, i + batchSize);
+        await db.qtBookBackups.bulkDelete(batchIds);
+        
+        // 更新进度
+        totalDeleted += batchIds.length;
+        processedCount += batchIds.length;
+        
+        // 定期报告进度（每秒最多一次，避免UI卡顿）
+        const now = Date.now();
+        if (progressCallback && (now - lastReportTime > 1000 || processedCount === totalCount)) {
+          progressCallback(processedCount, totalCount);
+          lastReportTime = now;
+        }
+        
+        // 记录进度日志
+        console.log(`批量删除笔记备份进度: ${processedCount}/${totalCount} (${((processedCount / totalCount) * 100).toFixed(2)}%), ` +
+          `已删除: ${totalDeleted}`);
+      }
+    } else {
+      // 对于更复杂的条件，使用游标分批处理
+      let hasMore = true;
+      let currentBatch: any[] = [];
+      
+      while (hasMore) {
+        // 获取下一批数据
+        currentBatch = await db.qtBookBackups
+          .offset(processedCount)
+          .limit(batchSize)
+          .toArray();
+        
+        // 检查是否还有更多数据
+        if (currentBatch.length < batchSize) {
+          hasMore = false;
+        }
+        
+        // 应用条件过滤
+        const batchToDelete = typeof condition === 'function' 
+          ? currentBatch.filter(condition) 
+          : [];
+        
+        // 更新处理计数
+        processedCount += currentBatch.length;
+        
+        // 如果有符合条件的记录，删除它们
+        if (batchToDelete.length > 0) {
+          const batchIds = batchToDelete.map(record => record.id);
+          await db.qtBookBackups.bulkDelete(batchIds);
+          totalDeleted += batchToDelete.length;
+        }
+        
+        // 定期报告进度
+        const now = Date.now();
+        if (progressCallback && (now - lastReportTime > 1000 || !hasMore)) {
+          progressCallback(processedCount, totalCount);
+          lastReportTime = now;
+        }
+        
+        // 记录进度日志
+        console.log(`批量处理笔记备份进度: ${processedCount}/${totalCount} (${((processedCount / totalCount) * 100).toFixed(2)}%), ` +
+          `已删除: ${totalDeleted}`);
+      }
+    }
+    
+    const endTime = performance.now();
+    console.log(`批量删除笔记备份成功: 共删除了${totalDeleted}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+    
+    return totalDeleted;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`批量删除笔记备份失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+};
+
+/**
  * 删除所有聊天记录 - 支持大数据量情况
  * @param options 操作选项
  * @returns 删除的记录数量
@@ -992,6 +1166,83 @@ export const deleteAllChatRecords = async (options: {
   } catch (error) {
     const endTime = performance.now();
     console.error(`删除所有聊天记录失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+};
+
+/**
+ * 删除所有笔记备份 - 支持大数据量情况
+ * @param options 操作选项
+ * @returns 删除的记录数量
+ */
+export const deleteAllQtBookBackups = async (options: {
+  progressCallback?: (processed: number, total: number) => void;
+  useClear?: boolean; // 是否使用clear方法（适用于小数据量）
+} = {}) => {
+  const { progressCallback, useClear = false } = options;
+  console.log(`开始删除所有笔记备份 ${useClear ? '(使用clear方法)' : '(使用批量删除)'}`);
+  const startTime = performance.now();
+  
+  try {
+    // 获取记录数量用于返回和进度报告
+    const count = await db.qtBookBackups.count();
+    if (count === 0) {
+      console.log('数据库中无笔记备份记录，无需删除');
+      return 0;
+    }
+    
+    if (useClear) {
+      // 对于小数据量，直接使用clear方法更高效
+      await db.qtBookBackups.clear();
+      
+      if (progressCallback) {
+        progressCallback(count, count);
+      }
+      
+      const endTime = performance.now();
+      console.log(`删除所有笔记备份成功: 删除了${count}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+      
+      return count;
+    } else {
+      // 对于大数据量，使用分批删除以避免锁定UI线程太长时间
+      const batchSize = 1000; // 每批删除1000条记录
+      let deletedCount = 0;
+      let lastReportTime = Date.now();
+      
+      // 使用分批删除，保持用户界面响应
+      while (deletedCount < count) {
+        // 获取下一批要删除的ID
+        const keysToDelete = await db.qtBookBackups
+          .orderBy('id')
+          .limit(batchSize)
+          .primaryKeys();
+        
+        if (keysToDelete.length > 0) {
+          // 批量删除这批记录
+          await db.qtBookBackups.bulkDelete(keysToDelete as number[]);
+          deletedCount += keysToDelete.length;
+          
+          // 更新进度（限制更新频率）
+          const now = Date.now();
+          if (progressCallback && (now - lastReportTime > 1000 || deletedCount >= count)) {
+            progressCallback(deletedCount, count);
+            lastReportTime = now;
+          }
+          
+          console.log(`删除笔记备份进度: ${deletedCount}/${count} (${((deletedCount / count) * 100).toFixed(2)}%)`);
+        } else {
+          break; // 没有更多记录了
+        }
+      }
+      
+      const endTime = performance.now();
+      console.log(`批量删除所有笔记备份成功: 删除了${deletedCount}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+      
+      return deletedCount;
+    }
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`删除所有笔记备份失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
     throw error;
   }
 };
