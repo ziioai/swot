@@ -231,7 +231,7 @@ const CACHE_TTL = 30000; // 缓存有效期，单位毫秒（30秒）
 /**
  * 获取备份数据的缓存版本，可以显著提高重复查询的性能
  */
-export const getQtBookBackupsWithCache = async (offset: number = 0, limit: number = 10) => {
+export const __getQtBookBackupsWithCache = async (offset: number = 0, limit: number = 10) => {
   const cacheKey = `backups_${offset}_${limit}`;
   const currentTime = Date.now();
   const cachedResult = backupsCache.get(cacheKey);
@@ -261,5 +261,388 @@ export const clearQtBookBackupsCache = () => {
   backupsCache.clear();
   console.log('备份数据缓存已清除');
 };
+
+/**
+ * 优化版本的备份获取函数，使用游标增量处理大数据集
+ * 相比一次性加载所有数据，这种方法可以减少内存使用并提高性能
+ */
+export const __getQtBookBackupsOptimized = async (offset: number = 0, limit: number = 10, 
+    progressCallback?: (loaded: number, total: number) => void) => {
+  const startTime = performance.now();
+  console.log(`开始优化获取备份数据 (offset=${offset}, limit=${limit})`);
+  
+  try {
+    const result: any[] = [];
+    let currentIndex = 0;
+    let skipped = 0;
+    
+    // 首先获取总数用于进度报告
+    const totalCount = await db.qtBookBackups.count();
+    
+    // 使用游标API以流式处理大量数据
+    await db.qtBookBackups
+      .orderBy('id')
+      .reverse()
+      .until(() => {
+        // 达到目标数量时停止
+        return result.length >= limit;
+      })
+      .eachPrimaryKey(() => {
+        // 处理offset
+        if (skipped < offset) {
+          skipped++;
+          return;
+        }
+        
+        // 只收集需要的记录
+        if (result.length < limit) {
+          currentIndex++;
+          result.push({}); // 仅用于计数
+          // 报告进度
+          if (progressCallback) {
+            progressCallback(currentIndex, Math.min(limit, totalCount - offset));
+          }
+        }
+      });
+    
+    // 分批次查询实际记录，避免一次性加载全部数据
+    // 获取offset之后的limit条记录
+    const backups = await db.qtBookBackups
+      .orderBy('id')
+      .reverse()
+      .offset(offset)
+      .limit(limit)
+      .toArray();
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`优化获取备份数据成功: ${backups.length} 条记录`);
+    console.log(`优化获取备份数据耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return backups;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`优化获取备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+}
+
+/**
+ * 使用精简查询的备份获取，手动提取所需字段以减少数据传输
+ * 当你只需要记录的部分字段时，这种方法可以显著提升性能
+ * @param fieldNames 要获取的字段数组
+ */
+export const __getQtBookBackupsProjection = async (
+  fieldNames: string[] = ['id', 'key'], 
+  offset: number = 0, 
+  limit: number = 10
+) => {
+  const startTime = performance.now();
+  console.log(`开始精简查询备份数据 (只获取字段:${fieldNames.join(',')})`);
+  
+  try {
+    // 获取完整记录但手动提取指定字段
+    const fullBackups = await db.qtBookBackups
+      .orderBy('id')
+      .reverse()
+      .offset(offset)
+      .limit(limit)
+      .toArray();
+    
+    // 手动进行字段投影，只保留需要的字段
+    const projectedBackups = fullBackups.map(backup => {
+      const result: Record<string, any> = {};
+      fieldNames.forEach(field => {
+        // 处理嵌套字段路径，例如 'data.version'
+        if (field.includes('.')) {
+          const parts = field.split('.');
+          let currentObj: any = backup;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (currentObj && typeof currentObj === 'object') {
+              currentObj = currentObj[parts[i]];
+            } else {
+              currentObj = null;
+              break;
+            }
+          }
+          
+          const lastPart = parts[parts.length - 1];
+          result[field] = currentObj && typeof currentObj === 'object' ? 
+              currentObj[lastPart] : null;
+        } else {
+          result[field] = backup[field];
+        }
+      });
+      return result;
+    });
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`精简查询备份数据成功: ${projectedBackups.length} 条记录`);
+    console.log(`精简查询备份数据耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return projectedBackups;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`精简查询备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+}
+
+/**
+ * 懒加载版本的备份获取器，适用于显示大量记录但只需要异步加载详细内容的场景
+ * 返回的对象包含一个加载详细数据的方法，可以按需调用
+ */
+export const __getQtBookBackupsLazy = async (offset: number = 0, limit: number = 10) => {
+  const startTime = performance.now();
+  console.log(`开始懒加载备份数据索引 (offset=${offset}, limit=${limit})`);
+  
+  try {
+    // 首先只获取ID和key等基本信息
+    const backupIndexes = await db.qtBookBackups
+      .orderBy('id')
+      .reverse()
+      .offset(offset)
+      .limit(limit)
+      .toArray();
+    
+    // 为每个结果添加懒加载方法
+    const lazyResults = backupIndexes.map(backup => {
+      // 创建一个不含data字段的浅复制对象
+      const { data, ...basicInfo } = backup;
+      
+      // 添加异步获取完整数据的方法
+      return {
+        ...basicInfo,
+        // 添加一个标记表明数据是否已加载
+        _dataLoaded: false,
+        // 添加详细信息获取器
+        async loadFullData() {
+          if (this._dataLoaded) return this;
+          
+          console.log(`懒加载备份 ID=${basicInfo.id} 的详细数据`);
+          const fullBackup = await db.qtBookBackups.get(basicInfo.id);
+          
+          if (fullBackup) {
+            // 把所有详细字段合并到当前对象
+            Object.assign(this, fullBackup);
+            this._dataLoaded = true;
+          }
+          
+          return this;
+        },
+        // 如果只需要data中的特定字段，可以用这个更高效的方法
+        async loadDataField(fieldPath: string): Promise<any> {
+          // 如果数据已加载，直接从当前对象获取
+          if (this._dataLoaded) {
+            // 从路径中获取字段值
+            const parts = fieldPath.split('.');
+            let value: any = this;
+            
+            for (const part of parts) {
+              if (value && typeof value === 'object') {
+                value = value[part];
+              } else {
+                return undefined;
+              }
+            }
+            return value;
+          }
+          
+          console.log(`懒加载备份 ID=${basicInfo.id} 的特定字段: ${fieldPath}`);
+          const fullBackup = await db.qtBookBackups.get(basicInfo.id);
+          
+          if (fullBackup) {
+            // 从路径中获取字段值
+            const parts = fieldPath.split('.');
+            let value: any = fullBackup;
+            
+            for (const part of parts) {
+              if (value && typeof value === 'object') {
+                value = value[part];
+              } else {
+                return undefined;
+              }
+            }
+            
+            return value;
+          }
+          
+          return undefined;
+        }
+      };
+    });
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`懒加载备份索引成功: ${lazyResults.length} 条记录`);
+    console.log(`懒加载备份索引耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return lazyResults;
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`懒加载备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+}
+
+/**
+ * 批处理函数：按批次处理大量数据，适用于需要遍历整个表但内存有限的场景
+ * 该函数会自动分批处理所有记录，而不是一次性加载全部数据
+ * @param batchCallback 每批数据的处理函数
+ * @param batchSize 每批处理的记录数量
+ */
+export const __processQtBookBackupsInBatches = async (
+  batchCallback: (batch: any[], batchIndex: number) => Promise<void> | void,
+  batchSize: number = 50
+) => {
+  const startTime = performance.now();
+  console.log(`开始批处理备份数据 (批大小=${batchSize})`);
+  
+  try {
+    let totalProcessed = 0;
+    let batchIndex = 0;
+    let hasMore = true;
+    
+    // 获取总记录数用于显示进度
+    const totalCount = await db.qtBookBackups.count();
+    
+    while (hasMore) {
+      // 获取一批数据
+      const batch = await db.qtBookBackups
+        .orderBy('id')
+        .offset(batchIndex * batchSize)
+        .limit(batchSize)
+        .toArray();
+      
+      // 如果没有数据了，退出循环
+      if (batch.length === 0) {
+        hasMore = false;
+        continue;
+      }
+      
+      // 处理这一批数据
+      await batchCallback(batch, batchIndex);
+      
+      // 更新计数和批次索引
+      totalProcessed += batch.length;
+      batchIndex++;
+      
+      // 显示进度
+      console.log(`批处理进度: ${totalProcessed}/${totalCount} (${((totalProcessed / totalCount) * 100).toFixed(2)}%)`);
+      
+      // 如果这批数据不足一批，说明已经处理完所有数据
+      if (batch.length < batchSize) {
+        hasMore = false;
+      }
+    }
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`批处理备份数据完成，共处理 ${totalProcessed} 条记录`);
+    console.log(`批处理总耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return { totalProcessed };
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`批处理备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+}
+
+/**
+ * 流式处理函数：一次处理一条记录，适用于处理大量数据但不需要同时访问多条记录的场景
+ * 该函数可以最大限度地减少内存使用，因为它一次只加载一条记录
+ * @param recordProcessor 对每条记录的处理函数
+ * @param options 流式处理选项
+ */
+export const __streamQtBookBackups = async (
+  recordProcessor: (record: any, index: number) => Promise<boolean | void> | boolean | void,
+  options: {
+    reverse?: boolean,    // 是否倒序处理
+    limit?: number,       // 处理的最大记录数
+    filter?: (record: any) => boolean, // 过滤函数
+    progressInterval?: number // 多少条记录显示一次进度
+  } = {}
+) => {
+  const { 
+    reverse = false, 
+    limit,
+    filter,
+    progressInterval = 100
+  } = options;
+  
+  const startTime = performance.now();
+  console.log(`开始流式处理备份数据 ${reverse ? '(倒序)' : ''}`);
+  
+  try {
+    let processed = 0;
+    let skipped = 0;
+    let shouldContinue = true;
+    
+    // 获取总记录数用于进度显示
+    const totalCount = await db.qtBookBackups.count();
+    
+    // 创建一个查询对象
+    let query = db.qtBookBackups.orderBy('id');
+    if (reverse) {
+      query = query.reverse();
+    }
+    
+    // 使用eachPrimaryKey而不是each可以大幅减少内存使用
+    await query.eachPrimaryKey(async (id) => {
+      // 如果达到限制或者处理器返回false，则停止处理
+      if (!shouldContinue || (limit !== undefined && processed >= limit)) {
+        return false;
+      }
+      
+      // 逐个获取记录而不是一次性加载
+      const record = await db.qtBookBackups.get(id);
+      
+      // 如果设置了过滤器且记录不匹配，则跳过
+      if (filter && !filter(record)) {
+        skipped++;
+        return; // 继续处理下一条
+      }
+      
+      // 处理记录
+      const result = await recordProcessor(record, processed);
+      processed++;
+      
+      // 如果处理函数返回false，停止处理
+      if (result === false) {
+        shouldContinue = false;
+        return false;
+      }
+      
+      // 定期显示进度
+      if (processed % progressInterval === 0) {
+        const currentTime = performance.now();
+        const elapsedSeconds = (currentTime - startTime) / 1000;
+        const recordsPerSecond = processed / elapsedSeconds;
+        
+        console.log(`流处理进度: ${processed}/${totalCount} (${((processed / totalCount) * 100).toFixed(2)}%), ` +
+          `速度: ${recordsPerSecond.toFixed(2)} 记录/秒, ` +
+          `已跳过: ${skipped} 条记录`);
+      }
+    });
+    
+    const endTime = performance.now();
+    const timeDiff = endTime - startTime;
+    
+    console.log(`流式处理完成，共处理 ${processed} 条记录，跳过 ${skipped} 条记录`);
+    console.log(`流式处理总耗时: ${timeDiff.toFixed(2)} ms`);
+    
+    return { processed, skipped };
+  } catch (error) {
+    const endTime = performance.now();
+    console.error(`流式处理备份数据失败，耗时 ${(endTime - startTime).toFixed(2)} ms`, error);
+    throw error;
+  }
+}
 
 
