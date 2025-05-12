@@ -7,7 +7,15 @@ import Panel from 'primevue/panel';
 import Paginator from 'primevue/paginator';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
-import { getChatRecords, saveChatRecord, getChatRecordsCount, deleteChatRecord } from './swot-db-functions';
+import { 
+  getChatRecords, 
+  saveChatRecord, 
+  getChatRecordsCount, 
+  deleteChatRecord,
+  updateChatRecordMark,
+  batchDeleteChatRecords,
+  deleteAllChatRecords
+} from './swot-db-functions';
 import { sleep } from '@utils/functions';
 
 export default defineComponent({
@@ -24,6 +32,18 @@ export default defineComponent({
     const rows = ref(10);
     const selectedChat = ref<any>(null);
     const showChatDialog = ref(false);
+    
+    // 确认对话框相关状态
+    const showConfirmDialog = ref(false);
+    const confirmDialogTitle = ref("");
+    const confirmDialogMessage = ref("");
+    const confirmAction = ref<() => Promise<void>>(() => Promise.resolve());
+    
+    // 批量操作进度状态
+    const batchOperationInProgress = ref(false);
+    const batchOperationProgress = ref(0);
+    const batchOperationTotal = ref(0);
+    const batchOperationMessage = ref("");
     
     // Load chat records with pagination using requestIdleCallback for optimization
     const loadChatRecords = async (updateTotalCount = true) => {
@@ -122,6 +142,14 @@ export default defineComponent({
       }
     };
     
+    // 显示确认对话框并设置确认后的操作
+    const showConfirm = (title: string, message: string, action: () => Promise<void>) => {
+      confirmDialogTitle.value = title;
+      confirmDialogMessage.value = message;
+      confirmAction.value = action;
+      showConfirmDialog.value = true;
+    };
+    
     // Extract formatted chat content for display
     const getChatSummary = (chat: any) => {
       if (!chat?.data) return '无内容';
@@ -178,8 +206,8 @@ export default defineComponent({
           vnd("div", { class: "font-bold" }, ["聊天历史记录"]),
         ]),
         default: () => vnd("div", { class: [] }, [
-          // Refresh and Demo buttons
-          vnd("div", { class: ["stack-h mb-2"] }, [
+          // Action buttons
+          vnd("div", { class: ["stack-h mb-2 flex-wrap gap-1"] }, [
             vnd(ToolButton, { 
               label: "刷新", 
               icon: "pi pi-refresh", 
@@ -214,10 +242,140 @@ export default defineComponent({
                 }
               }
             }),
+            // 批量操作按钮
+            vnd(ToolButton, { 
+              label: "删除已标记", 
+              icon: "pi pi-bookmark",
+              class: "p-button-danger ml-2",
+              disabled: batchOperationInProgress.value,
+              onClick: () => {
+                showConfirm(
+                  "删除所有已标记的记录",
+                  "确定要删除所有已标记的聊天记录吗？此操作不可撤销。",
+                  async () => {
+                    try {
+                      batchOperationInProgress.value = true;
+                      batchOperationMessage.value = "正在删除已标记记录...";
+                      batchOperationProgress.value = 0;
+                      batchOperationTotal.value = 0;
+                      
+                      const count = await batchDeleteChatRecords({ isMarked: true }, {
+                        progressCallback: (processed, total) => {
+                          batchOperationProgress.value = processed;
+                          batchOperationTotal.value = total;
+                        }
+                      });
+                      
+                      console.log(`成功删除 ${count} 条已标记记录`);
+                      batchOperationMessage.value = `成功删除 ${count} 条已标记记录`;
+                      reload(); // 刷新列表
+                    } catch (error: any) {
+                      console.error("删除已标记记录失败:", error);
+                      batchOperationMessage.value = `删除失败: ${error?.message || '未知错误'}`;
+                    } finally {
+                      setTimeout(() => {
+                        batchOperationInProgress.value = false;
+                      }, 1500);
+                    }
+                  }
+                );
+              }
+            }),
+            vnd(ToolButton, { 
+              label: "删除未标记", 
+              icon: "pi pi-bookmark-fill",
+              class: "p-button-warning",
+              disabled: batchOperationInProgress.value,
+              onClick: () => {
+                showConfirm(
+                  "删除所有未标记的记录",
+                  "确定要删除所有未标记的聊天记录吗？此操作不可撤销。",
+                  async () => {
+                    try {
+                      batchOperationInProgress.value = true;
+                      batchOperationMessage.value = "正在删除未标记记录...";
+                      batchOperationProgress.value = 0;
+                      batchOperationTotal.value = 0;
+                      
+                      const count = await batchDeleteChatRecords({ isMarked: false }, {
+                        progressCallback: (processed, total) => {
+                          batchOperationProgress.value = processed;
+                          batchOperationTotal.value = total;
+                        }
+                      });
+                      
+                      console.log(`成功删除 ${count} 条未标记记录`);
+                      batchOperationMessage.value = `成功删除 ${count} 条未标记记录`;
+                      reload(); // 刷新列表
+                    } catch (error: any) {
+                      console.error("删除未标记记录失败:", error);
+                      batchOperationMessage.value = `删除失败: ${error?.message || '未知错误'}`;
+                    } finally {
+                      setTimeout(() => {
+                        batchOperationInProgress.value = false;
+                      }, 1500);
+                    }
+                  }
+                );
+              }
+            }),
+            vnd(ToolButton, { 
+              label: "删除全部", 
+              icon: "pi pi-trash",
+              class: "p-button-danger",
+              disabled: batchOperationInProgress.value,
+              onClick: () => {
+                showConfirm(
+                  "删除所有记录",
+                  "确定要删除所有聊天记录吗？此操作不可撤销。",
+                  async () => {
+                    try {
+                      batchOperationInProgress.value = true;
+                      batchOperationMessage.value = "正在删除所有记录...";
+                      batchOperationProgress.value = 0;
+                      batchOperationTotal.value = 0;
+                      
+                      const count = await deleteAllChatRecords({
+                        useClear: false, // 使用分批删除而不是clear方法，以支持大数据量
+                        progressCallback: (processed, total) => {
+                          batchOperationProgress.value = processed;
+                          batchOperationTotal.value = total;
+                        }
+                      });
+                      
+                      console.log(`成功删除全部 ${count} 条记录`);
+                      batchOperationMessage.value = `成功删除全部 ${count} 条记录`;
+                      reload(); // 刷新列表
+                    } catch (error: any) {
+                      console.error("删除所有记录失败:", error);
+                      batchOperationMessage.value = `删除失败: ${error?.message || '未知错误'}`;
+                    } finally {
+                      setTimeout(() => {
+                        batchOperationInProgress.value = false;
+                      }, 1500);
+                    }
+                  }
+                );
+              }
+            }),
           ]),
           
           // Loading indicator
           loading.value && vnd("div", { class: "my-2 text-center" }, ["加载中..."]),
+          
+          // Batch operation progress
+          batchOperationInProgress.value && vnd("div", { class: "my-2" }, [
+            vnd("div", { class: "text-center mb-1" }, [batchOperationMessage.value]),
+            vnd("div", { class: "w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700" }, [
+              vnd("div", { 
+                class: "bg-blue-600 h-2.5 rounded-full transition-all duration-300", 
+                style: { width: `${batchOperationTotal.value ? (batchOperationProgress.value / batchOperationTotal.value) * 100 : 0}%` }
+              })
+            ]),
+            batchOperationTotal.value > 0 && vnd("div", { class: "text-xs text-center mt-1" }, [
+              `${batchOperationProgress.value} / ${batchOperationTotal.value} (${Math.round((batchOperationProgress.value / batchOperationTotal.value) * 100)}%)`
+            ])
+          ]),
           
           // Simple custom table implementation
           !loading.value && vnd("div", { class: "border-1 border-gray-200 dark:border-gray-700 rounded overflow-hidden" }, [
@@ -257,6 +415,25 @@ export default defineComponent({
                       onClick: () => loadChat(item)
                     }),
                     vnd(ToolButton, {
+                      icon: item.isMarked ? "pi pi-bookmark-fill" : "pi pi-bookmark",
+                      tip: item.isMarked ? "取消标记" : "标记",
+                      class: item.isMarked ? "p-button-success" : "",
+                      onClick: async () => {
+                        try {
+                          const newIsMarkedValue = !item.isMarked;
+                          await updateChatRecordMark(item.id, newIsMarkedValue);
+                          
+                          // 更新本地数据，避免重新加载整个列表
+                          const index = chatRecords.value.findIndex(record => record.id === item.id);
+                          if (index !== -1) {
+                            chatRecords.value[index].isMarked = newIsMarkedValue;
+                          }
+                        } catch (error) {
+                          console.error("标记/取消标记聊天记录失败:", error);
+                        }
+                      }
+                    }),
+                    vnd(ToolButton, {
                       icon: "pi pi-trash",
                       tip: "删除此记录",
                       class: "p-button-danger",
@@ -277,6 +454,8 @@ export default defineComponent({
             onPage: onPageChange,
             class: "mt-2"
           }),
+          
+          // 确认对话框会在下方实现，这里删除重复的
           
           // Chat details dialog
           vnd(Dialog, {
@@ -327,6 +506,44 @@ export default defineComponent({
                   label: "关闭",
                   icon: "pi pi-times",
                   onClick: () => { showChatDialog.value = false; }
+                })
+              ])
+            ])
+          }),
+          
+          // 确认对话框
+          vnd(Dialog, {
+            header: confirmDialogTitle.value,
+            visible: showConfirmDialog.value,
+            style: { width: '30vw' },
+            modal: true,
+            'onUpdate:visible': (value: boolean) => {
+              showConfirmDialog.value = value;
+            }
+          }, {
+            default: () => vnd("div", { class: "p-3" }, [
+              vnd("div", { class: "mb-4" }, [confirmDialogMessage.value]),
+              
+              vnd("div", { class: "flex justify-end gap-2" }, [
+                vnd(Button, {
+                  label: "取消",
+                  icon: "pi pi-times",
+                  class: "p-button-text",
+                  onClick: () => { showConfirmDialog.value = false; }
+                }),
+                vnd(Button, {
+                  label: "确认",
+                  icon: "pi pi-check",
+                  class: "p-button-danger",
+                  onClick: async () => {
+                    showConfirmDialog.value = false;
+                    try {
+                      await confirmAction.value();
+                      reload(); // 刷新列表
+                    } catch (error) {
+                      console.error("确认操作失败:", error);
+                    }
+                  }
                 })
               ])
             ])
