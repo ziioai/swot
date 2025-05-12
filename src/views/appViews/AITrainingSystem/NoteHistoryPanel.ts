@@ -15,29 +15,49 @@ export default defineComponent({
   emits: ['select-version'],
   setup(_props, { emit }) {
     const backups = ref<any[]>([]);
-    const loading = ref(true);
+    const loading = ref(false);
     const totalRecords = ref(0);
     const first = ref(0);
     const rows = ref(10);
     
     // Load notebook backups with pagination
-    const loadBackups = async (updateTotalCount = true) => {
-      loading.value = true;
-      try {
-        const result = await getQtBookBackups(first.value, rows.value);
-        backups.value = result || [];
-        
-        // Get total count for pagination if needed
-        if (updateTotalCount) {
-          const count = await getQtBookBackupsCount();
-          totalRecords.value = count;
-        }
-      } catch (error) {
-        console.error("Failed to load notebook backups:", error);
-      } finally {
-        loading.value = false;
+  // 优化后的加载函数，使用 requestIdleCallback
+  const loadBackups = async (updateTotalCount = true) => {
+    if (loading.value) {
+      console.warn("[loadBackups] Loading already in progress, skipping new load request");
+      return
+    }; // 避免重复加载
+    
+    loading.value = true;
+    try {
+      // 使用 Promise 和 requestIdleCallback 在浏览器空闲时执行
+      const result = await new Promise<any[]>(resolve => {
+        window.requestIdleCallback 
+          ? window.requestIdleCallback(() => {
+              getQtBookBackups(first.value, rows.value).then(resolve);
+            }) 
+          : getQtBookBackups(first.value, rows.value).then(resolve);
+      });
+      
+      backups.value = result || [];
+      
+      // 同样对计数查询使用 requestIdleCallback
+      if (updateTotalCount) {
+        const count = await new Promise<number>(resolve => {
+        window.requestIdleCallback 
+          ? window.requestIdleCallback(() => {
+              getQtBookBackupsCount().then(resolve);
+            }) 
+          : getQtBookBackupsCount().then(resolve);
+        });
+        totalRecords.value = count;
       }
-    };
+    } catch (error) {
+      console.error("Failed to load notebook backups:", error);
+    } finally {
+      loading.value = false;
+    }
+  };
     
     // Handle pagination
     const onPageChange = (event: { first: number, rows: number, page: number, pageCount: number }) => {
@@ -53,6 +73,7 @@ export default defineComponent({
         // Get the new total count first
         const count = await getQtBookBackupsCount();
         totalRecords.value = count;
+        loading.value = false;
         
         // Check if current page is out of range after reload
         const currentPage = Math.floor(first.value / rows.value);
@@ -68,6 +89,7 @@ export default defineComponent({
         
         loadBackups(false); // Don't update total count again
       } catch (error) {
+        loading.value = false;
         console.error("Failed to reload notebook backups:", error);
         loadBackups(true); // Still try to load even if count check failed, and get the count
       }
@@ -108,8 +130,10 @@ export default defineComponent({
       return JSON.stringify(backup.data).length;
     };
 
-    onMounted(() => {
-      loadBackups();
+    onMounted(async () => {
+      setTimeout(async () => {
+        loadBackups();
+      }, 1000);
     });
 
     return () => {

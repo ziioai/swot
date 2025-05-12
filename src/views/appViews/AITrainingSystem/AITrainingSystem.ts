@@ -38,6 +38,7 @@ import {
 } from "./swot-db-functions";
 
 import renderMarkdown from '@utils/md';
+import { sleep } from '@utils/functions';
 
 import {
   // save as appSave,
@@ -128,12 +129,12 @@ export default defineComponent({
     // Save UI state to localStorage
     const saveUiData = async () => {
       await save("uiData", uiData);
-      toast.add({ 
-        severity: "success", 
-        summary: "UI状态已保存", 
-        detail: `已保存当前标签页索引: ${uiData.activeTabIndex}`, 
-        life: 1000 
-      });
+      // toast.add({ 
+      //   severity: "success", 
+      //   summary: "UI状态已保存", 
+      //   detail: `已保存当前标签页索引: ${uiData.activeTabIndex}`, 
+      //   life: 1000 
+      // });
       console.log("Saved UI data:", uiData);
     };
     
@@ -227,20 +228,18 @@ export default defineComponent({
     };
     // /** lifecycle **/ //
     onMounted(async ()=>{
-      
-      // Load UI data
       const savedUiData = await load("uiData");
       if (savedUiData) {
         Object.assign(uiData, savedUiData);
         console.log("Loaded UI data:", uiData);
       }
+      await sleep(1000);
       await loadAppData();
     });
     onUnmounted(async ()=>{
-      await saveAppData();
-      
       // Save UI data before unmounting
       await saveUiData();
+      await saveAppData();
     });
 
     const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);

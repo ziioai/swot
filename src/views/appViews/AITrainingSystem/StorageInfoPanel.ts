@@ -12,10 +12,20 @@ export default defineComponent({
     const loadingStorageInfo = ref(false);
     
     // 获取数据库大小信息
-    const loadStorageInfo = async () => {
+    const loadStorageInfo = async (force=false) => {
+      // 检查是否已经在加载中，避免重复操作
+      if (!force&&loadingStorageInfo.value) return;
+      
       loadingStorageInfo.value = true; // 开始加载存储信息
       try {
-        storageInfo.value = await getIDBStorageSize();
+        // 使用 requestIdleCallback 在浏览器空闲时执行，避免阻塞主线程
+        storageInfo.value = await new Promise((resolve) => {
+          window.requestIdleCallback 
+            ? window.requestIdleCallback(() => {
+                getIDBStorageSize().then(resolve);
+              }) 
+            : getIDBStorageSize().then(resolve);
+        });
       } catch (error) {
         console.error("Failed to get storage size:", error);
         storageInfo.value = null;
@@ -24,8 +34,10 @@ export default defineComponent({
       }
     };
 
-    onMounted(() => {
-      loadStorageInfo();
+    onMounted(async () => {
+      setTimeout(async () => {
+        loadStorageInfo();
+      }, 1000);
     });
 
     return () => {
@@ -53,7 +65,7 @@ export default defineComponent({
                 icon: "pi pi-refresh", 
                 tip: "刷新存储信息",
                 loading: loadingStorageInfo.value,
-                onClick: loadStorageInfo 
+                onClick: ()=>{loadStorageInfo(true)}
               }),
             ]),
             
