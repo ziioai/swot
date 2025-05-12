@@ -42,6 +42,10 @@ export default defineComponent({
     const progressValue = ref(0);
     const progressMessage = ref('');
     
+    // 详情对话框相关
+    const selectedBackup = ref<any>(null);
+    const showDetailsDialog = ref(false);
+    
     // Load notebook backups with pagination
   // 优化后的加载函数，使用 requestIdleCallback
   const loadBackups = async (updateTotalCount = true) => {
@@ -120,6 +124,12 @@ export default defineComponent({
     // Load a version
     const loadVersion = (backup: any) => {
       emit('select-version', backup);
+    };
+    
+    // View backup details
+    const viewBackupDetails = (backup: any) => {
+      selectedBackup.value = backup;
+      showDetailsDialog.value = true;
     };
     
     // 显示确认对话框
@@ -369,6 +379,11 @@ export default defineComponent({
                   ]),
                   vnd("div", { class: "flex-1 flex justify-center gap-2" }, [
                     vnd(ToolButton, {
+                      icon: "pi pi-eye",
+                      tip: "查看详情",
+                      onClick: () => viewBackupDetails(item)
+                    }),
+                    vnd(ToolButton, {
                       icon: "pi pi-arrow-right-arrow-left",
                       tip: "加载此版本到当前状态",
                       onClick: () => loadVersion(item)
@@ -421,6 +436,65 @@ export default defineComponent({
                 })
               ])
             ]
+          }),
+          
+          // 备份详情对话框
+          vnd(Dialog, {
+            header: "笔记版本详情",
+            visible: showDetailsDialog.value,
+            style: { width: '80vw' },
+            modal: true,
+            'onUpdate:visible': (value: boolean) => {
+              showDetailsDialog.value = value;
+            }
+          }, {
+            default: () => selectedBackup.value && vnd("div", { class: "p-3" }, [
+              vnd("h3", { class: "mb-2 font-bold" }, [`ID: ${selectedBackup.value.id} | 标识: ${selectedBackup.value.key}`]),
+              
+              // 显示题型信息
+              selectedBackup.value.data?.entries && Array.isArray(selectedBackup.value.data.entries) ?
+                vnd("div", { class: "mb-4" }, [
+                  vnd("h4", { class: "font-bold mb-2" }, ["题型列表"]),
+                  ...selectedBackup.value.data.entries.map((entry: any, index: number) => 
+                    vnd("div", { 
+                      key: index,
+                      class: `p-3 mb-2 rounded ${entry.deleted ? 'bg-red-100 dark:bg-red-900' : 'bg-blue-100 dark:bg-blue-900'}`
+                    }, [
+                      vnd("div", { class: "font-bold mb-1 flex items-center" }, [
+                        entry.deleted && vnd("i", { 
+                          class: "pi pi-trash mr-2 text-red-500"
+                        }),
+                        vnd("span", { 
+                          class: entry.deleted ? "line-through text-red-600" : ""
+                        }, [`【${entry?.name}】`]),
+                        // 已删除标识
+                        entry.deleted && vnd("span", { 
+                          class: "ml-2 text-xs bg-red-100 text-red-600 py-0.5 px-1 rounded"
+                        }, ["已删除"]),
+                      ]),
+                      vnd("div", { class: "text-sm mb-1" }, [`描述: ${entry.desc || '无'}`]),
+                      vnd("div", { class: "text-sm" }, [`线索: ${entry.clue || '无'}`])
+                    ])
+                  )
+                ]) :
+                vnd("div", { class: "mb-4 text-gray-500" }, ["没有题型数据"]),
+              
+              // 原始JSON数据
+              vnd("div", {}, [
+                vnd("h4", { class: "font-bold mb-2" }, ["原始数据"]),
+                vnd("div", { class: "p-3 bg-gray-100 dark:bg-gray-800 rounded overflow-auto max-h-60vh" }, [
+                  vnd("pre", { class: "text-xs overflow-auto max-h-60vh" }, [JSON.stringify(selectedBackup.value.data, null, 2)])
+                ]),
+              ]),
+              
+              vnd("div", { class: "flex justify-end mt-4" }, [
+                vnd(Button, {
+                  label: "关闭",
+                  icon: "pi pi-times",
+                  onClick: () => { showDetailsDialog.value = false; }
+                })
+              ])
+            ])
           })
         ])
       });
