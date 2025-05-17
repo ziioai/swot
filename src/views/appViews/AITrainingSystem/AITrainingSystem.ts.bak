@@ -70,11 +70,15 @@ import {
 // import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
 import { FIE2025_Training_Data_Standardized } from '@data/FIE2025';
 
+
+
 export default defineComponent({
   name: "AITrainingSystem",
   components: { TrainingControlPanel, QuestionCard, CurrentNotePanel, NoteHistoryPanel, ChatRecordsPanel, AccuracyPanel },
   setup() {
     const toast = useToast();
+
+
 
     const supplierForm = reactive({
       selectedSupplier: suppliers[0] as SupplierDict,
@@ -82,11 +86,17 @@ export default defineComponent({
       supplierModelsDict: {} as Record<string, ModelDict[]>,
       selectedModelDict: {} as Record<string, ModelDict>,
     });
+    onMounted(async ()=>{
+      const supplierForm_ = await appLoad("supplierForm");
+      if (supplierForm_!=null) { Object.assign(supplierForm, supplierForm_); }
+    });
 
     // UI state management - persistent across sessions
     const uiData = reactive({
       activeTabIndex: 0, // Default to first tab (training)
     });
+
+
 
     const appData = reactive<{
       trainer?: SWOT | null;
@@ -98,26 +108,6 @@ export default defineComponent({
       promptTemplates: null,
     });
 
-    // Show/hide file upload dialog for importing trainer data
-    const showImportDialog = ref(false);
-
-    // -------------------------------
-    // State and Computed Properties
-    // -------------------------------
-
-    const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);
-    const quDataDict = computed(()=>appData?.trainer?.state?.quDataDict);
-
-    // 创建响应式的训练状态文本
-    const trainingStateText = computed(() => {
-      return appData.trainer?.getTrainingStateText() || "未开始";
-    });
-
-    // -------------------------------
-    // Event Handlers & Functions
-    // -------------------------------
-
-    // 加载训练题集
     const 加载训练题集 = () => {
       appData.questions = FIE2025_Training_Data_Standardized;
       // toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
@@ -125,17 +115,9 @@ export default defineComponent({
       // console.log("appData.questions", appData.questions);
     };
 
-    // Log App Data
     const logAppData = () => {
       console.log("appData", appData);
     };
-
-    // Log UI Data
-    const handleLogUiData = () => {
-      console.log("UI State:", uiData);
-    };
-
-    // Save App Data
     const saveAppData = async () => {
       // save("questions", appData.questions);
       if (!appData?.trainer?.isSWOT) {return;}
@@ -177,8 +159,6 @@ export default defineComponent({
         appData.trainer.updatePromptTemplates(templates);
       }
     };
-
-    // Export trainer data
     const exportTrainerData = async () => {
       if (!appData?.trainer?.isSWOT) {return;}
       const json = appData.trainer.toJSON(false);
@@ -187,26 +167,12 @@ export default defineComponent({
       saveAs(blob, fileName);
       toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
     };
-
-    // Export questions
     const exportQuestions = async () => {
       const blob = new Blob([JSON.stringify(appData.questions)], { type: 'application/json' });
       const fileName = `SWOT_Questions_${new Date().toISOString()}.json`;
       saveAs(blob, fileName);
       toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
     };
-
-    // Toggle import dialog visibility
-    const handleToggleImportDialog = () => {
-      showImportDialog.value = true;
-    };
-
-    // Handle import dialog visibility update
-    const handleUpdateImportDialogVisibility = (value: boolean) => {
-      showImportDialog.value = value;
-    };
-
-    // Load App Data
     const loadAppData = async () => {
       appData.trainer = new SWOT();
       const trainerJson = await load("trainer");
@@ -261,19 +227,46 @@ export default defineComponent({
       }
       console.log("appData.questions", appData.questions);
     };
+    // /** lifecycle **/ //
+    onMounted(async ()=>{
+      const savedUiData = await load("uiData");
+      if (savedUiData) {
+        Object.assign(uiData, savedUiData);
+        console.log("Loaded UI data:", uiData);
+      }
+      await sleep(1000);
+      await loadAppData();
+    });
+    onUnmounted(async ()=>{
+      // Save UI data before unmounting
+      await saveUiData();
+      await saveAppData();
+    });
 
-    // Update options
+    const quStateDict = computed(()=>appData?.trainer?.state?.quStateDict);
+    const quDataDict = computed(()=>appData?.trainer?.state?.quDataDict);
+
     const updateOptions = (options: SWOTOptions) => {
       if (!appData.trainer) { return; }
       appData.trainer.assignOptions(options);
-    };
+    }
 
-    // Analyze Error
-    const analyzeError = () => {
-      toast.add({ severity: "info", summary: "UI演示", detail: "错误分析点击", life: 1000 });
-    };
+    // 创建响应式的训练状态文本
+    const trainingStateText = computed(() => {
+      return appData.trainer?.getTrainingStateText() || "未开始";
+    });
 
-    // Handle file upload for importing trainer data
+    // Callback functions have been moved to TrainingControlPanel.ts
+
+    // Training control functions have been moved to TrainingControlPanel.ts
+
+    const analyzeError = () => toast.add({ severity: "info", summary: "UI演示", detail: "错误分析点击", life: 1000 });
+
+    // Function removed - replaced by handleFileUploaded
+    // Show/hide file upload dialog for importing trainer data
+    const showImportDialog = ref(false);
+    
+    // Handle importing trainer data from a JSON file
     const handleFileUploaded = async (fileData: { name: string, content: string | ArrayBuffer | null, file: File }) => {
       try {
         if (!fileData.content || typeof fileData.content !== 'string') {
@@ -321,119 +314,24 @@ export default defineComponent({
       }
     };
 
-    // Handle tab change
-    const handleTabChange = (index: number) => {
-      uiData.activeTabIndex = index; // Update the reactive state
-      saveUiData(); // Save UI state when switching tabs
-    };
 
-    // Handle current note panel save
-    const handleCurrentNotePanelSave = async () => {
-      if (!appData.trainer?.state?.notebook) return;
-      try {
-        const newVersionId = nanoid(6);
-        appData.trainer.state.notebookVersion = newVersionId;
-        
-        await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
-        toast.add({ 
-          severity: "success", 
-          summary: "笔记保存", 
-          detail: `笔记已保存，新版本标识: ${newVersionId}`, 
-          life: 2000 
-        });
-      } catch (err: any) {
-        console.error("保存笔记失败:", err);
-        toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
-      }
-    };
 
-    // Handle notebook editor update
-    const handleNotebookEditorUpdate = (newNotebook: any) => {
-      if (appData.trainer) {
-        appData.trainer.state.notebook = newNotebook;
-        const newVersionId = nanoid(6);
-        appData.trainer.state.notebookVersion = newVersionId;
-        toast.add({ 
-          severity: "info", 
-          summary: "笔记已更新", 
-          detail: `新版本标识: ${newVersionId}`, 
-          life: 2000 
-        });
-      }
-    };
 
-    // Handle notebook editor save
-    const handleNotebookEditorSave = async () => {
-      if (!appData.trainer?.state?.notebook) return;
-      try {
-        const newVersionId = nanoid(6);
-        appData.trainer.state.notebookVersion = newVersionId;
-        
-        await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
-        toast.add({ 
-          severity: "success", 
-          summary: "笔记保存", 
-          detail: `笔记已保存，新版本标识: ${newVersionId}`, 
-          life: 2000 
-        });
-      } catch (err: any) {
-        console.error("保存笔记失败:", err);
-        toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
-      }
-    };
 
-    // Handle note history version selection
-    const handleSelectNoteVersion = (backup: any) => {
-      if (!appData.trainer) return;
-      console.log("准备加载笔记版本", backup);
-      if (backup?.data?.entries?.length) {
-        toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
-        appData.trainer.state.notebook = backup.data;
-        appData.trainer.state.notebookVersion = backup.key;
-      } else {
-        toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
-      }
-    };
 
-    // Handle chat records selection
-    const handleSelectChat = (chat: any) => {
-      console.log("选择聊天记录", chat);
-      // 后续可以添加处理选中聊天记录的逻辑
-    };
 
-    // -------------------------------
-    // Lifecycle Hooks
-    // -------------------------------
 
-    onMounted(async () => {
-      const supplierForm_ = await appLoad("supplierForm");
-      if (supplierForm_!=null) { Object.assign(supplierForm, supplierForm_); }
-      
-      const savedUiData = await load("uiData");
-      if (savedUiData) {
-        Object.assign(uiData, savedUiData);
-        console.log("Loaded UI data:", uiData);
-      }
-      await sleep(1000);
-      await loadAppData();
-    });
 
-    onUnmounted(async () => {
-      // Save UI data before unmounting
-      await saveUiData();
-      await saveAppData();
-    });
-
-    // -------------------------------
-    // Render Function
-    // -------------------------------
 
     return () =>
       vnd("div", { class: "container mx-auto px-4 py-6" }, [
         vnd(Tabs, {
           // 使用PrimeVue Tabs组件
           value: uiData.activeTabIndex,
-          'onUpdate:value': handleTabChange,
+          'onUpdate:value': (index: number) => {
+            uiData.activeTabIndex = index; // Update the reactive state
+            saveUiData(); // Save UI state when switching tabs
+          },
         }, {
           default: () => [
             vnd(TabList, { class: "mb-3" }, {
@@ -466,10 +364,10 @@ export default defineComponent({
                             vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
                             vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
                             vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
-                            vnd(ToolButton, { label: "logUiData", icon: "pi pi-info", onClick: handleLogUiData }),
+                            vnd(ToolButton, { label: "logUiData", icon: "pi pi-info", onClick: () => console.log("UI State:", uiData) }),
                             vnd(ToolButton, { label: "saveUiData", icon: "pi pi-save", onClick: saveUiData }),
                             vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
-                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: handleToggleImportDialog }),
+                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: () => showImportDialog.value = true }),
                             vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
                           ]),
                         ]),
@@ -518,14 +416,60 @@ export default defineComponent({
                             note: appData.trainer?.state?.notebook??null,
                             notebookEditPlan: appData.trainer?.state?.notebookEditPlan??null,
                             version: appData.trainer?.state?.notebookVersion,
-                            onSaveNote: handleCurrentNotePanelSave,
+                            onSaveNote: async () => {
+                              if (!appData.trainer?.state?.notebook) return;
+                              try {
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                
+                                await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                                toast.add({ 
+                                  severity: "success", 
+                                  summary: "笔记保存", 
+                                  detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              } catch (err: any) {
+                                console.error("保存笔记失败:", err);
+                                toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                              }
+                            },
                           }),
                           vnd(NotebookEditor, {
                             class: "w-100% mb-4",
                             notebook: appData.trainer?.state?.notebook??null,
                             version: appData.trainer?.state?.notebookVersion,
-                            "onUpdate:notebook": handleNotebookEditorUpdate,
-                            onSave: handleNotebookEditorSave,
+                            "onUpdate:notebook": (newNotebook: any) => {
+                              if (appData.trainer) {
+                                appData.trainer.state.notebook = newNotebook;
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                toast.add({ 
+                                  severity: "info", 
+                                  summary: "笔记已更新", 
+                                  detail: `新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              }
+                            },
+                            onSave: async () => {
+                              if (!appData.trainer?.state?.notebook) return;
+                              try {
+                                const newVersionId = nanoid(6);
+                                appData.trainer.state.notebookVersion = newVersionId;
+                                
+                                await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
+                                toast.add({ 
+                                  severity: "success", 
+                                  summary: "笔记保存", 
+                                  detail: `笔记已保存，新版本标识: ${newVersionId}`, 
+                                  life: 2000 
+                                });
+                              } catch (err: any) {
+                                console.error("保存笔记失败:", err);
+                                toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
+                              }
+                            },
                           }),
                         ]),
                       }),
@@ -569,7 +513,17 @@ export default defineComponent({
                       default: () => vnd(NoteHistoryPanel, {
                         class: "w-100%",
                         currentVersion: appData.trainer?.state?.notebookVersion,
-                        onSelectVersion: handleSelectNoteVersion,
+                        onSelectVersion: (backup: any) => {
+                          if (!appData.trainer) return;
+                          console.log("准备加载笔记版本", backup);
+                          if (backup?.data?.entries?.length) {
+                            toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
+                            appData.trainer.state.notebook = backup.data;
+                            appData.trainer.state.notebookVersion = backup.key;
+                          } else {
+                            toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
+                          }
+                        },
                       }),
                     }),
                   ],
@@ -643,7 +597,10 @@ export default defineComponent({
                       default: () => vnd(ChatRecordsPanel, {
                         class: "w-100%",
                         // currentChatId: null,
-                        onSelectChat: handleSelectChat,
+                        onSelectChat: (chat: any) => {
+                          console.log("选择聊天记录", chat);
+                          // 后续可以添加处理选中聊天记录的逻辑
+                        },
                       }),
                     }),
                   ],
@@ -665,7 +622,7 @@ export default defineComponent({
         // FileUploadDialog remains outside the tabs as it's a modal dialog
         vnd(FileUploadDialog, {
           visible: showImportDialog.value,
-          'onUpdate:visible': handleUpdateImportDialogVisibility,
+          'onUpdate:visible': (value: boolean) => showImportDialog.value = value,
           title: "导入训练器数据",
           acceptedFileTypes: "application/json",
           onFileUploaded: handleFileUploaded,
