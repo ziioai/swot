@@ -16,7 +16,7 @@ const md = markdownit({
 });
 
 const readMeText = `
-### PureKnow
+### SWOT
 `;
 
 const AppAboutView = defineComponent({
