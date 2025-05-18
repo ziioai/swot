@@ -22,6 +22,7 @@ import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
 import PromptTemplatesPanel from './PromptTemplatesPanel';
+import QuestionBankConfigPanel from './QuestionBankConfigPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -117,9 +118,7 @@ export default defineComponent({
       trainer: null,
       questions: [],
       promptTemplates: null,
-    });
-
-    // 显示/隐藏文件上传对话框，用于导入训练器数据
+    });      // 显示/隐藏文件上传对话框，用于导入训练器数据
     const showImportDialog = ref(false);
 
     // -------------------------------
@@ -174,7 +173,12 @@ export default defineComponent({
      * 将训练器状态保存到本地存储
      */
     const saveAppData = async () => {
-      // save("questions", appData.questions);
+      // 保存问题数据
+      if (appData.questions && appData.questions.length) {
+        await save("questions", appData.questions);
+      }
+      
+      // 保存训练器状态
       if (!appData?.trainer?.isSWOT) {return;}
       const json = appData.trainer.toJSON(false);
       await save("trainer", json);
@@ -318,15 +322,15 @@ export default defineComponent({
         }
       }
 
-      const questions = [] as any[];  //await load("questions");
-      if (questions?.length) {
-        appData.questions = questions;
-        appData.trainer.loadQuEntries(questions, false);
-        toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
+      const savedQuestions = await load("questions") as any[];
+      if (savedQuestions?.length) {
+        appData.questions = savedQuestions;
+        appData.trainer.loadQuEntries(savedQuestions, false);
+        toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 条已保存的题目`, life: 1000 });
       } else {
         await 加载训练题集();
         appData.trainer.loadQuEntries(appData.questions, false);
-        toast.add({ severity: "info", summary: "从头加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
+        toast.add({ severity: "info", summary: "从头加载", detail: `加载了 ${appData.questions.length} 条内置题目`, life: 1000 });
       }
       console.log("appData.questions", appData.questions);
     };
@@ -755,30 +759,60 @@ export default defineComponent({
                 // 标签页4: 题库配置 - 管理训练用的题目集
                 vnd(TabPanel, { value: 3 }, {
                   default: () => [
+                    // 添加的解释卡片
+                    vnd("div", { class: "p-2 mb-3 bg-orange-50 dark:bg-orange-900/30 rounded-md border-l-4 border-orange-500" }, [
+                      vnd("div", { class: "font-medium" }, "管理训练和测试用的题目集"),
+                      vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练、开发测试和最终测试的题库数据，包括导入和配置题库格式")
+                    ]),
+                    vnd(QuestionBankConfigPanel, {
+                      onQuestionsImported: (questions: any[]) => {
+                        // 确保 questions 符合 QuestionEntry 类型结构
+                        const validQuestions = questions.filter(q => 
+                          q.nnid && q.content && q.answer !== undefined
+                        );
+                        
+                        appData.questions = validQuestions;
+                        if (appData.trainer) {
+                          appData.trainer.loadQuEntries(validQuestions, false);
+                        }
+                        toast.add({ 
+                          severity: "success", 
+                          summary: "已加载题库", 
+                          detail: `已加载 ${validQuestions.length} 题到训练器`, 
+                          life: 2000 
+                        });
+                        saveAppData();
+                      }
+                    }),
                     vnd(Panel, {
-                      header: "题库配置",
-                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                      header: "内置题库快速加载",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",],
+                      toggleable: true,
+                      collapsed: true,
                     }, {
                       default: () => [
-                        // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-orange-50 dark:bg-orange-900/30 rounded-md border-l-4 border-orange-500" }, [
-                          vnd("div", { class: "font-medium" }, "管理训练和测试用的题目集"),
-                          vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练、开发测试和最终测试的题库数据")
-                        ]),
                         vnd("div", {
                           class: "stack-v",
                         }, [
-                          vnd("div", { class: "markdown-body", innerHTML: renderMarkdown(`
-暂不开发，数据写在代码里
-
-- 训练集：用于训练
-- 开发集：训练好之后用开发集测试性能
-- 测试集：输出答案，用于提交
-                          `.trim()),
-                          }),
-                          vnd("div", {class: "stack-h"}, [
-                            vnd(ToolButton, { label: "加载训练题集", icon: "pi pi-play", class: "mr-0.5rem", onClick: 加载训练题集, }),
+                          vnd("div", { class: "stack-h"}, [
+                            vnd(ToolButton, { 
+                              label: "加载FIE2025训练题集", 
+                              icon: "pi pi-play", 
+                              class: "mr-0.5rem", 
+                              onClick: 加载训练题集,
+                              tooltip: "加载内置的FIE2025训练题集"
+                            }),
+                            vnd(ToolButton, { 
+                              label: "导出当前题库", 
+                              icon: "pi pi-download", 
+                              class: "mr-0.5rem", 
+                              onClick: exportQuestions,
+                              tooltip: "将当前题库导出为JSON文件" 
+                            }),
                           ]),
+                          vnd("div", { class: "text-sm text-gray-500 mt-2" }, 
+                            `当前加载的题目数量: ${appData.questions.length || 0}`
+                          ),
                         ]),
                       ]
                     }),
