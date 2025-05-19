@@ -588,7 +588,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-md border-l-4 border-blue-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "调试工具面板"),
                           vnd("div", { class: "text-sm opacity-80" }, "这里提供各种调试和数据操作按钮，用于保存/加载应用状态、导出/导入训练器数据等")
                         ]),
@@ -618,7 +618,7 @@ export default defineComponent({
                         }, {
                           default: () => [
                             // 添加的解释卡片
-                            vnd("div", { class: "p-2 mb-3 bg-green-50 dark:bg-green-900/30 rounded-md border-l-4 border-green-500" }, [
+                            vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                               vnd("div", { class: "font-medium" }, "控制AI训练流程和参数"),
                               vnd("div", { class: "text-sm opacity-80" }, "在此面板可调整训练参数、启动/暂停训练，并监控训练进度")
                             ]),
@@ -651,7 +651,7 @@ export default defineComponent({
                       }, {
                         default: () => [
                           // 添加的解释卡片
-                          vnd("div", { class: "p-2 mb-3 bg-amber-50 dark:bg-amber-900/30 rounded-md border-l-4 border-amber-500" }, [
+                          vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                             vnd("div", { class: "font-medium" }, "查看和编辑用于训练的笔记内容"),
                             vnd("div", { class: "text-sm opacity-80" }, "笔记是AI学习的核心内容，在这里可以查看和编辑笔记，追踪AI对笔记的修改建议")
                           ]),
@@ -687,7 +687,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-purple-50 dark:bg-purple-900/30 rounded-md border-l-4 border-purple-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "展示当前训练中的问题及AI的回答"),
                           vnd("div", { class: "text-sm opacity-80" }, "在这里可以查看本轮训练中AI处理的每个问题及其回答，包括正确与错误的情况")
                         ]),
@@ -723,7 +723,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-cyan-50 dark:bg-cyan-900/30 rounded-md border-l-4 border-cyan-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "管理和恢复之前的笔记版本"),
                           vnd("div", { class: "text-sm opacity-80" }, "这里保存了所有历史笔记版本，可以查看笔记的演变过程，并在需要时恢复到之前的版本")
                         ]),
@@ -746,7 +746,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-lime-50 dark:bg-lime-900/30 rounded-md border-l-4 border-lime-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "配置用于训练的提示词模板"),
                           vnd("div", { class: "text-sm opacity-80" }, "在这里可以编辑和管理用于训练过程中各个阶段的提示词模板，以优化AI的训练效果")
                         ]),
@@ -764,7 +764,7 @@ export default defineComponent({
                 vnd(TabPanel, { value: 3 }, {
                   default: () => [
                     // 添加的解释卡片
-                    vnd("div", { class: "p-2 mb-3 bg-orange-50 dark:bg-orange-900/30 rounded-md border-l-4 border-orange-500" }, [
+                    vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                       vnd("div", { class: "font-medium" }, "对题库进行配置"),
                       vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练或测试的题库数据，配备了基础的数据格式相关功能")
                     ]),
@@ -810,7 +810,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-md border-l-4 border-indigo-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "系统介绍和使用指南"),
                           vnd("div", { class: "text-sm opacity-80" }, "这里提供了系统的整体介绍、操作说明和背景知识，帮助用户了解和使用SWOT训练系统")
                         ]),
@@ -829,7 +829,7 @@ export default defineComponent({
                     }, {
                       default: () => [
                         // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-pink-50 dark:bg-pink-900/30 rounded-md border-l-4 border-pink-500" }, [
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                           vnd("div", { class: "font-medium" }, "查看和管理与AI模型的对话记录"),
                           vnd("div", { class: "text-sm opacity-80" }, "这里保存了与AI模型的历史对话记录，可以查看和分析之前的交互过程")
                         ]),
@@ -847,7 +847,7 @@ export default defineComponent({
                 vnd(TabPanel, { value: 5 }, {
                   default: () => [
                     // 添加的解释卡片
-                    vnd("div", { class: "p-2 mb-3 bg-rose-50 dark:bg-rose-900/30 rounded-md border-l-4 border-rose-500" }, [
+                    vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
                       vnd("div", { class: "font-medium" }, "管理本地存储数据"),
                       vnd("div", { class: "text-sm opacity-80" }, "在这里可以查看和管理系统在本地存储的各种数据，包括清理和备份功能")
                     ]),

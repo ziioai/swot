@@ -24,6 +24,8 @@ import renderMarkdown from '@utils/md';
 
 const 备忘 = `
 
+训练流程说明：
+
 - O 是否达到最大循环次数
   - 达到：结束训练
   - 未达到：
