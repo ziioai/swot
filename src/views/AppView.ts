@@ -124,42 +124,6 @@ const AppView = defineComponent({
       topOffset: 20,
       pixelsPerRem: 12, // Your code uses 12 pixels per rem
     });
-    // const barCollapsed = ref(false);
-    // const lastScrollY = ref(0);
-    // const scrollThreshold = 50; // Minimum scroll amount before triggering hide/show
-
-    // // Function to handle scroll events
-    // const handleScroll = () => {
-    //   const currentScrollY = window.scrollY;
-    //   const scrollDifference = currentScrollY - lastScrollY.value;
-      
-    //   // If scrolled down more than threshold, collapse the bar
-    //   if (scrollDifference > scrollThreshold) {
-    //     barCollapsed.value = true;
-    //     lastScrollY.value = currentScrollY;
-    //   } 
-    //   // If scrolled up more than threshold, expand the bar
-    //   else if (scrollDifference < -scrollThreshold) {
-    //     barCollapsed.value = false;
-    //     lastScrollY.value = currentScrollY;
-    //   }
-      
-    //   // If at the top of the page or within 20rem of the top, always show the bar
-    //   const nearTopThreshold = 20 * 12; // Convert 20rem to pixels (assuming 1rem = 16px)
-    //   if (currentScrollY === 0 || currentScrollY < nearTopThreshold) {
-    //     barCollapsed.value = false;
-    //   }
-    // };
-
-    // // Add scroll event listener on component mount
-    // onMounted(() => {
-    //   window.addEventListener('scroll', handleScroll, { passive: true });
-    // });
-
-    // // Clean up event listener on component unmount
-    // onUnmounted(() => {
-    //   window.removeEventListener('scroll', handleScroll);
-    // });
 
     return ()=>{
 
