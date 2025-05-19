@@ -792,31 +792,31 @@ export default defineComponent({
                     vnd(QuestionBankConfigPanel, {
                       onProcessedDataImported: onProcessedDataImported,
                     }),
-                    vnd(Panel, {
-                      header: "内置题库快速加载",
-                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",],
-                      toggleable: true,
-                      collapsed: false,
-                    }, {
-                      default: () => [
-                        vnd("div", {
-                          class: "stack-v",
-                        }, [
-                          vnd("div", { class: "stack-h"}, [
-                            vnd(ToolButton, { 
-                              label: "加载SpaCE2024训练题集",
-                              icon: "pi pi-play",
-                              class: "mr-0.5rem",
-                            }),
-                            vnd(ToolButton, { 
-                              label: "加载FIE2025训练题集",
-                              icon: "pi pi-play",
-                              class: "mr-0.5rem",
-                            }),
-                          ]),
-                        ]),
-                      ]
-                    }),
+                    // vnd(Panel, {
+                    //   header: "内置题库快速加载",
+                    //   class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",],
+                    //   toggleable: true,
+                    //   collapsed: false,
+                    // }, {
+                    //   default: () => [
+                    //     vnd("div", {
+                    //       class: "stack-v",
+                    //     }, [
+                    //       vnd("div", { class: "stack-h"}, [
+                    //         vnd(ToolButton, { 
+                    //           label: "加载SpaCE2024训练题集",
+                    //           icon: "pi pi-play",
+                    //           class: "mr-0.5rem",
+                    //         }),
+                    //         vnd(ToolButton, { 
+                    //           label: "加载FIE2025训练题集",
+                    //           icon: "pi pi-play",
+                    //           class: "mr-0.5rem",
+                    //         }),
+                    //       ]),
+                    //     ]),
+                    //   ]
+                    // }),
                   ],
                 }),
 
