@@ -53,7 +53,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // 'MyDemo': ['./src/lib/MyDemo'],
+          'SpaCE2025': ['./src/data/SpaCE2025'],
+          'SpaCE2024': ['./src/data/SpaCE2024'],
+          'FIE2025': ['./src/data/FIE2025'],
           // three: ['three'],
           // d3: ['d3'],
 
@@ -78,13 +80,29 @@ export default defineConfig({
             'dexie',
             'localforage',
           ],
-          jschardet: ['jschardet'],
+          // jschardet: ['jschardet'],
+          openai: ['openai'],
 
           vue: ['vue', 'vue-router', 'vue-i18n', 'pinia'],
-          // vueuse: ['@vueuse/core', '@vueuse/rxjs'],
+          vueuse: ['@vueuse/core', '@vueuse/rxjs'],
           primevue: ['primevue'],
           // transformers: ['@huggingface/transformers'],
-          // icons: ['@kalimahapps/vue-icons'],
+          // 'kalimah-icons': ['@kalimahapps/vue-icons'],
+          'markdown-utils': [ // 添加 markdown-utils
+            'markdown-it',
+            'remark',
+            'remark-frontmatter',
+            'remark-gfm',
+            'remark-math',
+            'remark-parse',
+            'remark-rehype',
+            'rehype-katex',
+            'rehype-pretty-code',
+            'rehype-raw',
+            'rehype-stringify',
+            'unified'
+          ],
+          // formily: ['@formily/core', '@formily/vue'],
         }
       }
     }
