@@ -118,6 +118,16 @@ const AppView = defineComponent({
       currentLabelName.value = `${String(route.name ?? "")}`;
     }, { immediate: true });
 
+    // 监听 systemSettingsStore中的 locale Ref 的变化
+    watch(()=>locale?.value, (newLocaleValue) => {
+      // newLocaleValue 是 systemSettingsStore.locale 的新值
+      // i18nLocale 是从 useI18n() 获取的 Ref
+      if (i18nLocale!=null && i18nLocale.value !== newLocaleValue) {
+        // 更新 vue-i18n 的 locale 值
+        i18nLocale.value = newLocaleValue??"en";
+      }
+    }, { immediate: true });
+
 
     const { isCollapsed: barCollapsed } = useScrollCollapse({
       threshold: 25,
@@ -165,6 +175,7 @@ const AppView = defineComponent({
               window?.location?.hostname != "localhost" ? null :
               { label: "Dev", icon: 'pi pi-github', url: GITHUB_DEV_URL, target: '_blank', },
               { label: "GitHub", icon: 'pi pi-github', url: GITHUB_URL, target: '_blank', },
+
               window?.location?.hostname != "localhost" ? null :
               { label: `${locale!.value} | ${i18nLocale!.value}`,
                 icon: 'pi pi-language',
@@ -173,6 +184,7 @@ const AppView = defineComponent({
                   command: () => { setLocale(it, i18nLocale); },
                 })),
               },
+
               { label: "theme",
                 icon: `pi pi-${isDarkModeOn.value ? "moon" : "sun"}`,
                 command: () => { toggleDarkMode(); },
