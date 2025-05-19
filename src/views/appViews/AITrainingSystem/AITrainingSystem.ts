@@ -23,6 +23,7 @@ import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
 import PromptTemplatesPanel from './PromptTemplatesPanel';
 import QuestionBankConfigPanel from './QuestionBankConfigPanel';
+import NewQuestionBankConfigPanel from './NewQuestionBankConfigPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -761,34 +762,21 @@ export default defineComponent({
                   default: () => [
                     // 添加的解释卡片
                     vnd("div", { class: "p-2 mb-3 bg-orange-50 dark:bg-orange-900/30 rounded-md border-l-4 border-orange-500" }, [
-                      vnd("div", { class: "font-medium" }, "管理训练和测试用的题目集"),
-                      vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练、开发测试和最终测试的题库数据，包括导入和配置题库格式")
+                      vnd("div", { class: "font-medium" }, "对题库进行配置"),
+                      vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练或测试的题库数据，配备了基础的数据格式相关功能")
                     ]),
                     vnd(QuestionBankConfigPanel, {
-                      onQuestionsImported: (questions: any[]) => {
-                        // 确保 questions 符合 QuestionEntry 类型结构
-                        const validQuestions = questions.filter(q => 
-                          q.nnid && q.content && q.answer !== undefined
-                        );
-                        
-                        appData.questions = validQuestions;
-                        if (appData.trainer) {
-                          appData.trainer.loadQuEntries(validQuestions, false);
-                        }
-                        toast.add({ 
-                          severity: "success", 
-                          summary: "已加载题库", 
-                          detail: `已加载 ${validQuestions.length} 题到训练器`, 
-                          life: 2000 
-                        });
-                        saveAppData();
+                      onQuestionsImported: (_questions: any[]) => {
+                        // 之前的实现真是瞎搞啊
                       }
+                    }),
+                    vnd(NewQuestionBankConfigPanel, {
                     }),
                     vnd(Panel, {
                       header: "内置题库快速加载",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",],
                       toggleable: true,
-                      collapsed: true,
+                      collapsed: false,
                     }, {
                       default: () => [
                         vnd("div", {
@@ -796,23 +784,16 @@ export default defineComponent({
                         }, [
                           vnd("div", { class: "stack-h"}, [
                             vnd(ToolButton, { 
-                              label: "加载FIE2025训练题集", 
-                              icon: "pi pi-play", 
-                              class: "mr-0.5rem", 
-                              onClick: 加载训练题集,
-                              tooltip: "加载内置的FIE2025训练题集"
+                              label: "加载SpaCE2024训练题集",
+                              icon: "pi pi-play",
+                              class: "mr-0.5rem",
                             }),
                             vnd(ToolButton, { 
-                              label: "导出当前题库", 
-                              icon: "pi pi-download", 
-                              class: "mr-0.5rem", 
-                              onClick: exportQuestions,
-                              tooltip: "将当前题库导出为JSON文件" 
+                              label: "加载FIE2025训练题集",
+                              icon: "pi pi-play",
+                              class: "mr-0.5rem",
                             }),
                           ]),
-                          vnd("div", { class: "text-sm text-gray-500 mt-2" }, 
-                            `当前加载的题目数量: ${appData.questions.length || 0}`
-                          ),
                         ]),
                       ]
                     }),

@@ -69,16 +69,16 @@ export default defineComponent({
 
     // Process the selected file
     const processFile = (file: File) => {
-      // Check if the file type is accepted
-      if (props.acceptedFileTypes && !file.type.match(props.acceptedFileTypes)) {
-        toast.add({
-          severity: "error",
-          summary: "文件类型错误",
-          detail: `请上传 ${props.acceptedFileTypes} 类型的文件`,
-          life: 3000
-        });
-        return;
-      }
+      // // Check if the file type is accepted
+      // if (props.acceptedFileTypes && !file.type.match(props.acceptedFileTypes)) {
+      //   toast.add({
+      //     severity: "error",
+      //     summary: "文件类型错误",
+      //     detail: `请上传 ${props.acceptedFileTypes} 类型的文件`,
+      //     life: 3000
+      //   });
+      //   return;
+      // }
 
       const reader = new FileReader();
       reader.onload = (e) => {
