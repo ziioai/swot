@@ -149,6 +149,10 @@ export default defineComponent({
       // console.log("appData.questions", appData.questions);
     };
 
+    const onProcessedDataImported = (qus: any[]) => {
+      appData.questions = qus;
+    };
+
     /**
      * 打印应用数据
      * 
@@ -559,7 +563,7 @@ export default defineComponent({
             // 标签列表 - 定义了各个功能区的标签
             vnd(TabList, { class: "mb-3" }, {
               default: () => [
-                vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明与调试" }),
+                vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明" }),
                 vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
                 vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
                 vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
@@ -765,6 +769,7 @@ export default defineComponent({
                       vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练或测试的题库数据，配备了基础的数据格式相关功能")
                     ]),
                     vnd(QuestionBankConfigPanel, {
+                      onProcessedDataImported: onProcessedDataImported,
                     }),
                     vnd(Panel, {
                       header: "内置题库快速加载",
@@ -794,7 +799,7 @@ export default defineComponent({
                   ],
                 }),
 
-                // 标签页5: 说明和调试 - 系统的说明文档和备忘录
+                // 标签页5: 说明 - 系统的说明文档和备忘录
                 vnd(TabPanel, { value: 4 }, {
                   default: () => [
                     // MemoBoard - 显示系统说明和使用指南

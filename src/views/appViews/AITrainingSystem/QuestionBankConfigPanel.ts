@@ -9,16 +9,8 @@ import Select from 'primevue/select';
 import MultiSelect from 'primevue/multiselect';
 import Button from 'primevue/button';
 import Tooltip from 'primevue/tooltip';
-// import Dialog from 'primevue/dialog';
-// Accordion and AccordionTab imports removed as they are replaced by Panel
 import Fieldset from 'primevue/fieldset';
 
-// Assuming swot-db-functions and FileUploadDialog are in the same directory or adjust path
-// For now, we mock save/load. Replace with actual implementation if available.
-// const mockDb = new Map<string, any>();
-// const save = async (key: string, data: any) => { mockDb.set(key, data); };
-// const load = async (key: string) => { return mockDb.get(key); };
-// import { save, load } from './swot-db-functions';
 import FileUploadDialog from './components/FileUploadDialog'; // Adjust path if necessary
 
 
@@ -39,8 +31,9 @@ export default defineComponent({
   setup(_props, { emit }) {
     const toast = useToast();
     const showImportDialog = ref(false);
-    const newContentFieldOption = ref(''); // New ref for the custom option input
-    const exportConfigFilename = ref('question-bank-config.json'); // New ref for export filename
+    const showImportConfigDialog = ref(false); // 新增: 控制导入配置对话框的显示
+    const newContentFieldOption = ref('');
+    const exportConfigFilename = ref('question-bank-config.json');
 
     const configData = reactive({
       nnidConfig: {
@@ -261,6 +254,62 @@ export default defineComponent({
       }
     };
 
+    // 新增: 处理导入的配置文件
+    const handleConfigFileUploaded = (fileData: { name: string, content: string | ArrayBuffer | null, file: File }) => {
+      try {
+        if (!fileData.content || typeof fileData.content !== 'string') {
+          toast.add({ severity: "error", summary: "导入失败", detail: "无效的文件内容。", life: 3000 });
+          return;
+        }
+
+        if (!fileData.name.endsWith('.json')) {
+          toast.add({ severity: "error", summary: "导入失败", detail: "不支持的文件类型。请使用 JSON 文件。", life: 3000 });
+          return;
+        }
+        
+        const importedConfig = JSON.parse(fileData.content);
+
+        // 验证导入的配置结构
+        if (importedConfig && importedConfig.nnidConfig && importedConfig.fieldMapping) {
+          configData.nnidConfig = importedConfig.nnidConfig;
+          configData.fieldMapping = importedConfig.fieldMapping;
+          configData.additionalContentFields = importedConfig.additionalContentFields || [];
+          
+          // 确保 availableFields 包含导入配置中使用的字段
+          const allFieldsInConfig = new Set<string>();
+          if (importedConfig.nnidConfig.sourceField) {
+            allFieldsInConfig.add(importedConfig.nnidConfig.sourceField);
+          }
+          importedConfig.fieldMapping.contentFields?.forEach((f:string) => allFieldsInConfig.add(f));
+          importedConfig.fieldMapping.explainFields?.forEach((f:string) => allFieldsInConfig.add(f));
+          if (importedConfig.fieldMapping.answerField) {
+            allFieldsInConfig.add(importedConfig.fieldMapping.answerField);
+          }
+          importedConfig.additionalContentFields?.forEach((f: {key:string}) => allFieldsInConfig.add(f.key));
+
+          allFieldsInConfig.forEach(field => {
+            if (field && !configData.availableFields.includes(field)) {
+              configData.availableFields.push(field);
+            }
+          });
+
+
+          processAndPreviewData(); // 使用新配置重新处理数据
+          toast.add({ severity: 'success', summary: '配置已导入', detail: '预处理配置已成功导入并应用。', life: 3000 });
+        } else {
+          toast.add({ severity: 'error', summary: '导入失败', detail: '配置文件结构无效。', life: 3000 });
+        }
+        showImportConfigDialog.value = false;
+      } catch (error: any) {
+        console.error("配置文件导入失败:", error);
+        toast.add({
+          severity: "error",
+          summary: "导入失败",
+          detail: error.message || "无法解析配置文件内容。",
+          life: 3000
+        });
+      }
+    };
 
     const emitProcessedData = () => {
       if (!configData.processedData.length) {
@@ -268,7 +317,7 @@ export default defineComponent({
         return;
       }
       emit('processedDataImported', _.cloneDeep(configData.processedData));
-      toast.add({ severity: 'success', summary: '数据已发出', detail: `已发出 ${configData.processedData.length} 条处理记录。`, life: 3000 });
+      toast.add({ severity: 'success', summary: '数据已加载', detail: `已加载 ${configData.processedData.length} 条处理记录。`, life: 3000 });
     };
 
     onMounted(() => {
@@ -434,7 +483,10 @@ export default defineComponent({
                         placeholder: "例如: my-config.json"
                       })
                     ]),
-                    vnd(Button, { label: "导出配置", icon: "pi pi-download", class:"mt-4", onClick: exportConfig }),
+                    vnd("div", { class: "flex gap-2 mt-4" }, [ // 使用 flex 布局容器
+                      vnd(Button, { label: "导入配置", icon: "pi pi-folder-open", class:"flex-1", outlined: true, onClick: () => showImportConfigDialog.value = true }), // 新增导入配置按钮
+                      vnd(Button, { label: "导出配置", icon: "pi pi-download", class:"flex-1", onClick: exportConfig }),
+                    ]),
                   ])
                 }),
                 
@@ -476,13 +528,20 @@ export default defineComponent({
         ])
       }),
 
-      // File Upload Dialog
+
       vnd(FileUploadDialog, {
         title: "导入题目文件",
         visible: showImportDialog.value,
         acceptedFileTypes: ".json,.jsonl,application/json",
         onFileUploaded: handleFileUploaded,
         'onUpdate:visible': (v: boolean) => {showImportDialog.value = v},
+      }),
+      vnd(FileUploadDialog, {
+        title: "导入配置文件",
+        visible: showImportConfigDialog.value,
+        acceptedFileTypes: ".json,application/json", // 仅接受 JSON
+        onFileUploaded: handleConfigFileUploaded, // 使用新的处理函数
+        'onUpdate:visible': (v: boolean) => {showImportConfigDialog.value = v},
       }),
 
     ]);

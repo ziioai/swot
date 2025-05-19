@@ -24,8 +24,6 @@ import renderMarkdown from '@utils/md';
 
 const 备忘 = `
 
-[SpaCE2025](https://pku-space.github.io/SpaCE2025/)
-
 - O 是否达到最大循环次数
   - 达到：结束训练
   - 未达到：
@@ -56,6 +54,7 @@ const 备忘 = `
       - 总循环次数+=1
       - 返回 O 继续下一轮循环
 
+参考： [SpaCE2025](https://pku-space.github.io/SpaCE2025/)
 `;
 
 
@@ -67,12 +66,12 @@ export default defineComponent({
     return () => {
 
       return vnd("div", {class: "stack-v"}, [
-        vnd("p", { class: "" }, "小镇做题家 AI版"),
+        // vnd("p", { class: "" }, "小镇做题家 AI版"),
         vnd("div", { class: "markdown-body",
           innerHTML: renderMarkdown(备忘),
         }),
 
-        vnd("div", {class: "stack-h"}, [
+        vnd("div", {class: "stack-h hidden!"}, [
           vnd(ToolButton, { label: "播放叮咚声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放叮咚声, }),
           vnd(ToolButton, { label: "播放咕嘟声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放咕嘟声, }),
           vnd(ToolButton, { label: "播放咔哒声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放咔哒声, }),
@@ -84,7 +83,7 @@ export default defineComponent({
           vnd(ToolButton, { label: "播放女人说话声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放女人说话声, }),
         ]),
 
-        vnd("div", {class: "stack-h"}, [
+        vnd("div", {class: "stack-h hidden!"}, [
           vnd(ToolButton, { label: "播放喇叭式胜利音效", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放喇叭式胜利音效, }),
           // vnd(ToolButton, { label: "播放胜利音效", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放胜利音效, }),
           // vnd(ToolButton, { label: "播放小星星", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放小星星, }),
