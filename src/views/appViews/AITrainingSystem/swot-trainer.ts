@@ -19,7 +19,7 @@ import {
   播放随机曲谱,
   播放猫叫声,
   播放男人说话声,
-  播放女人说Good声,
+  播放女人说话声,
   播放胜利音效,
   // 播放小星星,
   // 播放电子舞曲,
@@ -384,7 +384,7 @@ export async function 执行笔记的更新操作(swot: SWOT) {
   await sleep(3_0);
   swot.state.notebookEditPlan = {};
   await sleep(1_00);
-  播放女人说Good声();
+  播放女人说话声();
 }
 
 export async function 为单个错题更新笔记(swot: SWOT, quId: QuestionTrainingState["nnid"]) {

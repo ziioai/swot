@@ -10,8 +10,7 @@ import MultiSelect from 'primevue/multiselect';
 import Button from 'primevue/button';
 import Tooltip from 'primevue/tooltip';
 // import Dialog from 'primevue/dialog';
-import Accordion from 'primevue/accordion';
-import AccordionTab from 'primevue/accordiontab';
+// Accordion and AccordionTab imports removed as they are replaced by Panel
 import Fieldset from 'primevue/fieldset';
 
 // Assuming swot-db-functions and FileUploadDialog are in the same directory or adjust path
@@ -19,7 +18,7 @@ import Fieldset from 'primevue/fieldset';
 const mockDb = new Map<string, any>();
 const save = async (key: string, data: any) => { mockDb.set(key, data); };
 const load = async (key: string) => { return mockDb.get(key); };
-// import { save, load } from './swot-db-functions'; 
+// import { save, load } from './swot-db-functions';
 import FileUploadDialog from './components/FileUploadDialog'; // Adjust path if necessary
 
 // Define the processed entry structure
@@ -236,133 +235,142 @@ export default defineComponent({
       return configData.availableFields.map(field => ({ label: field, value: field }));
     });
 
-    return () => vnd("div", { class: "stack-v gap-4 p-4" }, [
-      vnd(Panel, { header: "New Question Bank Importer & Preprocessor", toggleable: true, class:"bg-zinc-100/75! dark:bg-zinc-800/75!" }, {
+    return () => vnd("div", { class: "stack-v gap-4 my-1.5rem" }, [
+      vnd(Panel, {
+        header: "New Question Bank Importer & Preprocessor",
+        toggleable: true,
+        class:"w-full bg-zinc-100/75! dark:bg-zinc-800/75!",
+      }, {
         default: () => vnd("div", { class: "stack-v gap-6" }, [
           // 1. File Upload
-          vnd("div", { class: "flex justify-between items-center" }, [
+          vnd("div", { class: "flex justify-between items-center gap-2" }, [
             vnd("span", {}, "Import question data (JSON or JSONL):"),
             vnd(Button, { label: "Upload File", icon: "pi pi-upload", onClick: () => showImportDialog.value = true })
           ]),
 
-          configData.originalData.length > 0 ? vnd(Accordion, { activeIndex: 0 }, {
-            default: () => [
-              vnd(AccordionTab, { header: "Preprocessing Configuration" }, {
-                default: () => vnd("div", { class: "stack-v gap-4 p-fluid" }, [
-                  // 2. NNID Configuration
-                  vnd(Fieldset, { legend: "NNID Configuration", toggleable: true }, {
-                    default: () => vnd("div", { class: "grid grid-cols-1 md:grid-cols-2 gap-4" }, [
-                      vnd("div", { class: "flex flex-col gap-2" }, [
-                        vnd("label", { for: "nnidSource" }, "NNID Source Field"),
-                        vnd(Select, {
-                          inputId: "nnidSource",
-                          options: availableFieldsOptions.value,
-                          modelValue: configData.nnidConfig.sourceField,
-                          "onUpdate:modelValue": (v: string) => configData.nnidConfig.sourceField = v,
-                          placeholder: "Select NNID source",
-                          optionLabel: "label",
-                          optionValue: "value",
-                          class: "w-full"
-                        })
-                      ]),
-                      vnd("div", { class: "flex flex-col gap-2" }, [
-                        vnd("label", { for: "nnidPrefix" }, "NNID Prefix"),
-                        vnd(InputText, {
-                          id: "nnidPrefix",
-                          modelValue: configData.nnidConfig.prefix,
-                          "onUpdate:modelValue": (v: string) => configData.nnidConfig.prefix = v,
-                          placeholder: "Enter NNID prefix"
-                        })
-                      ])
-                    ])
-                  }),
-
-                  // 3. Field Mapping
-                  vnd(Fieldset, { legend: "Field Mapping", toggleable: true }, {
-                     default: () => vnd("div", { class: "grid grid-cols-1 md:grid-cols-3 gap-4" }, [
-                      vnd("div", { class: "flex flex-col gap-2" }, [
-                        vnd("label", { for: "contentFields" }, "Content Fields"),
-                        vnd(MultiSelect, {
-                          inputId: "contentFields",
-                          options: availableFieldsOptions.value,
-                          modelValue: configData.fieldMapping.contentFields,
-                          "onUpdate:modelValue": (v: string[]) => configData.fieldMapping.contentFields = v,
-                          placeholder: "Select content fields",
-                          optionLabel: "label",
-                          optionValue: "value",
-                          display: "chip",
-                          class: "w-full"
-                        })
-                      ]),
-                      vnd("div", { class: "flex flex-col gap-2" }, [
-                        vnd("label", { for: "explainFields" }, "Explain Fields (Optional)"),
-                        vnd(MultiSelect, {
-                          inputId: "explainFields",
-                          options: availableFieldsOptions.value,
-                          modelValue: configData.fieldMapping.explainFields,
-                          "onUpdate:modelValue": (v: string[]) => configData.fieldMapping.explainFields = v,
-                          placeholder: "Select explain fields",
-                          optionLabel: "label",
-                          optionValue: "value",
-                          display: "chip",
-                          class: "w-full"
-                        })
-                      ]),
-                      vnd("div", { class: "flex flex-col gap-2" }, [
-                        vnd("label", { for: "answerField" }, "Answer Field"),
-                        vnd(Select, {
-                          inputId: "answerField",
-                          options: availableFieldsOptions.value,
-                          modelValue: configData.fieldMapping.answerField,
-                          "onUpdate:modelValue": (v: string) => configData.fieldMapping.answerField = v,
-                          placeholder: "Select answer field",
-                          optionLabel: "label",
-                          optionValue: "value",
-                          class: "w-full"
-                        })
-                      ])
-                    ])
-                  }),
-
-                  // 4. Additional Content Fields
-                  vnd(Fieldset, { legend: "Additional Content Fields", toggleable: true }, {
-                    default: () => vnd("div", { class: "stack-v gap-3" }, [
-                      ...configData.additionalContentFields.map((field, index) =>
-                        vnd("div", { key: index, class: "grid grid-cols-[1fr_1fr_auto] gap-2 items-center" }, [
-                          vnd(InputText, { placeholder: "Key", modelValue: field.key, "onUpdate:modelValue": (v: string) => field.key = v }),
-                          vnd(InputText, { placeholder: "Value", modelValue: field.value, "onUpdate:modelValue": (v: string) => field.value = v }),
-                          vnd(Button, { icon: "pi pi-times", severity: "danger", text: true, rounded: true, onClick: () => removeAdditionalField(index) })
-                        ])
-                      ),
-                      vnd(Button, { label: "Add Field to Content", icon: "pi pi-plus", outlined: true, size:"small", onClick: addAdditionalField, class:"self-start" })
-                    ])
-                  }),
-                  vnd(Button, { label: "Save Configuration", icon: "pi pi-save", class:"mt-4", onClick: saveCurrentConfig })
-                ])
-              }),
-              
-              // 5. Data Preview
-              configData.previewSamples.original.length > 0 ? 
-              vnd(AccordionTab, { header: `Data Preview (Showing ${configData.previewSamples.original.length} Samples)` }, {
-                default: () => vnd("div", { class: "stack-v gap-4" }, [
-                  ...configData.previewSamples.original.map((origItem, index) =>
-                    vnd(Fieldset, { key: index, legend: `Sample ${index + 1}`, toggleable: true, collapsed: index > 0 }, {
+          // Replaced Accordion with a series of Panels
+          ...(configData.originalData.length > 0
+            ? [
+                vnd(Panel, { header: "Preprocessing Configuration", toggleable: true, class: "mt-4" }, {
+                  default: () => vnd("div", { class: "stack-v gap-4 p-fluid" }, [
+                    // 2. NNID Configuration
+                    vnd(Fieldset, { legend: "NNID Configuration", toggleable: true }, {
                       default: () => vnd("div", { class: "grid grid-cols-1 md:grid-cols-2 gap-4" }, [
-                        vnd("div", {}, [
-                          vnd("h4", {class:"font-semibold mb-2"}, "Original:"),
-                          vnd("pre", { class: "bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-auto max-h-60" }, JSON.stringify(origItem, null, 2))
+                        vnd("div", { class: "flex flex-col gap-2" }, [
+                          vnd("label", { for: "nnidSource" }, "NNID Source Field"),
+                          vnd(Select, {
+                            inputId: "nnidSource",
+                            options: availableFieldsOptions.value,
+                            modelValue: configData.nnidConfig.sourceField,
+                            "onUpdate:modelValue": (v: string) => configData.nnidConfig.sourceField = v,
+                            placeholder: "Select NNID source",
+                            optionLabel: "label",
+                            optionValue: "value",
+                            class: "w-full"
+                          })
                         ]),
-                        vnd("div", {}, [
-                          vnd("h4", {class:"font-semibold mb-2"}, "Processed:"),
-                          vnd("pre", { class: "bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-auto max-h-60" }, JSON.stringify(configData.previewSamples.processed[index] || {}, null, 2))
+                        vnd("div", { class: "flex flex-col gap-2" }, [
+                          vnd("label", { for: "nnidPrefix" }, "NNID Prefix"),
+                          vnd(InputText, {
+                            id: "nnidPrefix",
+                            modelValue: configData.nnidConfig.prefix,
+                            "onUpdate:modelValue": (v: string) => configData.nnidConfig.prefix = v,
+                            placeholder: "Enter NNID prefix"
+                          })
                         ])
                       ])
-                    })
-                  )
-                ])
-              }) : null
-            ]
-          }) : vnd("div", {class:"text-center text-gray-500 dark:text-gray-400 py-4"}, "Upload a file to configure preprocessing and see a preview."),
+                    }),
+
+                    // 3. Field Mapping
+                    vnd(Fieldset, { legend: "Field Mapping", toggleable: true }, {
+                       default: () => vnd("div", { class: "grid grid-cols-1 md:grid-cols-3 gap-4" }, [
+                        vnd("div", { class: "flex flex-col gap-2" }, [
+                          vnd("label", { for: "contentFields" }, "Content Fields"),
+                          vnd(MultiSelect, {
+                            inputId: "contentFields",
+                            options: availableFieldsOptions.value,
+                            modelValue: configData.fieldMapping.contentFields,
+                            "onUpdate:modelValue": (v: string[]) => configData.fieldMapping.contentFields = v,
+                            placeholder: "Select content fields",
+                            optionLabel: "label",
+                            optionValue: "value",
+                            display: "chip",
+                            class: "w-full"
+                          })
+                        ]),
+                        vnd("div", { class: "flex flex-col gap-2" }, [
+                          vnd("label", { for: "explainFields" }, "Explain Fields (Optional)"),
+                          vnd(MultiSelect, {
+                            inputId: "explainFields",
+                            options: availableFieldsOptions.value,
+                            modelValue: configData.fieldMapping.explainFields,
+                            "onUpdate:modelValue": (v: string[]) => configData.fieldMapping.explainFields = v,
+                            placeholder: "Select explain fields",
+                            optionLabel: "label",
+                            optionValue: "value",
+                            display: "chip",
+                            class: "w-full"
+                          })
+                        ]),
+                        vnd("div", { class: "flex flex-col gap-2" }, [
+                          vnd("label", { for: "answerField" }, "Answer Field"),
+                          vnd(Select, {
+                            inputId: "answerField",
+                            options: availableFieldsOptions.value,
+                            modelValue: configData.fieldMapping.answerField,
+                            "onUpdate:modelValue": (v: string) => configData.fieldMapping.answerField = v,
+                            placeholder: "Select answer field",
+                            optionLabel: "label",
+                            optionValue: "value",
+                            class: "w-full"
+                          })
+                        ])
+                      ])
+                    }),
+
+                    // 4. Additional Content Fields
+                    vnd(Fieldset, { legend: "Additional Content Fields", toggleable: true }, {
+                      default: () => vnd("div", { class: "stack-v gap-3" }, [
+                        ...configData.additionalContentFields.map((field, index) =>
+                          vnd("div", { key: index, class: "grid grid-cols-[1fr_1fr_auto] gap-2 items-center" }, [
+                            vnd(InputText, { placeholder: "Key", modelValue: field.key, "onUpdate:modelValue": (v: string) => field.key = v }),
+                            vnd(InputText, { placeholder: "Value", modelValue: field.value, "onUpdate:modelValue": (v: string) => field.value = v }),
+                            vnd(Button, { icon: "pi pi-times", severity: "danger", text: true, rounded: true, onClick: () => removeAdditionalField(index) })
+                          ])
+                        ),
+                        vnd(Button, { label: "Add Field to Content", icon: "pi pi-plus", outlined: true, size:"small", onClick: addAdditionalField, class:"self-start" })
+                      ])
+                    }),
+                    vnd(Button, { label: "Save Configuration", icon: "pi pi-save", class:"mt-4", onClick: saveCurrentConfig })
+                  ])
+                }),
+                
+                // 5. Data Preview Panel
+                (configData.previewSamples.original.length > 0 ? 
+                  vnd(Panel, { header: `Data Preview (Showing ${configData.previewSamples.original.length} Samples)`, toggleable: true, class: "mt-4" }, {
+                    default: () => vnd("div", { class: "stack-v gap-4" }, [
+                      ...configData.previewSamples.original.map((origItem, index) =>
+                        vnd(Fieldset, { key: index, legend: `Sample ${index + 1}`, toggleable: true, collapsed: index > 0 }, {
+                          default: () => vnd("div", { class: "grid grid-cols-1 md:grid-cols-2 gap-4" }, [
+                            vnd("div", {}, [
+                              vnd("h4", {class:"font-semibold mb-2"}, "Original:"),
+                              vnd("pre", { class: "bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-auto max-h-60" }, JSON.stringify(origItem, null, 2))
+                            ]),
+                            vnd("div", {}, [
+                              vnd("h4", {class:"font-semibold mb-2"}, "Processed:"),
+                              vnd("pre", { class: "bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-auto max-h-60" }, JSON.stringify(configData.previewSamples.processed[index] || {}, null, 2))
+                            ])
+                          ])
+                        })
+                      )
+                    ])
+                  })
+                : null)
+              ].filter(Boolean) // Filter out null if the preview panel is not rendered
+            : [
+                vnd("div", {class:"text-center text-gray-500 dark:text-gray-400 py-4"}, "Upload a file to configure preprocessing and see a preview.")
+              ]
+          ),
 
           // 6. Emit Processed Data
           configData.processedData.length > 0 ? vnd(Button, {
@@ -381,7 +389,7 @@ export default defineComponent({
         visible: showImportDialog.value,
         acceptedFileTypes: ".json,.jsonl,application/json",
         onFileUploaded: handleFileUploaded,
-        onUpdateVisibility: (v: boolean) => showImportDialog.value = v
+        'onUpdate:visible': (v: boolean) => {showImportDialog.value = v},
       }),
       
       // General Preview Dialog (can be repurposed or removed if accordion preview is sufficient)

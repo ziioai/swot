@@ -1525,8 +1525,8 @@ export const 男人说话声曲谱: SoundEffect = {
 export const 播放男人说话声 = () => 播放音效(男人说话声曲谱);
 
 // 曲谱定义 - 女人说"good"声音
-export const 女人说Good声曲谱: SoundEffect = {
-  name: "女人说Good声音",
+export const 女人说话声曲谱: SoundEffect = {
+  name: "女人说话声音",
   type: "composite",
   masterVolume: 0.8,
   elements: [
@@ -1764,7 +1764,7 @@ export const 女人说Good声曲谱: SoundEffect = {
   // ]
 };
 
-export const 播放女人说Good声 = () => 播放音效(女人说Good声曲谱);
+export const 播放女人说话声 = () => 播放音效(女人说话声曲谱);
 
 
 

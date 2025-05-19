@@ -13,7 +13,7 @@ import {
   播放随机曲谱,
   播放猫叫声,
   播放男人说话声,
-  播放女人说Good声,
+  播放女人说话声,
   // 播放胜利音效,
   // 播放小星星,
   // 播放电子舞曲,
@@ -81,7 +81,7 @@ export default defineComponent({
           vnd(ToolButton, { label: "播放哐当声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放哐当声, }),
           vnd(ToolButton, { label: "播放猫叫声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放猫叫声, }),
           vnd(ToolButton, { label: "播放男人说话声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放男人说话声, }),
-          vnd(ToolButton, { label: "播放女人说Good声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放女人说Good声, }),
+          vnd(ToolButton, { label: "播放女人说话声", icon: "pi pi-play", class: "mr-0.5rem", onClick: 播放女人说话声, }),
         ]),
 
         vnd("div", {class: "stack-h"}, [

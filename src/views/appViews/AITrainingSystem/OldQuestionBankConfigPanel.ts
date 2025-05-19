@@ -30,7 +30,7 @@ type QuestionSetType = 'training' | 'validation' | 'test';
  * 4. Managing different question sets (training, validation, test)
  */
 export default defineComponent({
-  name: "QuestionBankConfigPanel",
+  name: "OldQuestionBankConfigPanel",
   directives: {
     tooltip: Tooltip
   },
