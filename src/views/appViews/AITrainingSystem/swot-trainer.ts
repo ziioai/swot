@@ -7,6 +7,7 @@ import {
   // saveQtBookBackup,
   记录调模型时的数据,
   记录版本笔记数据,
+  精简调模型的单纯数据,
 } from './swot-db-functions';
 import {
   播放叮咚声,
@@ -351,8 +352,8 @@ export async function 合并笔记修改计划并更新笔记(swot: SWOT, quIds:
       记录调模型时的数据({
         promptVersion: currentPromptVersion, 
         version: swot.getNotebookVersion(), 
-        data: dataWrap, 
-        supplierForm: swot.supplierForm, 
+        data: 精简调模型的单纯数据(dataWrap), 
+        selectedSupplier: swot.supplierForm?.selectedSupplier, 
         type: "合并对笔记的修改", 
         time: Date.now(),
       });
@@ -449,8 +450,8 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     记录调模型时的数据({
       promptVersion: currentPromptVersion, 
       version: swot.getNotebookVersion(), 
-      data: judgeResponseDataWrap, 
-      supplierForm: swot.supplierForm, 
+      data: 精简调模型的单纯数据(judgeResponseDataWrap), 
+      selectedSupplier: swot.supplierForm?.selectedSupplier, 
       type: "judgeResponse", 
       time: Date.now(),
     });
@@ -493,8 +494,8 @@ export async function 试做单个题目(swot: SWOT, quId: QuestionTrainingState
     记录调模型时的数据({
       promptVersion: customVersion, 
       version: swot.getNotebookVersion(), 
-      data: responseDataWrap, 
-      supplierForm: swot.supplierForm, 
+      data: 精简调模型的单纯数据(responseDataWrap), 
+      selectedSupplier: swot.supplierForm?.selectedSupplier, 
       type: "response", 
       time: Date.now(),
     });
@@ -610,8 +611,8 @@ export async function 处理单个错题(swot: SWOT, quId: QuestionTrainingState
   记录调模型时的数据({
     promptVersion: currentPromptVersion, 
     version: swot.getNotebookVersion(), 
-    data: errorReportDataWrap, 
-    supplierForm: swot.supplierForm, 
+    data: 精简调模型的单纯数据(errorReportDataWrap), 
+    selectedSupplier: swot.supplierForm?.selectedSupplier, 
     type: "errorReport", 
     time: Date.now(),
   });

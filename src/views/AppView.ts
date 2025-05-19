@@ -14,9 +14,10 @@ import {
 import Menubar from 'primevue/menubar';
 
 
-import Tabs from 'primevue/tabs';
-import TabList from 'primevue/tablist';
-import Tab from 'primevue/tab';
+// import Tabs from 'primevue/tabs';
+// import TabList from 'primevue/tablist';
+// import Tab from 'primevue/tab';
+
 // import TabPanels from 'primevue/tabpanels';
 // import TabPanel from 'primevue/tabpanel';
 
@@ -27,7 +28,10 @@ import { storeToRefs } from 'pinia';
 // import { useToast } from 'primevue/usetoast';
 
 import { RouterView } from 'vue-router';
-import { useRouter, useRoute } from 'vue-router';
+import {
+  // useRouter,
+  useRoute,
+} from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import { useScrollCollapse } from '@hooks/useScrollCollapse';
@@ -106,7 +110,7 @@ const AppView = defineComponent({
     const currentLabelName = ref(items.value[0].label);
 
     // const toast = useToast();
-    const router = useRouter();
+    // const router = useRouter();
     const route = useRoute();
 
     watch(()=>route.name, ()=>{
@@ -231,54 +235,54 @@ const AppView = defineComponent({
           "z-80",
           "my-5rem",
           "md:rounded-0.5rem md:border-2 xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto",
-          "w-100% p-0.75rem bg-var-p-panel-background border-var-p-panel-border-color overflow-auto",
+          "w-100% ==p-0.75rem bg-var-p-panel-background border-var-p-panel-border-color overflow-auto",
           "min-h-80vh",
           // "grow-1",
         ] }, [
 
 
-          vnd("div", { class: [
-            "==md:rounded-0.5rem ==md:border-2 xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto",
-            "w-100% ==p-0.75rem bg-var-p-panel-background ==border-var-p-panel-border-color",
-            // "grow-1 overflow-auto",
-            "bg-transparent! [background:transparent]!",
-          ], style: {
-            "--p-panel-background": "transparent",
-            "--p-tabs-tablist-background": "transparent",
-          } }, [
-            vnd(Tabs, {
-              class: "bg-transparent!",
-              value: currentLabelName.value,
-              scrollable: true,
-              lazy: false,
-            }, {
-              default:()=>vnd(TabList, {
-                class: "bg-transparent!",
-                pt: {
-                  "tabList": { class: "bg-transparent! [background:transparent]!", },
-                },
-              }, {
-                default:()=>items.value.map(item=>vnd(Tab, {
-                  class: "bg-transparent!",
-                  key: item.label,
-                  value: item.name,
-                  onClick: ()=>{
-                    if (router.hasRoute(item?.name)) {
-                      router.push({ name: item.name });
-                    }
-                    // item?.command?.();
-                  },
-                }, {
-                  default: () => vnd("span", {
-                    class: "inline-flex flex-row flex-items-center gap-2",
-                  }, [
-                    vnd("i", { class: item.icon }),
-                    vnd("span", {}, item.label),
-                  ]),
-                })),
-              }),
-            }),
-          ]),
+          // vnd("div", { class: [
+          //   "==md:rounded-0.5rem ==md:border-2 xl:max-w-1280px lg:max-w-1024px md:max-w-768px md:mx-auto",
+          //   "w-100% ==p-0.75rem bg-var-p-panel-background ==border-var-p-panel-border-color",
+          //   // "grow-1 overflow-auto",
+          //   "bg-transparent! [background:transparent]!",
+          // ], style: {
+          //   "--p-panel-background": "transparent",
+          //   "--p-tabs-tablist-background": "transparent",
+          // } }, [
+          //   vnd(Tabs, {
+          //     class: "bg-transparent!",
+          //     value: currentLabelName.value,
+          //     scrollable: true,
+          //     lazy: false,
+          //   }, {
+          //     default:()=>vnd(TabList, {
+          //       class: "bg-transparent!",
+          //       pt: {
+          //         "tabList": { class: "bg-transparent! [background:transparent]!", },
+          //       },
+          //     }, {
+          //       default:()=>items.value.map(item=>vnd(Tab, {
+          //         class: "bg-transparent!",
+          //         key: item.label,
+          //         value: item.name,
+          //         onClick: ()=>{
+          //           if (router.hasRoute(item?.name)) {
+          //             router.push({ name: item.name });
+          //           }
+          //           // item?.command?.();
+          //         },
+          //       }, {
+          //         default: () => vnd("span", {
+          //           class: "inline-flex flex-row flex-items-center gap-2",
+          //         }, [
+          //           vnd("i", { class: item.icon }),
+          //           vnd("span", {}, item.label),
+          //         ]),
+          //       })),
+          //     }),
+          //   }),
+          // ]),
 
 
           // vnd("div", {class: ["my-2rem"]}),

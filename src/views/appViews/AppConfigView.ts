@@ -210,7 +210,7 @@ const AppConfigView = defineComponent({
               }}),
             ]),
 
-            vnd(ToolButton, { size: "small", icon: "pi pi-trash", label: "debug", command: ()=>{
+            vnd(ToolButton, { size: "small", icon: "pi pi-cog", label: "debug", command: ()=>{
               console.log({supplierForm, selectedModel: selectedModel.value});
             }}),
 

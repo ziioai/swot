@@ -23,6 +23,7 @@ import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
 import PromptTemplatesPanel from './PromptTemplatesPanel';
 import QuestionBankConfigPanel from './QuestionBankConfigPanel';
+import AppConfigView from '../AppConfigView';
 import {
   SWOTOptions,
   // SWOTState,
@@ -552,7 +553,7 @@ export default defineComponent({
     // -------------------------------
 
     return () =>
-      vnd("div", { class: "container mx-auto px-4 py-6" }, [
+      vnd("div", { class: "container mx-auto ==px-4 ==py-6" }, [
         // 标签页导航系统 - 用于在不同功能区域之间切换
         vnd(Tabs, {
           // 使用PrimeVue Tabs组件
@@ -564,6 +565,7 @@ export default defineComponent({
             vnd(TabList, { class: "mb-3" }, {
               default: () => [
                 vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明" }),
+                vnd(Tab, { value: 7, pt: { root: { class: 'font-bold' } } }, { default: () => "模型接口配置" }),
                 vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
                 vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
                 vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
@@ -709,6 +711,25 @@ export default defineComponent({
                             })
                           ),
                         ]),
+                      ]
+                    }),
+                  ],
+                }),
+
+                // 标签页7: 模型接口管理
+                vnd(TabPanel, { value: 7 }, {
+                  default: () => [
+                    vnd(Panel, {
+                      header: "模型接口管理",
+                      class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
+                    }, {
+                      default: () => [
+                        // 添加的解释卡片
+                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
+                          vnd("div", { class: "font-medium" }, "对模型接口进行管理"),
+                          vnd("div", { class: "text-sm opacity-80" }, "管理模型接口")
+                        ]),
+                        vnd(AppConfigView, {}),
                       ]
                     }),
                   ],

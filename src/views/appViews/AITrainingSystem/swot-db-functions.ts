@@ -67,6 +67,19 @@ export const 记录调模型时的数据 = async (data: any) => {
   return result;
 };
 
+export const 精简调模型的单纯数据 = (data: any) => {
+  const newData = _.cloneDeep(data);
+  if (newData?.outputData && ("string" != typeof newData.outputData)) {
+    newData.outputSpans = undefined;
+  }
+  if (newData?.thinkingData && ("string" != typeof newData.thinkingData)) {
+    newData.thinkingSpans = undefined;
+  }
+  if (!newData?.outputSpans?.length) { newData.outputSpans = undefined; }
+  if (!newData?.thinkingSpans?.length) { newData.thinkingSpans = undefined; }
+  return newData;
+};
+
 export const saveQtBookBackup = async (item: Record<string, any>) => {
   const result = await db.qtBookBackups.put(_.cloneDeep(item));
   return result;

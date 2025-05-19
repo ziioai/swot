@@ -310,27 +310,24 @@ export default defineComponent({
               loading: loading.value,
               onClick: reload 
             }),
-            
+
             // 批量操作按钮
             vnd("div", { class: "flex gap-1 ml-auto" }, [
               vnd(ToolButton, {
                 label: "删除已标记",
                 icon: "pi pi-trash",
-                class: "p-button-warning",
                 disabled: loading.value,
                 onClick: deleteMarkedBackups
               }),
               vnd(ToolButton, {
                 label: "删除未标记",
                 icon: "pi pi-trash",
-                class: "p-button-secondary",
                 disabled: loading.value,
                 onClick: deleteUnmarkedBackups
               }),
               vnd(ToolButton, {
                 label: "删除全部",
                 icon: "pi pi-trash",
-                class: "p-button-danger",
                 disabled: loading.value,
                 onClick: deleteAllBackups
               }),
