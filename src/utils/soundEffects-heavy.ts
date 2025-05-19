@@ -99,7 +99,7 @@ class AudioPlayer {
   };
   private timers: number[] = [];
   private isPlaying: boolean = false;
-  private currentScore: SoundScore | null = null;
+  // private currentScore: SoundScore | null = null;
 
   private constructor() {
     this.activeNodes = {
@@ -125,7 +125,7 @@ class AudioPlayer {
       this.stop();
     }
   
-    this.currentScore = score;
+    // this.currentScore = score;
     this.isPlaying = true;
     this.audioContext = new AudioContext();
   
