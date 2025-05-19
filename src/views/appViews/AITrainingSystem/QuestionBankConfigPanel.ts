@@ -30,7 +30,7 @@ interface ProcessedEntry {
 }
 
 export default defineComponent({
-  name: "NewQuestionBankConfigPanel",
+  name: "QuestionBankConfigPanel",
   directives: {
     tooltip: Tooltip
   },
@@ -42,7 +42,7 @@ export default defineComponent({
     const configData = reactive({
       nnidConfig: {
         sourceField: '',
-        prefix: 'NNID-'
+        prefix: '[NNID]'
       },
       fieldMapping: {
         contentFields: [] as string[],

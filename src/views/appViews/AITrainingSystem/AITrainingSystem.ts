@@ -22,8 +22,7 @@ import AccuracyPanel from './components/AccuracyPanel';
 import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
 import PromptTemplatesPanel from './PromptTemplatesPanel';
-import OldQuestionBankConfigPanel from './OldQuestionBankConfigPanel';
-import NewQuestionBankConfigPanel from './NewQuestionBankConfigPanel';
+import QuestionBankConfigPanel from './QuestionBankConfigPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -765,12 +764,7 @@ export default defineComponent({
                       vnd("div", { class: "font-medium" }, "对题库进行配置"),
                       vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练或测试的题库数据，配备了基础的数据格式相关功能")
                     ]),
-                    vnd(NewQuestionBankConfigPanel, {
-                    }),
-                    vnd(OldQuestionBankConfigPanel, {
-                      onQuestionsImported: (_questions: any[]) => {
-                        // 之前的实现真是瞎搞啊
-                      }
+                    vnd(QuestionBankConfigPanel, {
                     }),
                     vnd(Panel, {
                       header: "内置题库快速加载",
