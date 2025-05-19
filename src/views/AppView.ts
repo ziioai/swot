@@ -221,7 +221,7 @@ const AppView = defineComponent({
             ].filter(it=>it!=null),
             pt: {
               rootList: {
-                class: "ml-auto!",
+                class: "ml-auto! ==flex-nowrap! ==overflow-x-auto!",
               },
             },
           }, {

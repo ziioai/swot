@@ -519,7 +519,7 @@ export default defineComponent({
 
           // 6. Emit Processed Data
           configData.processedData.length > 0 ? vnd(Button, {
-            label: `加载 ${configData.processedData.length} 条处理记录`,
+            label: `加载 ${configData.processedData.length} 道试题`,
             icon: "pi pi-upload",
             severity: "success",
             class: "mt-6 w-full md:w-auto self-end",

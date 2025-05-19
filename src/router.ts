@@ -6,10 +6,10 @@ import { createWebHashHistory, createRouter } from 'vue-router'
 
 import NotFoundView from '@views/NotFoundView';
 import AppView from '@views/AppView';
-import AppNotesView from '@views/appViews/AppNotesView';
-import AppAboutView from '@views/appViews/AppAboutView';
-import AppConfigView from '@views/appViews/AppConfigView';
-import SpaCESolverDemo from '@views/appViews/SpaCESolverDemo';
+// import AppNotesView from '@views/appViews/AppNotesView';
+// import AppAboutView from '@views/appViews/AppAboutView';
+// import AppConfigView from '@views/appViews/AppConfigView';
+// import SpaCESolverDemo from '@views/appViews/SpaCESolverDemo';
 import AITrainingSystem from '@views/appViews/AITrainingSystem';
 
 // const routes = [
@@ -26,11 +26,11 @@ const routes = [
   { path: '/:pathMatch(.*)*', name: '404', component: NotFoundView },
   { path: '/', redirect: '/train' },
   { path: '/', name: 'app-root', component: AppView, children: [
-    { path: 'ss', name: 'app-ss', component: SpaCESolverDemo },
+    // { path: 'ss', name: 'app-ss', component: SpaCESolverDemo },
     { path: 'train', name: 'app-train', component: AITrainingSystem },
-    { path: 'notes', name: 'app-notes', component: AppNotesView },
-    { path: 'about', name: 'app-about', component: AppAboutView },
-    { path: 'config', name: 'app-config', component: AppConfigView },
+    // { path: 'notes', name: 'app-notes', component: AppNotesView },
+    // { path: 'about', name: 'app-about', component: AppAboutView },
+    // { path: 'config', name: 'app-config', component: AppConfigView },
   ] },
 ];
 

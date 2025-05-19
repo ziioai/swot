@@ -69,8 +69,8 @@ import {
   SWOT,
   // defaultOptions, defaultState,
 } from './swot-trainer';
-// import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
-import { FIE2025_Training_Data_Standardized } from '@data/FIE2025';
+import { SpaCE2024_Demo_Data_Standardized } from '@data/SpaCE2024';
+// import { FIE2025_Training_Data_Standardized } from '@data/FIE2025';
 
 /**
  * AI训练系统组件
@@ -144,7 +144,7 @@ export default defineComponent({
      * 从预定义数据源加载训练问题
      */
     const 加载训练题集 = () => {
-      appData.questions = FIE2025_Training_Data_Standardized;
+      appData.questions = SpaCE2024_Demo_Data_Standardized;
       // toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
       // save("questions", appData.questions);
       // console.log("appData.questions", appData.questions);
@@ -562,7 +562,7 @@ export default defineComponent({
         }, {
           default: () => [
             // 标签列表 - 定义了各个功能区的标签
-            vnd(TabList, { class: "mb-3" }, {
+            vnd(TabList, { class: "mb-3 max-w-100% overflow-auto" }, {
               default: () => [
                 vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明" }),
                 vnd(Tab, { value: 7, pt: { root: { class: 'font-bold' } } }, { default: () => "模型接口配置" }),
