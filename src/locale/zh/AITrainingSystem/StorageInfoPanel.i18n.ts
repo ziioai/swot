@@ -1,0 +1,18 @@
+export default {
+  title: "存储空间管理",
+  usageCalculating: "存储占用: 计算中...",
+  usagePrefix: "存储占用: ",
+  notCalculated: "未计算",
+  usageDetailsTitle: "存储空间使用情况",
+  refreshTip: "刷新存储信息",
+  calculatingDetails: "正在计算存储空间使用情况...",
+  errorDefault: "获取存储信息时发生错误",
+  unsupportedAPI: "当前浏览器不支持存储估算 API，无法获取精确存储大小",
+  totalUsage: "总占用空间",
+  unknown: "未知",
+  totalRecords: "数据库记录总数",
+  recordsSuffix: "条记录",
+  qtBookBackupsTable: "笔记历史版本表",
+  chatRecordsTable: "聊天记录表",
+  kvsTable: "键值存储表",
+};
