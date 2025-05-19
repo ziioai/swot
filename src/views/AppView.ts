@@ -176,7 +176,7 @@ const AppView = defineComponent({
               { label: "Dev", icon: 'pi pi-github', url: GITHUB_DEV_URL, target: '_blank', },
               { label: "GitHub", icon: 'pi pi-github', url: GITHUB_URL, target: '_blank', },
 
-              window?.location?.hostname != "localhost" ? null :
+              // window?.location?.hostname != "localhost" ? null :
               { label: `${locale!.value} | ${i18nLocale!.value}`,
                 icon: 'pi pi-language',
                 items: availableLocales?.value?.map(it=>({
