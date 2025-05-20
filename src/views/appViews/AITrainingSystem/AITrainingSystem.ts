@@ -106,7 +106,7 @@ export default defineComponent({
      * 管理用户界面状态，如当前活动标签页索引
      */
     const uiData = reactive({
-      activeTabIndex: 0, // Default to first tab (training)
+      activeTabIndex: 4, // Default to first tab
     });
 
     /**
