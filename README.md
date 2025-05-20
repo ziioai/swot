@@ -1,42 +1,44 @@
-# SWOT (小镇做题家) - AI 训练系统
+# AI SWOT: Practical demonstration of the System Prompt Learning paradigm.
 
-SWOT (意为“小镇做题家”) 是一个专注于自我提示训练 (Self-Prompt Training) 的 AI 训练系统。它提供了一个全面的平台，用户可以通过以下功能来训练和管理 AI 模型。
+[中文说明](README-cn.md)
 
-## 核心功能
+SWOT (meaning "Small-Town Overachiever") is an AI training system focused on Self-Prompt Training, following the System Prompt Learning paradigm. It provides a comprehensive platform for users to train and manage AI models through the following features.
 
-*   **训练与答题:**
-    *   用户可以加载题集，AI 会根据提供的笔记进行答题。
-    *   系统会记录 AI 的答题情况，包括正确率、错误分析等。
-    *   用户可以控制训练过程，例如启动、暂停训练，并调整训练参数。
-*   **笔记管理:**
-    *   **当前笔记:** 系统展示 AI 在解题过程中自主学习并记录的笔记。用户可以查看这些笔记，并观察 AI 如何根据解题结果和错误分析来迭代和优化其笔记。
-    *   **笔记历史:** 系统会自动保存 AI 笔记的各个历史版本。用户可以方便地查看笔记的演变过程，并在需要时恢复到之前的版本。
-    *   **笔记导入/导出:** 支持笔记数据的导入和导出。
-*   **提示词配置:**
-    *   用户可以编辑和管理用于训练过程中各个阶段的提示词模板，以优化 AI 的训练效果。
-*   **题库配置:**
-    *   用户可以管理用于训练或测试的题库数据，支持导入处理后的数据。
-*   **模型接口配置:**
-    *   管理 AI 模型的供应商、API 密钥和所选模型。
-*   **对话记录:**
-    *   保存与 AI 模型的历史对话记录，方便用户查看和分析之前的交互过程。
-*   **存储管理:**
-    *   查看和管理系统在本地存储的各种数据，包括训练器状态、问题集、提示词模板等。支持数据的导入和导出。
-*   **调试工具:**
-    *   提供一系列调试工具，方便开发者进行数据操作和状态检查。
+## Core Features
 
-## 设计理念
+*   **Training and Answering:**
+    *   Users can load question sets, and the AI will answer based on the provided notes.
+    *   The system records the AI's answering performance, including accuracy, error analysis, etc.
+    *   Users can control the training process, such as starting and pausing training, and adjusting training parameters.
+*   **Note Management:**
+    *   **Current Notes:** The system displays notes autonomously learned and recorded by the AI during the problem-solving process. Users can view these notes and observe how the AI iterates and optimizes its notes based on problem-solving results and error analysis.
+    *   **Note History:** The system automatically saves historical versions of AI notes. Users can easily view the evolution of notes and restore to previous versions if needed.
+    *   **Note Import/Export:** Supports importing and exporting note data.
+*   **Prompt Configuration:**
+    *   Users can edit and manage prompt templates used in various stages of the training process to optimize AI training effectiveness.
+*   **Question Bank Configuration:**
+    *   Users can manage question bank data for training or testing, supporting the import of processed data.
+*   **Model Interface Configuration:**
+    *   Manage AI model providers, API keys, and selected models.
+*   **Conversation History:**
+    *   Saves historical conversation records with the AI model, allowing users to easily review and analyze previous interactions.
+*   **Storage Management:**
+    *   View and manage various data stored locally by the system, including trainer status, question sets, prompt templates, etc. Supports data import and export.
+*   **Debugging Tools:**
+    *   Provides a series of debugging tools for developers to perform data operations and status checks.
 
-SWOT 系统旨在通过模拟“做题-学习-改进笔记-再做题”的循环，帮助 AI 模型提升其在特定知识领域的能力。用户提供题集，AI 在解题过程中自主记录和迭代笔记，通过这个学习循环，最终达到提升模型表现的目的。
+## Design Philosophy
 
-## 技术栈 (根据 `AITrainingSystem.ts` 推断)
+The SWOT system aims to enhance AI models' capabilities in specific knowledge domains by simulating a cycle of "problem-solving - learning - improving notes - problem-solving again." Users provide question sets, and the AI autonomously records and iterates on its notes during the problem-solving process. Through this learning cycle, the goal is to ultimately improve the model's performance. This design philosophy aligns with the [System Prompt Learning paradigm proposed by Andrej Karpathy](https://x.com/karpathy/status/1921368644069765486).
 
-*   Vue.js (前端框架)
-*   PrimeVue (UI 组件库)
-*   TypeScript (编程语言)
-*   Vite (构建工具)
-*   UnoCSS (CSS 引擎)
+## Tech Stack (Inferred from `AITrainingSystem.ts`)
 
-## 如何运行
+*   Vue.js (Frontend Framework)
+*   PrimeVue (UI Component Library)
+*   TypeScript (Programming Language)
+*   Vite (Build Tool)
+*   UnoCSS (CSS Engine)
 
-请参考项目中的 `HOW_TO_RUN-cn.md` (中文) 或 `HOW_TO_RUN-en.md` (英文) 文件获取详细的运行指南。项目提供了多种启动脚本，例如 `start-project-macos-cn.sh`，`start-project-linux-cn.sh`，`start-project-cn.bat` 等，用于在不同操作系统上启动项目。
+## How to Run
+
+Please refer to the `HOW_TO_RUN-cn.md` (Chinese) or `HOW_TO_RUN-en.md` (English) files in the project for detailed running instructions. The project provides various startup scripts, such as `start-project-macos-en.sh`, `start-project-linux-en.sh`, `start-project-en.bat`, etc., for launching the project on different operating systems.
