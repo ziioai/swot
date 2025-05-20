@@ -31,7 +31,7 @@ SWOT (meaning "Small-Town Overachiever") is an AI training system focused on Sel
 
 The SWOT system aims to enhance AI models' capabilities in specific knowledge domains by simulating a cycle of "problem-solving - learning - improving notes - problem-solving again." Users provide question sets, and the AI autonomously records and iterates on its notes during the problem-solving process. Through this learning cycle, the goal is to ultimately improve the model's performance. This design philosophy aligns with the [System Prompt Learning paradigm proposed by Andrej Karpathy](https://x.com/karpathy/status/1921368644069765486).
 
-## Tech Stack (Inferred from `AITrainingSystem.ts`)
+## Tech Stack
 
 *   Vue.js (Frontend Framework)
 *   PrimeVue (UI Component Library)
