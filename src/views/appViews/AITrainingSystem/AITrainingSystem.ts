@@ -836,11 +836,11 @@ export default defineComponent({
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
-                        // 添加的解释卡片
-                        vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, "系统介绍和使用指南"),
-                          vnd("div", { class: "text-sm opacity-80" }, "这里提供了系统的整体介绍、操作说明和背景知识，帮助用户了解和使用SWOT训练系统")
-                        ]),
+                        // // 添加的解释卡片
+                        // vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
+                        //   vnd("div", { class: "font-medium" }, "系统介绍和使用指南"),
+                        //   vnd("div", { class: "text-sm opacity-80" }, "这里提供了系统的整体介绍、操作说明和背景知识，帮助用户了解和使用SWOT训练系统")
+                        // ]),
                         vnd(MemoBoard),
                       ],
                     }),
