@@ -339,6 +339,7 @@ const AppConfigView = defineComponent({
               }}),
             ]),
 
+            window?.location?.hostname != "localhost" ? null :
             vnd(ToolButton, { size: "small", icon: "pi pi-cog", label: "debug", command: ()=>{
               console.log({
                 supplierForm,
