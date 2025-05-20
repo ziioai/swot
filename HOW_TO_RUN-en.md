@@ -61,3 +61,8 @@ This document explains how to use the provided scripts to start this project on 
 *   If, after installing `pnpm`, the script fails to find the `pnpm` command in the same session, try closing the current terminal/command prompt window, opening a new one, and then re-running the startup script. This is often because the path to the newly installed command has not yet been recognized in the current session.
 *   All interactive prompts in these scripts are in English.
 *   If you encounter any issues, check the error messages output in the terminal; they usually provide clues for resolving the problem.
+
+## Important Notes
+
+*   **Running the project using the scripts described above will start the development version.** The development version typically includes features like hot-reloading and detailed error outputs, which are helpful for development but not suitable for a production deployment.
+*   **If you intend to build the project (e.g., to generate optimized files for a production environment), this usually involves different commands and configurations (e.g., `pnpm build`). Please familiarize yourself with the project's build process and related concepts before proceeding.**
