@@ -176,8 +176,13 @@ const AppView = defineComponent({
               { label: "Dev", icon: 'pi pi-github', url: GITHUB_DEV_URL, target: '_blank', },
               { label: "GitHub", icon: 'pi pi-github', url: GITHUB_URL, target: '_blank', },
 
+              { label: "theme",
+                icon: `pi pi-${isDarkModeOn.value ? "moon" : "sun"}`,
+                command: () => { toggleDarkMode(); },
+              },
+
               // window?.location?.hostname != "localhost" ? null :
-              { label: `${locale!.value} | ${i18nLocale!.value}`,
+              { label: locale!.value,//`${locale!.value} | ${i18nLocale!.value}`,
                 icon: 'pi pi-language',
                 items: availableLocales?.value?.map(it=>({
                   label: it, icon: 'pi pi-flag',
@@ -185,10 +190,6 @@ const AppView = defineComponent({
                 })),
               },
 
-              { label: "theme",
-                icon: `pi pi-${isDarkModeOn.value ? "moon" : "sun"}`,
-                command: () => { toggleDarkMode(); },
-              },
               // { label: "root", icon: 'pi pi-globe',
               //   command: () => { router.push({ name: "root" }); },
               // },
