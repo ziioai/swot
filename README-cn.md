@@ -31,7 +31,7 @@ SWOT (意为“小镇做题家”) 是一个专注于自我提示训练 (Self-Pr
 
 SWOT 系统旨在通过模拟“做题-学习-改进笔记-再做题”的循环，帮助 AI 模型提升其在特定知识领域的能力。用户提供题集，AI 在解题过程中自主记录和迭代笔记，通过这个学习循环，最终达到提升模型表现的目的。这一设计思想与 [Andrej Karpathy 提出的 System Prompt Learning 范式](https://x.com/karpathy/status/1921368644069765486) 不谋而合。
 
-## 技术栈 (根据 `AITrainingSystem.ts` 推断)
+## 技术栈
 
 *   Vue.js (前端框架)
 *   PrimeVue (UI 组件库)

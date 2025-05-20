@@ -23,9 +23,11 @@ import renderMarkdown from '@utils/md';
 
 
 const 备忘 = `
-# SWOT (小镇做题家) - AI 训练系统
+# AI SWOT (小镇做题家) - 真正可运行的 System Prompt Learning 演示
 
-SWOT (意为“小镇做题家”) 是一个专注于自我提示训练 (Self-Prompt Training) 的 AI 训练系统。它提供了一个全面的平台，用户可以通过以下功能来训练和管理 AI 模型。
+[english version](README.md)
+
+SWOT (意为“小镇做题家”) 是一个专注于自我提示训练 (Self-Prompt Training) 、遵循了System Prompt Learning 范式的 AI 训练系统。它提供了一个全面的平台，用户可以通过以下功能来训练和管理 AI 模型。
 
 ## 核心功能
 
@@ -52,8 +54,7 @@ SWOT (意为“小镇做题家”) 是一个专注于自我提示训练 (Self-Pr
 
 ## 设计理念
 
-SWOT 系统旨在通过模拟“做题-学习-改进笔记-再做题”的循环，帮助 AI 模型提升其在特定知识领域的能力。用户提供题集，AI 在解题过程中自主记录和迭代笔记，通过这个学习循环，最终达到提升模型表现的目的。
-
+SWOT 系统旨在通过模拟“做题-学习-改进笔记-再做题”的循环，帮助 AI 模型提升其在特定知识领域的能力。用户提供题集，AI 在解题过程中自主记录和迭代笔记，通过这个学习循环，最终达到提升模型表现的目的。这一设计思想与 [Andrej Karpathy 提出的 System Prompt Learning 范式](https://x.com/karpathy/status/1921368644069765486) 不谋而合。
 
 ## 训练流程逻辑
 
