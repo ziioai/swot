@@ -831,7 +831,7 @@ export default defineComponent({
                   default: () => [
                     // MemoBoard - 显示系统说明和使用指南
                     vnd(Panel, {
-                      header: "SWOT: self-prompt training",
+                      header: "SWOT",
                       toggleable: true,
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
