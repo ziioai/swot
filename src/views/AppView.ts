@@ -169,10 +169,10 @@ const AppView = defineComponent({
             breakpoint: "0px",
             model: [
   
-              window?.location?.hostname != "localhost" ? null :
+              window?.location?.hostname != "localhost==" ? null :
               { label: 'Dev Ref', icon: 'pi pi-external-link', items: menubarDevLinkItems},
   
-              window?.location?.hostname != "localhost" ? null :
+              window?.location?.hostname != "localhost==" ? null :
               { label: "Dev", icon: 'pi pi-github', url: GITHUB_DEV_URL, target: '_blank', },
               { label: "GitHub", icon: 'pi pi-github', url: GITHUB_URL, target: '_blank', },
 

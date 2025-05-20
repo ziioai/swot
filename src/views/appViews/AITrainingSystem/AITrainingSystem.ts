@@ -588,8 +588,9 @@ export default defineComponent({
                   default: () => [
 
                     // 调试工具面板 - 提供各种调试和数据操作按钮
+                    window?.location?.hostname != "localhost" ? null :
                     vnd(Panel, {
-                      header: "DEBUG",
+                      header: "DEBUG（仅开发模式可见）",
                       toggleable: true,
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
