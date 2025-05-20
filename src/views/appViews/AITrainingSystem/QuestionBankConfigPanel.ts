@@ -317,7 +317,7 @@ export default defineComponent({
         return;
       }
       emit('processedDataImported', _.cloneDeep(configData.processedData));
-      toast.add({ severity: 'success', summary: '数据已加载', detail: `已加载 ${configData.processedData.length} 条处理记录。`, life: 3000 });
+      toast.add({ severity: 'success', summary: '数据已加载', detail: `已加载 ${configData.processedData.length} 道题。`, life: 3000 });
     };
 
     onMounted(() => {

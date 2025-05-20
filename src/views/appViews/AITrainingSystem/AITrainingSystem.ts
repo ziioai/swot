@@ -152,6 +152,11 @@ export default defineComponent({
 
     const onProcessedDataImported = (qus: any[]) => {
       appData.questions = qus;
+      save("questions", appData.questions);
+      if (appData?.trainer!=null) {
+        appData.trainer.loadQuEntries(appData.questions, false);
+      }
+      console.log("appData.questions", appData.questions);
     };
 
     /**
