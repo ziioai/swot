@@ -4,7 +4,6 @@ import { saveAs } from 'file-saver';
 import { nanoid } from 'nanoid';
 import { h as vnd, defineComponent, reactive, computed, onMounted, onUnmounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useI18n } from 'vue-i18n';
 import Panel from 'primevue/panel';
 import ToolButton from '@components/shared/ToolButton';
 import Tabs from 'primevue/tabs';
@@ -84,8 +83,6 @@ export default defineComponent({
   name: "AITrainingSystem",
   components: { TrainingControlPanel, QuestionCard, CurrentNotePanel, NoteHistoryPanel, ChatRecordsPanel, AccuracyPanel },
   setup() {
-    const { t } = useI18n();
-    const tran = (text: string, xx?: any) => t(`AITrainingSystem.AITrainingSystem.${text}`, xx);
     const toast = useToast();
 
     /**
@@ -148,7 +145,7 @@ export default defineComponent({
      */
     const 加载训练题集 = () => {
       appData.questions = SpaCE2024_Demo_Data_Standardized;
-      // toast.add({ severity: "info", summary: tran("actions.loadTrainingQuestionsSummary"), detail: tran("actions.loadTrainingQuestionsDetail", { count: appData.questions.length }), life: 1000 });
+      // toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 题`, life: 1000 });
       // save("questions", appData.questions);
       // console.log("appData.questions", appData.questions);
     };
@@ -208,8 +205,8 @@ export default defineComponent({
       await save("uiData", uiData);
       // toast.add({ 
       //   severity: "success", 
-      //   summary: tran("actions.uiStateSaved"), 
-      //   detail: tran("actions.uiStateSavedDetail", { index: uiData.activeTabIndex }), 
+      //   summary: "UI状态已保存", 
+      //   detail: `已保存当前标签页索引: ${uiData.activeTabIndex}`, 
       //   life: 1000 
       // });
       console.log("Saved UI data:", uiData);
@@ -224,8 +221,8 @@ export default defineComponent({
       await save("promptTemplates", appData.promptTemplates);
       toast.add({ 
         severity: "success", 
-        summary: tran("actions.promptTemplatesSaved"), 
-        detail: tran("actions.promptTemplatesSavedDetail", { version: appData.promptTemplates?.version || '未命名' }), 
+        summary: "提示词模板已保存", 
+        detail: `保存版本: ${appData.promptTemplates?.version || '未命名'}`, 
         life: 2000 
       });
     };
@@ -255,7 +252,7 @@ export default defineComponent({
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       const fileName = `SWOT_Trainer_${new Date().toISOString()}.json`;
       saveAs(blob, fileName);
-      toast.add({ severity: "info", summary: tran("actions.exportData"), detail: tran("actions.exportedFile", { fileName }), life: 1000 });
+      toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
     };
 
     /**
@@ -267,7 +264,7 @@ export default defineComponent({
       const blob = new Blob([JSON.stringify(appData.questions)], { type: 'application/json' });
       const fileName = `SWOT_Questions_${new Date().toISOString()}.json`;
       saveAs(blob, fileName);
-      toast.add({ severity: "info", summary: tran("actions.exportData"), detail: tran("actions.exportedFile", { fileName }), life: 1000 });
+      toast.add({ severity: "info", summary: "导出数据", detail: `已导出 ${fileName}`, life: 1000 });
     };
 
     /**
@@ -299,10 +296,10 @@ export default defineComponent({
       console.log("trainerJson", trainerJson);
       if (trainerJson) {
         appData.trainer.fromJSON(trainerJson);
-        toast.add({ severity: "info", summary: tran("actions.loaded"), detail: tran("actions.loadedTrainerState"), life: 1000 });
+        toast.add({ severity: "info", summary: "已加载", detail: `已加载训练器状态`, life: 1000 });
       }
       appData.trainer.signalFn = (msg: string, severity: string="info", life: number=1000) => {
-        toast.add({ severity: severity??"info", summary: tran("actions.swot"), detail: msg, life: life??1000 });
+        toast.add({ severity: severity??"info", summary: "SWOT", detail: msg, life: life??1000 });
       }
       appData.trainer.supplierForm = supplierForm;
       console.log("appData.trainer", appData.trainer);
@@ -315,11 +312,11 @@ export default defineComponent({
         if (appData.trainer) {
           appData.trainer.updatePromptTemplates(promptTemplates);
         }
-        console.log(tran("actions.loadedPromptTemplates"), promptTemplates);
+        console.log("Loaded prompt templates:", promptTemplates);
       } else {
         // Initialize with default templates from solver.ts
         appData.promptTemplates = {
-          version: promptVersion || tran("actions.defaultTemplates"),
+          version: promptVersion || "默认模板",
           stage0_判断题型: stage0_判断题型_prompt,
           stage1_根据笔记做题: stage1_根据笔记做题_prompt,
           stage2_根据错题修改笔记: stage2_根据错题修改笔记_prompt,
@@ -339,11 +336,11 @@ export default defineComponent({
       if (savedQuestions?.length) {
         appData.questions = savedQuestions;
         appData.trainer.loadQuEntries(savedQuestions, false);
-        toast.add({ severity: "info", summary: tran("actions.loaded"), detail: tran("actions.loadedSavedQuestions", { count: appData.questions.length }), life: 1000 });
+        toast.add({ severity: "info", summary: "已加载", detail: `加载了 ${appData.questions.length} 条已保存的题目`, life: 1000 });
       } else {
         await 加载训练题集();
         appData.trainer.loadQuEntries(appData.questions, false);
-        toast.add({ severity: "info", summary: tran("actions.loadFromScratch"), detail: tran("actions.loadedBuiltInQuestions", {count: appData.questions.length }), life: 1000 });
+        toast.add({ severity: "info", summary: "从头加载", detail: `加载了 ${appData.questions.length} 条内置题目`, life: 1000 });
       }
       console.log("appData.questions", appData.questions);
     };
@@ -364,7 +361,7 @@ export default defineComponent({
      * 分析问题答案中的错误（UI演示功能）
      */
     const analyzeError = () => {
-      toast.add({ severity: "info", summary: tran("actions.uiDemo"), detail: tran("actions.errorAnalysisClicked"), life: 1000 });
+      toast.add({ severity: "info", summary: "UI演示", detail: "错误分析点击", life: 1000 });
     };
 
     /**
@@ -375,13 +372,13 @@ export default defineComponent({
     const handleFileUploaded = async (fileData: { name: string, content: string | ArrayBuffer | null, file: File }) => {
       try {
         if (!fileData.content || typeof fileData.content !== 'string') {
-          toast.add({ severity: "error", summary: tran("actions.importFailed"), detail: tran("actions.invalidFileContent"), life: 3000 });
+          toast.add({ severity: "error", summary: "导入失败", detail: "文件内容无效", life: 3000 });
           return;
         }
 
         const jsonData = JSON.parse(fileData.content);
         if (!jsonData) {
-          toast.add({ severity: "error", summary: tran("actions.importFailed"), detail: tran("actions.cannotParseJson"), life: 3000 });
+          toast.add({ severity: "error", summary: "导入失败", detail: "无法解析 JSON 数据", life: 3000 });
           return;
         }
 
@@ -404,16 +401,16 @@ export default defineComponent({
         
         toast.add({ 
           severity: "success", 
-          summary: tran("actions.importSuccessful"), 
-          detail: tran("actions.importSuccessfulDetail", { fileName: fileData.name }), 
+          summary: "导入成功", 
+          detail: `成功导入训练器数据，来自文件: ${fileData.name}`, 
           life: 3000 
         });
       } catch (error: any) {
-        console.error(tran("actions.importDataFailed"), error);
+        console.error("导入数据失败:", error);
         toast.add({ 
           severity: "error", 
-          summary: tran("actions.importFailed"), 
-          detail: error.message || tran("actions.importErrorOccurred"), 
+          summary: "导入失败", 
+          detail: error.message || "导入训练器数据时发生错误", 
           life: 3000 
         });
       }
@@ -443,13 +440,13 @@ export default defineComponent({
         await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
         toast.add({ 
           severity: "success", 
-          summary: tran("actions.noteSaved"), 
-          detail: tran("actions.noteSavedDetail", { versionId: newVersionId }), 
+          summary: "笔记保存", 
+          detail: `笔记已保存，新版本标识: ${newVersionId}`, 
           life: 2000 
         });
       } catch (err: any) {
-        console.error(tran("actions.saveNoteFailed"), err);
-        toast.add({ severity: "error", summary: tran("actions.noteSaved"), detail: err.message || "未知错误", life: 3000 });
+        console.error("保存笔记失败:", err);
+        toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
       }
     };
 
@@ -465,8 +462,8 @@ export default defineComponent({
         appData.trainer.state.notebookVersion = newVersionId;
         toast.add({ 
           severity: "info", 
-          summary: tran("actions.noteUpdated"), 
-          detail: tran("actions.noteUpdatedDetail", { versionId: newVersionId }), 
+          summary: "笔记已更新", 
+          detail: `新版本标识: ${newVersionId}`, 
           life: 2000 
         });
       }
@@ -486,13 +483,13 @@ export default defineComponent({
         await 记录版本笔记数据(appData.trainer?.state?.notebook, newVersionId);
         toast.add({ 
           severity: "success", 
-          summary: tran("actions.noteSaved"), 
-          detail: tran("actions.noteSavedDetail", { versionId: newVersionId }), 
+          summary: "笔记保存", 
+          detail: `笔记已保存，新版本标识: ${newVersionId}`, 
           life: 2000 
         });
       } catch (err: any) {
-        console.error(tran("actions.saveNoteFailed"), err);
-        toast.add({ severity: "error", summary: tran("actions.noteSaved"), detail: err.message || "未知错误", life: 3000 });
+        console.error("保存笔记失败:", err);
+        toast.add({ severity: "error", summary: "笔记保存失败", detail: err.message || "未知错误", life: 3000 });
       }
     };
 
@@ -503,13 +500,13 @@ export default defineComponent({
      */
     const handleSelectNoteVersion = (backup: any) => {
       if (!appData.trainer) return;
-      console.log(tran("actions.loadingNoteVersion"), backup);
+      console.log("准备加载笔记版本", backup);
       if (backup?.data?.entries?.length) {
-        toast.add({ severity: "info", summary: tran("actions.loadingNoteVersion"), detail: tran("actions.loadVersion", { key: backup.key }), life: 1000 });
+        toast.add({ severity: "info", summary: "加载笔记版本", detail: `加载版本: ${backup.key}`, life: 1000 });
         appData.trainer.state.notebook = backup.data;
         appData.trainer.state.notebookVersion = backup.key;
       } else {
-        toast.add({ severity: "error", summary: tran("actions.versionNoContent"), detail: tran("actions.versionNotLoaded", {key: backup.key}), life: 3000 });
+        toast.add({ severity: "error", summary: "版本无内容", detail: `版本无内容，未加载: ${backup.key}`, life: 3000 });
       }
     };
 
@@ -519,7 +516,7 @@ export default defineComponent({
      * 处理用户选择的对话记录
      */
     const handleSelectChat = (chat: any) => {
-      console.log(tran("actions.selectedChatRecord"), chat);
+      console.log("选择对话记录", chat);
       // 后续可以添加处理选中对话记录的逻辑
     };
 
@@ -572,14 +569,14 @@ export default defineComponent({
             // 标签列表 - 定义了各个功能区的标签
             vnd(TabList, { class: "mb-3 max-w-100% overflow-auto" }, {
               default: () => [
-                vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.description") }),
-                vnd(Tab, { value: 7, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.modelInterfaceConfig") }),
-                vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.questionBankConfig") }),
-                vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.promptConfig") }),
-                vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.trainingAndAnswering") }),
-                vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.noteHistory") }),
-                vnd(Tab, { value: 6, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.chatRecords") }),
-                vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => tran("tabs.storageManagement") }),
+                vnd(Tab, { value: 4, pt: { root: { class: 'font-bold' } } }, { default: () => "说明" }),
+                vnd(Tab, { value: 7, pt: { root: { class: 'font-bold' } } }, { default: () => "模型接口配置" }),
+                vnd(Tab, { value: 3, pt: { root: { class: 'font-bold' } } }, { default: () => "题库配置" }),
+                vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
+                vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
+                vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => "笔记历史" }),
+                vnd(Tab, { value: 6, pt: { root: { class: 'font-bold' } } }, { default: () => "对话记录" }),
+                vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => "存储管理" }),
               ]
             }),
             
@@ -593,26 +590,26 @@ export default defineComponent({
                     // 调试工具面板 - 提供各种调试和数据操作按钮
                     window?.location?.hostname != "localhost" ? null :
                     vnd(Panel, {
-                      header: tran("panels.debugPanel.header"),
+                      header: "DEBUG（仅开发模式可见）",
                       toggleable: true,
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.debugPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.debugPanel.description"))
+                          vnd("div", { class: "font-medium" }, "调试工具面板"),
+                          vnd("div", { class: "text-sm opacity-80" }, "这里提供各种调试和数据操作按钮，用于保存/加载应用状态、导出/导入训练器数据等")
                         ]),
                         vnd("div", {class: "stack-v"}, [
                           vnd("div", {class: "stack-h"}, [
-                            vnd(ToolButton, { label: tran("actions.saveAppData"), icon: "pi pi-play", onClick: saveAppData, }),
-                            vnd(ToolButton, { label: tran("actions.loadAppData"), icon: "pi pi-play", onClick: loadAppData, }),
-                            vnd(ToolButton, { label: tran("actions.printAppData"), icon: "pi pi-play", onClick: logAppData, }),
-                            vnd(ToolButton, { label: tran("actions.printUiData"), icon: "pi pi-info", onClick: handleLogUiData }),
-                            vnd(ToolButton, { label: tran("actions.saveUiData"), icon: "pi pi-save", onClick: saveUiData }),
-                            vnd(ToolButton, { label: tran("actions.exportTrainerData"), icon: "pi pi-download", onClick: exportTrainerData, }),
-                            vnd(ToolButton, { label: tran("actions.toggleImportDialog"), icon: "pi pi-upload", onClick: handleToggleImportDialog }),
-                            vnd(ToolButton, { label: tran("actions.exportQuestions"), icon: "pi pi-play", onClick: exportQuestions, }),
+                            vnd(ToolButton, { label: "saveAppData", icon: "pi pi-play", onClick: saveAppData, }),
+                            vnd(ToolButton, { label: "loadAppData", icon: "pi pi-play", onClick: loadAppData, }),
+                            vnd(ToolButton, { label: "logAppData", icon: "pi pi-play", onClick: logAppData, }),
+                            vnd(ToolButton, { label: "logUiData", icon: "pi pi-info", onClick: handleLogUiData }),
+                            vnd(ToolButton, { label: "saveUiData", icon: "pi pi-save", onClick: saveUiData }),
+                            vnd(ToolButton, { label: "exportTrainerData", icon: "pi pi-download", onClick: exportTrainerData, }),
+                            vnd(ToolButton, { label: "importTrainerData", icon: "pi pi-upload", onClick: handleToggleImportDialog }),
+                            vnd(ToolButton, { label: "exportQuestions", icon: "pi pi-play", onClick: exportQuestions, }),
                           ]),
                         ]),
                       ],
@@ -623,15 +620,15 @@ export default defineComponent({
                       vnd("div", { class: "col-span-1 md:col-span-6 xl:col-span-5 grid grid-cols-1 gap-4" }, [
                         // 训练控制面板 - 提供训练过程控制功能
                         vnd(Panel, {
-                          header: tran("panels.trainingControlPanel.header"),
+                          header: "训练控制",
                           toggleable: true,
                           class: ["bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                         }, {
                           default: () => [
                             // 添加的解释卡片
                             vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                              vnd("div", { class: "font-medium" }, tran("panels.trainingControlPanel.title")),
-                              vnd("div", { class: "text-sm opacity-80" }, tran("panels.trainingControlPanel.description"))
+                              vnd("div", { class: "font-medium" }, "控制AI训练流程和参数"),
+                              vnd("div", { class: "text-sm opacity-80" }, "在此面板可调整训练参数、启动/暂停训练，并监控训练进度")
                             ]),
                             vnd(TrainingControlPanel, {
                               options: appData.trainer?.options,
@@ -656,15 +653,15 @@ export default defineComponent({
 
                       // 题目笔记面板 - 显示和编辑当前笔记
                       vnd(Panel, {
-                        header: tran("panels.questionNotesPanel.header"),
+                        header: "题目笔记",
                         toggleable: true,
                         class: ["col-span-1 md:col-span-6 xl:col-span-7", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                       }, {
                         default: () => [
                           // 添加的解释卡片
                           vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                            vnd("div", { class: "font-medium" }, tran("panels.questionNotesPanel.title")),
-                            vnd("div", { class: "text-sm opacity-80" }, tran("panels.questionNotesPanel.description"))
+                            vnd("div", { class: "font-medium" }, "查看和编辑用于训练的笔记内容"),
+                            vnd("div", { class: "text-sm opacity-80" }, "笔记是AI学习的核心内容，在这里可以查看和编辑笔记，追踪AI对笔记的修改建议")
                           ]),
                           vnd("div", {
                             class: "stack-v",
@@ -692,15 +689,15 @@ export default defineComponent({
                     
                     // 本次循环的答题情况 - 显示当前训练循环中的问题和回答
                     vnd(Panel, {
-                      header: tran("panels.currentLoopAnsweringPanel.header"),
+                      header: "本次循环的答题情况",
                       toggleable: true,
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.currentLoopAnsweringPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.currentLoopAnsweringPanel.description"))
+                          vnd("div", { class: "font-medium" }, "展示当前训练中的问题及AI的回答"),
+                          vnd("div", { class: "text-sm opacity-80" }, "在这里可以查看本轮训练中AI处理的每个问题及其回答，包括正确与错误的情况")
                         ]),
                         vnd("div", {
                           class: ["stack-h"],
@@ -729,14 +726,14 @@ export default defineComponent({
                 vnd(TabPanel, { value: 7 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: tran("panels.modelInterfaceManagementPanel.header"),
+                      header: "模型接口管理",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.modelInterfaceManagementPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.modelInterfaceManagementPanel.description"))
+                          vnd("div", { class: "font-medium" }, "对模型接口进行管理"),
+                          vnd("div", { class: "text-sm opacity-80" }, "管理模型接口")
                         ]),
                         vnd(AppConfigView, {}),
                       ]
@@ -748,14 +745,14 @@ export default defineComponent({
                 vnd(TabPanel, { value: 1 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: tran("panels.noteHistoryPanel.header"),
+                      header: "笔记历史版本",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.noteHistoryPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.noteHistoryPanel.description"))
+                          vnd("div", { class: "font-medium" }, "管理和恢复之前的笔记版本"),
+                          vnd("div", { class: "text-sm opacity-80" }, "这里保存了所有历史笔记版本，可以查看笔记的演变过程，并在需要时恢复到之前的版本")
                         ]),
                         vnd(NoteHistoryPanel, {
                           class: "w-100%",
@@ -771,14 +768,14 @@ export default defineComponent({
                 vnd(TabPanel, { value: 2 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: tran("panels.promptTemplatesPanel.header"),
+                      header: "提示词模板管理",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.promptTemplatesPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.promptTemplatesPanel.description"))
+                          vnd("div", { class: "font-medium" }, "配置用于训练的提示词模板"),
+                          vnd("div", { class: "text-sm opacity-80" }, "在这里可以编辑和管理用于训练过程中各个阶段的提示词模板，以优化AI的训练效果")
                         ]),
                         vnd(PromptTemplatesPanel, {
                           savedTemplates: appData.promptTemplates,
@@ -795,8 +792,8 @@ export default defineComponent({
                   default: () => [
                     // 添加的解释卡片
                     vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                      vnd("div", { class: "font-medium" }, tran("panels.questionBankConfigPanel.title")),
-                      vnd("div", { class: "text-sm opacity-80" }, tran("panels.questionBankConfigPanel.description"))
+                      vnd("div", { class: "font-medium" }, "对题库进行配置"),
+                      vnd("div", { class: "text-sm opacity-80" }, "在这里可以管理用于训练或测试的题库数据，配备了基础的数据格式相关功能")
                     ]),
                     vnd(QuestionBankConfigPanel, {
                       onProcessedDataImported: onProcessedDataImported,
@@ -834,7 +831,7 @@ export default defineComponent({
                   default: () => [
                     // MemoBoard - 显示系统说明和使用指南
                     vnd(Panel, {
-                      header: tran("panels.memoBoardPanel.header"),
+                      header: "SWOT",
                       toggleable: true,
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
@@ -854,14 +851,14 @@ export default defineComponent({
                 vnd(TabPanel, { value: 6 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: tran("panels.chatHistoryPanel.header"),
+                      header: "对话历史记录",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [
                         // 添加的解释卡片
                         vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                          vnd("div", { class: "font-medium" }, tran("panels.chatHistoryPanel.title")),
-                          vnd("div", { class: "text-sm opacity-80" }, tran("panels.chatHistoryPanel.description"))
+                          vnd("div", { class: "font-medium" }, "查看和管理与AI模型的对话记录"),
+                          vnd("div", { class: "text-sm opacity-80" }, "这里保存了与AI模型的历史对话记录，可以查看和分析之前的交互过程")
                         ]),
                         vnd(ChatRecordsPanel, {
                           class: "w-100%",
@@ -878,8 +875,8 @@ export default defineComponent({
                   default: () => [
                     // 添加的解释卡片
                     vnd("div", { class: "p-2 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-sm border-l-4 border-blue-500" }, [
-                      vnd("div", { class: "font-medium" }, tran("panels.storageManagementPanel.title")),
-                      vnd("div", { class: "text-sm opacity-80" }, tran("panels.storageManagementPanel.description"))
+                      vnd("div", { class: "font-medium" }, "管理本地存储数据"),
+                      vnd("div", { class: "text-sm opacity-80" }, "在这里可以查看和管理系统在本地存储的各种数据，包括清理和备份功能")
                     ]),
                     vnd(StorageInfoPanel, {
                       class: "w-100%",
@@ -895,7 +892,7 @@ export default defineComponent({
         vnd(FileUploadDialog, {
           visible: showImportDialog.value,
           'onUpdate:visible': handleUpdateImportDialogVisibility,
-          title: tran("dialogs.importTrainerData"),
+          title: "导入训练器数据",
           acceptedFileTypes: "application/json",
           onFileUploaded: handleFileUploaded,
         }),
