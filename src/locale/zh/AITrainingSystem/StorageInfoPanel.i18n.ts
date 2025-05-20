@@ -13,6 +13,6 @@ export default {
   totalRecords: "数据库记录总数",
   recordsSuffix: "条记录",
   qtBookBackupsTable: "笔记历史版本表",
-  chatRecordsTable: "聊天记录表",
+  chatRecordsTable: "对话记录表",
   kvsTable: "键值存储表",
 };

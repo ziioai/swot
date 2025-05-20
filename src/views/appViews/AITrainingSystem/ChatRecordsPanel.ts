@@ -133,7 +133,7 @@ export default defineComponent({
     
     // Delete a chat record
     const deleteChat = async (chat: any) => {
-      if (confirm(`确定要删除聊天记录 ${chat.key} 吗？`)) {
+      if (confirm(`确定要删除对话记录 ${chat.key} 吗？`)) {
         try {
           await deleteChatRecord(chat.id);
           reload(); // Refresh the list after deletion
@@ -205,7 +205,7 @@ export default defineComponent({
         collapsed: false,
       }, {
         header: () => vnd("div", { class: "stack-h items-center! justify-between w-full" }, [
-          vnd("div", { class: "font-bold" }, ["聊天历史记录"]),
+          vnd("div", { class: "font-bold" }, ["对话历史记录"]),
         ]),
         default: () => vnd("div", { class: [] }, [
           // Action buttons
@@ -255,7 +255,7 @@ export default defineComponent({
                 onClick: () => {
                   showConfirm(
                     "删除所有已标记的记录",
-                    "确定要删除所有已标记的聊天记录吗？此操作不可撤销。",
+                    "确定要删除所有已标记的对话记录吗？此操作不可撤销。",
                     async () => {
                       try {
                         batchOperationInProgress.value = true;
@@ -292,7 +292,7 @@ export default defineComponent({
                 onClick: () => {
                   showConfirm(
                     "删除所有未标记的记录",
-                    "确定要删除所有未标记的聊天记录吗？此操作不可撤销。",
+                    "确定要删除所有未标记的对话记录吗？此操作不可撤销。",
                     async () => {
                       try {
                         batchOperationInProgress.value = true;
@@ -329,7 +329,7 @@ export default defineComponent({
                 onClick: () => {
                   showConfirm(
                     "删除所有记录",
-                    "确定要删除所有聊天记录吗？此操作不可撤销。",
+                    "确定要删除所有对话记录吗？此操作不可撤销。",
                     async () => {
                       try {
                         batchOperationInProgress.value = true;
@@ -395,7 +395,7 @@ export default defineComponent({
             
             // Table body
             chatRecords.value.length === 0 ? 
-              vnd("div", { class: "p-4 text-center text-gray-500 dark:text-gray-400" }, ["没有聊天记录"]) :
+              vnd("div", { class: "p-4 text-center text-gray-500 dark:text-gray-400" }, ["没有对话记录"]) :
               chatRecords.value.map(item => 
                 vnd("div", { 
                   key: item.id,
@@ -416,7 +416,7 @@ export default defineComponent({
                     }),
                     vnd(ToolButton, {
                       icon: "pi pi-arrow-right-arrow-left",
-                      tip: "加载此聊天记录",
+                      tip: "加载此对话记录",
                       onClick: () => loadChat(item)
                     }),
                     vnd(ToolButton, {
@@ -434,7 +434,7 @@ export default defineComponent({
                             chatRecords.value[index].isMarked = newIsMarkedValue;
                           }
                         } catch (error) {
-                          console.error("标记/取消标记聊天记录失败:", error);
+                          console.error("标记/取消标记对话记录失败:", error);
                         }
                       }
                     }),
@@ -464,7 +464,7 @@ export default defineComponent({
           
           // Chat details dialog
           vnd(Dialog, {
-            header: "聊天记录详情",
+            header: "对话记录详情",
             visible: showChatDialog.value,
             style: { width: '80vw' },
             modal: true,

@@ -511,13 +511,13 @@ export default defineComponent({
     };
 
     /**
-     * 处理聊天记录选择
+     * 处理对话记录选择
      * 
-     * 处理用户选择的聊天记录
+     * 处理用户选择的对话记录
      */
     const handleSelectChat = (chat: any) => {
-      console.log("选择聊天记录", chat);
-      // 后续可以添加处理选中聊天记录的逻辑
+      console.log("选择对话记录", chat);
+      // 后续可以添加处理选中对话记录的逻辑
     };
 
     // -------------------------------
@@ -575,7 +575,7 @@ export default defineComponent({
                 vnd(Tab, { value: 2, pt: { root: { class: 'font-bold' } } }, { default: () => "提示词配置" }),
                 vnd(Tab, { value: 0, pt: { root: { class: 'font-bold' } } }, { default: () => "训练与答题" }),
                 vnd(Tab, { value: 1, pt: { root: { class: 'font-bold' } } }, { default: () => "笔记历史" }),
-                vnd(Tab, { value: 6, pt: { root: { class: 'font-bold' } } }, { default: () => "聊天记录" }),
+                vnd(Tab, { value: 6, pt: { root: { class: 'font-bold' } } }, { default: () => "对话记录" }),
                 vnd(Tab, { value: 5, pt: { root: { class: 'font-bold' } } }, { default: () => "存储管理" }),
               ]
             }),
@@ -847,11 +847,11 @@ export default defineComponent({
                   ],
                 }),
 
-                // 标签页6: 聊天记录 - 显示历史聊天记录
+                // 标签页6: 对话记录 - 显示历史对话记录
                 vnd(TabPanel, { value: 6 }, {
                   default: () => [
                     vnd(Panel, {
-                      header: "聊天历史记录",
+                      header: "对话历史记录",
                       class: ["my-1.5rem! col", "bg-zinc-100/75!", "dark:bg-zinc-800/75!",]
                     }, {
                       default: () => [

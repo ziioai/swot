@@ -369,7 +369,7 @@ const AppConfigView = defineComponent({
               "onUpdate:modelValue": (value: string) => newSupplierData.modelsString = value,
             }),
             vnd(InputText, { fluid: true, placeholder: "模型列表 API 路径 (e.g., /models)", modelValue: newSupplierData.modelsUrl, "onUpdate:modelValue": (v: string) => newSupplierData.modelsUrl = v }),
-            vnd(InputText, { fluid: true, placeholder: "聊天 API 路径 (e.g., /chat/completions)", modelValue: newSupplierData.chatUrl, "onUpdate:modelValue": (v: string) => newSupplierData.chatUrl = v }),
+            vnd(InputText, { fluid: true, placeholder: "对话 API 路径 (e.g., /chat/completions)", modelValue: newSupplierData.chatUrl, "onUpdate:modelValue": (v: string) => newSupplierData.chatUrl = v }),
             vnd(Select, {
               class: "hidden!",
               options: supplierTypes,

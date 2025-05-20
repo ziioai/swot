@@ -775,20 +775,20 @@ export const getQtBookBackupsCountBySegments = async (segments: number = 10): Pr
 }
 
 /**
- * 更新聊天记录的标记状态
- * @param id 聊天记录的ID
+ * 更新对话记录的标记状态
+ * @param id 对话记录的ID
  * @param isMarked 是否标记
- * @returns 更新后的聊天记录ID
+ * @returns 更新后的对话记录ID
  */
 export const updateChatRecordMark = async (id: number, isMarked: boolean) => {
-  console.log(`更新聊天记录标记状态: ID=${id}, isMarked=${isMarked}`);
+  console.log(`更新对话记录标记状态: ID=${id}, isMarked=${isMarked}`);
   const startTime = performance.now();
   
   try {
     // 获取现有记录
     const record = await db.chatRecords.get(id);
     if (!record) {
-      console.error(`聊天记录不存在: ID=${id}`);
+      console.error(`对话记录不存在: ID=${id}`);
       return null;
     }
     
@@ -796,12 +796,12 @@ export const updateChatRecordMark = async (id: number, isMarked: boolean) => {
     await db.chatRecords.update(id, { isMarked });
     
     const endTime = performance.now();
-    console.log(`更新聊天记录标记状态成功: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+    console.log(`更新对话记录标记状态成功: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
     
     return id;
   } catch (error) {
     const endTime = performance.now();
-    console.error(`更新聊天记录标记状态失败: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    console.error(`更新对话记录标记状态失败: ID=${id}, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
     throw error;
   }
 };
@@ -839,7 +839,7 @@ export const updateQtBookBackupMark = async (id: number, isMarked: boolean) => {
 };
 
 /**
- * 批量删除聊天记录 - 针对大数据量优化
+ * 批量删除对话记录 - 针对大数据量优化
  * 使用分批处理和游标，避免一次性加载所有数据到内存中
  * @param condition 删除条件，可以是一个过滤函数或特定属性值
  * @param options 批处理选项
@@ -857,7 +857,7 @@ export const batchDeleteChatRecords = async (
     progressCallback 
   } = options;
   
-  console.log(`开始批量删除聊天记录: 条件=`, condition, `批大小=${batchSize}`);
+  console.log(`开始批量删除对话记录: 条件=`, condition, `批大小=${batchSize}`);
   const startTime = performance.now();
   
   try {
@@ -962,12 +962,12 @@ export const batchDeleteChatRecords = async (
     }
     
     const endTime = performance.now();
-    console.log(`批量删除聊天记录成功: 共删除了${totalDeleted}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+    console.log(`批量删除对话记录成功: 共删除了${totalDeleted}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
     
     return totalDeleted;
   } catch (error) {
     const endTime = performance.now();
-    console.error(`批量删除聊天记录失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    console.error(`批量删除对话记录失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
     throw error;
   }
 };
@@ -1107,7 +1107,7 @@ export const batchDeleteQtBookBackups = async (
 };
 
 /**
- * 删除所有聊天记录 - 支持大数据量情况
+ * 删除所有对话记录 - 支持大数据量情况
  * @param options 操作选项
  * @returns 删除的记录数量
  */
@@ -1116,7 +1116,7 @@ export const deleteAllChatRecords = async (options: {
   useClear?: boolean; // 是否使用clear方法（适用于小数据量）
 } = {}) => {
   const { progressCallback, useClear = false } = options;
-  console.log(`开始删除所有聊天记录 ${useClear ? '(使用clear方法)' : '(使用批量删除)'}`);
+  console.log(`开始删除所有对话记录 ${useClear ? '(使用clear方法)' : '(使用批量删除)'}`);
   const startTime = performance.now();
   
   try {
@@ -1136,7 +1136,7 @@ export const deleteAllChatRecords = async (options: {
       }
       
       const endTime = performance.now();
-      console.log(`删除所有聊天记录成功: 删除了${count}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+      console.log(`删除所有对话记录成功: 删除了${count}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
       
       return count;
     } else {
@@ -1172,13 +1172,13 @@ export const deleteAllChatRecords = async (options: {
       }
       
       const endTime = performance.now();
-      console.log(`批量删除所有聊天记录成功: 删除了${deletedCount}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
+      console.log(`批量删除所有对话记录成功: 删除了${deletedCount}条记录, 耗时: ${(endTime - startTime).toFixed(2)} ms`);
       
       return deletedCount;
     }
   } catch (error) {
     const endTime = performance.now();
-    console.error(`删除所有聊天记录失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
+    console.error(`删除所有对话记录失败, 耗时: ${(endTime - startTime).toFixed(2)} ms`, error);
     throw error;
   }
 };
