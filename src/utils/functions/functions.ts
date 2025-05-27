@@ -145,65 +145,6 @@ export const 刷新模型列表 = async (supplier: SupplierDict, form: any) => {
 
 // ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
 
-export async function 一般处理函数模板<CR, TT>(
-  demoData: any,
-  supplierForm: any,
-  系统提示词: string,
-  制作输入的函数: (demoData: any)=>string,
-  tempData: any={},
-  otherLLMOptions: any=null,
-  startFn?: any,
-  chunkFn?: any,
-  resultFn?: any,
-  onAfterUpdate?: any,
-) {
-  const modelName = supplierForm?.selectedModelDict?.[supplierForm?.selectedSupplier?.name]?.name;
-  const 系统提示词fix = !系统提示词?.trim?.()?.length ? "" : `${
-    modelName=="free:QwQ-32B"?"这是一个简单任务，请不要过度思考，尽量直接输出答案。\n\n----------\n\n":""
-  }${系统提示词}${
-    modelName=="free:QwQ-32B"?"\n\n----------\n\n这是一个简单任务，请不要过度思考，尽量直接输出答案。":""
-  }`;
-
-
-  const lifeCycleFns: LifeCycleFns<CR, TT> = {
-    chunkProcessor: async (result, delta) => {
-      // console.log("delta", delta);
-      await chunkFn?.(demoData, tempData, result, delta);
-      return delta as CR;
-    },
-    resultProcessor: async (result) => {
-      await resultFn?.(demoData, tempData, result);
-      return result as any;
-    },
-    onAfterUpdate: async () => {
-      await onAfterUpdate?.();
-    },
-  };
-
-  await startFn?.(demoData, tempData);
-  const llmOps = {
-    baseURL: supplierForm?.selectedSupplier?.baseUrl,
-    apiKey: supplierForm?.apiKeyDict[supplierForm?.selectedSupplier?.name],
-    defaultModel: supplierForm?.selectedModelDict?.[supplierForm?.selectedSupplier?.name]?.name,
-  };
-  const llmClient = new LLMClient(llmOps);
-  const initialResult = {} as CR;
-  const generator = llmClient.chatWithLifeCycle(
-    系统提示词fix,
-    [{role: "user" as LLMRole.User, content: 制作输入的函数(demoData)}],
-
-    initialResult,
-    otherLLMOptions??{ max_tokens: 2000, temperature: 1, },
-    lifeCycleFns,
-  );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  for await (const _chunk of generator) {
-    // console.log("_chunk", _chunk);
-    // do nothing
-  }
-  // demoData.processing = false;
-}
-
 export const 默认初始化函数 = async (demoData: any) => {
   demoData.processing = true;
   demoData.thinkingSpans = [] as string[];
@@ -225,43 +166,6 @@ export const 一般初始化函数__旧版 = async (demoData: any, tempData: any
 
 // ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
 
-export async function 进一步抽象的标准化处理函数<CR, TT>(
-  系统提示词: string,
-  制作输入的函数: (demoData: any)=>string,
-  dataWrap: any,
-  supplierForm: any,
-  llmOptions?: any,
-  onAfterUpdate?: any,
-  resultFn: any = 一般结果处理函数,
-) {
-  const theTempData = {};
-  const modelName = supplierForm?.selectedModelDict?.[supplierForm?.selectedSupplier?.name]?.name;
-  await 一般处理函数模板<CR, TT>(
-    dataWrap, supplierForm, 系统提示词, 制作输入的函数,
-    theTempData,
-    Object.assign({ max_tokens: modelName=="free:QwQ-32B"?8000:4000,
-      // presence_penalty: 0.06,
-      // temperature: 0.7,
-      model: modelName,
-      temperature: 1,
-    }, llmOptions??{}),
-    默认初始化函数,
-    async (dataWrap: any, _tempData: any, _result: any, delta: any) => {
-      // console.log("delta", delta);
-      if (delta.reasoning_content) {
-        dataWrap.thinkingSpans.push(delta.reasoning_content);
-      }
-      if (delta.content) {
-        dataWrap.outputSpans.push(delta.content);
-      }
-    },
-    resultFn,
-    async () => {
-      await onAfterUpdate?.();
-      dataWrap.processing = false;
-    },
-  );
-}
 
 export async function 一般结果处理函数(dataWrap: any, _tempData: any, _result: any) {
   // console.log("delta", delta);
@@ -312,4 +216,160 @@ export const badJSONLinesParser = (jsonStr: string) => {
 
 // ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
 // ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+interface 一般处理函数参数字典 {
+  demoData: any;
+  supplierForm: any;
+  系统提示词: string;
+  制作输入的函数: (demoData: any) => string;
+  tempData?: any;
+  otherLLMOptions?: any;
+  startFn?: any;
+  chunkFn?: any;
+  resultFn?: any;
+  onAfterUpdate?: any;
+}
+
+export async function 一般处理函数模板_字典版本<CR, TT>(
+  params: 一般处理函数参数字典
+) {
+  const modelName = params.supplierForm?.selectedModelDict?.[params.supplierForm?.selectedSupplier?.name]?.name;
+  const 系统提示词fix = !params.系统提示词?.trim?.()?.length ? "" : `${
+    modelName=="free:QwQ-32B"?"这是一个简单任务，请不要过度思考，尽量直接输出答案。\n\n----------\n\n":""
+  }${params.系统提示词}${
+    modelName=="free:QwQ-32B"?"\n\n----------\n\n这是一个简单任务，请不要过度思考，尽量直接输出答案。":""
+  }`;
+
+  const tempData = params.tempData ?? {};
+
+  const lifeCycleFns: LifeCycleFns<CR, TT> = {
+    chunkProcessor: async (result, delta) => {
+      // console.log("delta", delta);
+      await params.chunkFn?.(params.demoData, tempData, result, delta);
+      return delta as CR;
+    },
+    resultProcessor: async (result) => {
+      await params.resultFn?.(params.demoData, tempData, result);
+      return result as any;
+    },
+    onAfterUpdate: async () => {
+      await params.onAfterUpdate?.();
+    },
+  };
+
+  await params.startFn?.(params.demoData, tempData);
+  const llmOps = {
+    baseURL: params.supplierForm?.selectedSupplier?.baseUrl,
+    apiKey: params.supplierForm?.apiKeyDict[params.supplierForm?.selectedSupplier?.name],
+    defaultModel: params.supplierForm?.selectedModelDict?.[params.supplierForm?.selectedSupplier?.name]?.name,
+  };
+  const llmClient = new LLMClient(llmOps);
+  const initialResult = {} as CR;
+  const generator = llmClient.chatWithLifeCycle(
+    系统提示词fix,
+    [{role: "user" as LLMRole.User, content: params.制作输入的函数(params.demoData)}],
+
+    initialResult,
+    params.otherLLMOptions ?? { max_tokens: 2000, temperature: 1, },
+    lifeCycleFns,
+  );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  for await (const _chunk of generator) {
+    // console.log("_chunk", _chunk);
+    // do nothing
+  }
+  // demoData.processing = false;
+}
+
+export async function 一般处理函数模板<CR, TT>(
+  demoData: any,
+  supplierForm: any,
+  系统提示词: string,
+  制作输入的函数: (demoData: any)=>string,
+  tempData: any={},
+  otherLLMOptions: any=null,
+  startFn?: any,
+  chunkFn?: any,
+  resultFn?: any,
+  onAfterUpdate?: any,
+) {
+  return await 一般处理函数模板_字典版本<CR, TT>({
+    demoData,
+    supplierForm,
+    系统提示词,
+    制作输入的函数,
+    tempData,
+    otherLLMOptions,
+    startFn,
+    chunkFn,
+    resultFn,
+    onAfterUpdate
+  });
+}
+
+interface 进一步抽象的标准化处理函数参数字典 {
+  系统提示词: string;
+  制作输入的函数: (demoData: any) => string;
+  dataWrap: any;
+  supplierForm: any;
+  llmOptions?: any;
+  onAfterUpdate?: any;
+  resultFn?: any;
+}
+
+export async function 进一步抽象的标准化处理函数_字典版本<CR, TT>(
+  params: 进一步抽象的标准化处理函数参数字典
+) {
+  const theTempData = {};
+  const modelName = params.supplierForm?.selectedModelDict?.[params.supplierForm?.selectedSupplier?.name]?.name;
+  await 一般处理函数模板_字典版本<CR, TT>({
+    demoData: params.dataWrap,
+    supplierForm: params.supplierForm,
+    系统提示词: params.系统提示词,
+    制作输入的函数: params.制作输入的函数,
+    tempData: theTempData,
+    otherLLMOptions: Object.assign({ 
+      max_tokens: modelName=="free:QwQ-32B"?8000:4000,
+      model: modelName,
+      temperature: 1,
+    }, params.llmOptions??{}),
+    startFn: 默认初始化函数,
+    chunkFn: async (dataWrap: any, _tempData: any, _result: any, delta: any) => {
+      // console.log("delta", delta);
+      if (delta.reasoning_content) {
+        dataWrap.thinkingSpans.push(delta.reasoning_content);
+      }
+      if (delta.content) {
+        dataWrap.outputSpans.push(delta.content);
+      }
+    },
+    resultFn: params.resultFn ?? 一般结果处理函数,
+    onAfterUpdate: async () => {
+      await params.onAfterUpdate?.();
+      params.dataWrap.processing = false;
+    },
+  });
+}
+
+export async function 进一步抽象的标准化处理函数<CR, TT>(
+  系统提示词: string,
+  制作输入的函数: (demoData: any)=>string,
+  dataWrap: any,
+  supplierForm: any,
+  llmOptions?: any,
+  onAfterUpdate?: any,
+  resultFn: any = 一般结果处理函数,
+) {
+  return await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词,
+    制作输入的函数,
+    dataWrap,
+    supplierForm,
+    llmOptions,
+    onAfterUpdate,
+    resultFn
+  });
+}
+
 // ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //

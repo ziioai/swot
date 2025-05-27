@@ -4,7 +4,7 @@
 // stage0plus 先学习一些例题
 
 import _ from 'lodash';
-import { 进一步抽象的标准化处理函数 } from '@utils/functions';
+import { 进一步抽象的标准化处理函数_字典版本, } from '@utils/functions';
 // import {produce} from 'immer';
 const produce = (data: any, fn: any) => {
   fn?.(data);
@@ -409,9 +409,14 @@ export function stage0_判断题型_InputGenerator(dataWrap: any) {
 };
 
 export async function stage0_判断题型_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
-  const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    customPrompt || stage0_判断题型_prompt, stage0_判断题型_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
-  );
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: customPrompt || stage0_判断题型_prompt,
+    制作输入的函数: stage0_判断题型_InputGenerator,
+    dataWrap: dataWrap,
+    supplierForm: supplierForm,
+    llmOptions: null,
+    onAfterUpdate: onAfterUpdate,
+  });
   return that;
 };
 
@@ -469,9 +474,14 @@ export function stage1_根据笔记做题_InputGenerator(dataWrap: any) {
 }
 
 export async function stage1_根据笔记做题_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
-  const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    customPrompt || stage1_根据笔记做题_prompt, stage1_根据笔记做题_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
-  );
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: customPrompt || stage1_根据笔记做题_prompt,
+    制作输入的函数: stage1_根据笔记做题_InputGenerator,
+    dataWrap: dataWrap,
+    supplierForm: supplierForm,
+    llmOptions: null,
+    onAfterUpdate: onAfterUpdate,
+  });
   return that;
 }
 
@@ -573,9 +583,14 @@ export async function stage2_根据错题修改笔记_Process<CR, TT>(
         customNoteOpsToken
       );
     
-  const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    finalPrompt, stage2_根据错题修改笔记_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
-  );
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: finalPrompt,
+    制作输入的函数: stage2_根据错题修改笔记_InputGenerator,
+    dataWrap: dataWrap,
+    supplierForm: supplierForm,
+    llmOptions: null,
+    onAfterUpdate: onAfterUpdate,
+  });
   return that;
 }
 
@@ -681,9 +696,14 @@ export async function stage4_合并对笔记的修改_Process<CR, TT>(
         customNoteOpsToken
       );
     
-  const that = await 进一步抽象的标准化处理函数<CR, TT>(
-    finalPrompt, stage4_合并对笔记的修改_InputGenerator, dataWrap, supplierForm, null, onAfterUpdate,
-  );
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: finalPrompt,
+    制作输入的函数: stage4_合并对笔记的修改_InputGenerator,
+    dataWrap: dataWrap,
+    supplierForm: supplierForm,
+    llmOptions: null,
+    onAfterUpdate: onAfterUpdate,
+  });
   return that;
 };
 
