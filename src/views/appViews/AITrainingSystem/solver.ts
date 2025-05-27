@@ -408,18 +408,6 @@ export function stage0_判断题型_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 };
 
-export async function stage0_判断题型_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
-  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
-    系统提示词: customPrompt || stage0_判断题型_prompt,
-    制作输入的函数: stage0_判断题型_InputGenerator,
-    dataWrap: dataWrap,
-    supplierForm: supplierForm,
-    llmOptions: null,
-    onAfterUpdate: onAfterUpdate,
-  });
-  return that;
-};
-
 
 
 // stage1 根据笔记做题
@@ -471,18 +459,6 @@ export function stage1_根据笔记做题_InputGenerator(dataWrap: any) {
   }
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
-}
-
-export async function stage1_根据笔记做题_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
-  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
-    系统提示词: customPrompt || stage1_根据笔记做题_prompt,
-    制作输入的函数: stage1_根据笔记做题_InputGenerator,
-    dataWrap: dataWrap,
-    supplierForm: supplierForm,
-    llmOptions: null,
-    onAfterUpdate: onAfterUpdate,
-  });
-  return that;
 }
 
 
@@ -557,43 +533,6 @@ export function stage2_根据错题修改笔记_InputGenerator(dataWrap: any) {
   return lines.join("\n");
 }
 
-export async function stage2_根据错题修改笔记_Process<CR, TT>(
-  dataWrap: any, 
-  supplierForm: any, 
-  onAfterUpdate?: any, 
-  customPrompt?: string, 
-  customNoteDesc?: string, 
-  customNoteOps?: string,
-  customNoteDescToken?: string,
-  customNoteOpsToken?: string
-) {
-  const finalPrompt = customPrompt 
-    ? replaceTemplateTokens(
-        customPrompt, 
-        customNoteDesc || 笔记介绍, 
-        customNoteOps || 笔记操作介绍,
-        customNoteDescToken,
-        customNoteOpsToken
-      )
-    : replaceTemplateTokens(
-        stage2_根据错题修改笔记_prompt, 
-        customNoteDesc || 笔记介绍, 
-        customNoteOps || 笔记操作介绍,
-        customNoteDescToken,
-        customNoteOpsToken
-      );
-    
-  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
-    系统提示词: finalPrompt,
-    制作输入的函数: stage2_根据错题修改笔记_InputGenerator,
-    dataWrap: dataWrap,
-    supplierForm: supplierForm,
-    llmOptions: null,
-    onAfterUpdate: onAfterUpdate,
-  });
-  return that;
-}
-
 
 
 // stage4 合并对笔记的修改
@@ -653,7 +592,6 @@ interface YourResponse {
 
 `.trim();
 export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
-
   const entries = _.clone((dataWrap?.qtBook?.entries??[]).filter((it: any)=>!it.deleted)) as any[];
   entries.forEach((it) => {
     if (it?.steps?.length) { it.stepsNum = it.steps.length; }
@@ -670,6 +608,205 @@ export function stage4_合并对笔记的修改_InputGenerator(dataWrap: any) {
   lines.push("====[请按要求回应]====");
   return lines.join("\n");
 }
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+// stage3 根据例题修改笔记
+
+export const stage3_根据例题修改笔记_prompt = `
+`.trim();
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+// 字典版本接口定义
+interface Stage0判断题型参数字典 {
+  dataWrap: any;
+  supplierForm: any;
+  onAfterUpdate?: any;
+  customPrompt?: string;
+}
+
+interface Stage1根据笔记做题参数字典 {
+  dataWrap: any;
+  supplierForm: any;
+  onAfterUpdate?: any;
+  customPrompt?: string;
+}
+
+interface Stage2根据错题修改笔记参数字典 {
+  dataWrap: any;
+  supplierForm: any;
+  onAfterUpdate?: any;
+  customPrompt?: string;
+  customNoteDesc?: string;
+  customNoteOps?: string;
+  customNoteDescToken?: string;
+  customNoteOpsToken?: string;
+}
+
+interface Stage4合并对笔记的修改参数字典 {
+  dataWrap: any;
+  supplierForm: any;
+  onAfterUpdate?: any;
+  customPrompt?: string;
+  customNoteDesc?: string;
+  customNoteOps?: string;
+  customNoteDescToken?: string;
+  customNoteOpsToken?: string;
+}
+
+export async function stage0_判断题型_Process_字典版本<CR, TT>(params: Stage0判断题型参数字典) {
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: params.customPrompt || stage0_判断题型_prompt,
+    制作输入的函数: stage0_判断题型_InputGenerator,
+    dataWrap: params.dataWrap,
+    supplierForm: params.supplierForm,
+    llmOptions: null,
+    onAfterUpdate: params.onAfterUpdate,
+  });
+  return that;
+}
+
+export async function stage1_根据笔记做题_Process_字典版本<CR, TT>(params: Stage1根据笔记做题参数字典) {
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: params.customPrompt || stage1_根据笔记做题_prompt,
+    制作输入的函数: stage1_根据笔记做题_InputGenerator,
+    dataWrap: params.dataWrap,
+    supplierForm: params.supplierForm,
+    llmOptions: null,
+    onAfterUpdate: params.onAfterUpdate,
+  });
+  return that;
+}
+
+export async function stage2_根据错题修改笔记_Process_字典版本<CR, TT>(params: Stage2根据错题修改笔记参数字典) {
+  const finalPrompt = params.customPrompt 
+    ? replaceTemplateTokens(
+        params.customPrompt, 
+        params.customNoteDesc || 笔记介绍, 
+        params.customNoteOps || 笔记操作介绍,
+        params.customNoteDescToken,
+        params.customNoteOpsToken
+      )
+    : replaceTemplateTokens(
+        stage2_根据错题修改笔记_prompt, 
+        params.customNoteDesc || 笔记介绍, 
+        params.customNoteOps || 笔记操作介绍,
+        params.customNoteDescToken,
+        params.customNoteOpsToken
+      );
+    
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: finalPrompt,
+    制作输入的函数: stage2_根据错题修改笔记_InputGenerator,
+    dataWrap: params.dataWrap,
+    supplierForm: params.supplierForm,
+    llmOptions: null,
+    onAfterUpdate: params.onAfterUpdate,
+  });
+  return that;
+}
+
+export async function stage4_合并对笔记的修改_Process_字典版本<CR, TT>(params: Stage4合并对笔记的修改参数字典) {
+  const finalPrompt = params.customPrompt 
+    ? replaceTemplateTokens(
+        params.customPrompt, 
+        params.customNoteDesc || 笔记介绍, 
+        params.customNoteOps || 笔记操作介绍,
+        params.customNoteDescToken,
+        params.customNoteOpsToken
+      )
+    : replaceTemplateTokens(
+        stage4_合并对笔记的修改_prompt, 
+        params.customNoteDesc || 笔记介绍, 
+        params.customNoteOps || 笔记操作介绍,
+        params.customNoteDescToken,
+        params.customNoteOpsToken
+      );
+    
+  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
+    系统提示词: finalPrompt,
+    制作输入的函数: stage4_合并对笔记的修改_InputGenerator,
+    dataWrap: params.dataWrap,
+    supplierForm: params.supplierForm,
+    llmOptions: null,
+    onAfterUpdate: params.onAfterUpdate,
+  });
+  return that;
+}
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+
+
+
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+
+export async function stage0_判断题型_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
+  return await stage0_判断题型_Process_字典版本<CR, TT>({
+    dataWrap,
+    supplierForm,
+    onAfterUpdate,
+    customPrompt
+  });
+}
+
+export async function stage1_根据笔记做题_Process<CR, TT>(dataWrap: any, supplierForm: any, onAfterUpdate?: any, customPrompt?: string) {
+  return await stage1_根据笔记做题_Process_字典版本<CR, TT>({
+    dataWrap,
+    supplierForm,
+    onAfterUpdate,
+    customPrompt
+  });
+}
+
+export async function stage2_根据错题修改笔记_Process<CR, TT>(
+  dataWrap: any, 
+  supplierForm: any, 
+  onAfterUpdate?: any, 
+  customPrompt?: string, 
+  customNoteDesc?: string, 
+  customNoteOps?: string,
+  customNoteDescToken?: string,
+  customNoteOpsToken?: string
+) {
+  return await stage2_根据错题修改笔记_Process_字典版本<CR, TT>({
+    dataWrap,
+    supplierForm,
+    onAfterUpdate,
+    customPrompt,
+    customNoteDesc,
+    customNoteOps,
+    customNoteDescToken,
+    customNoteOpsToken
+  });
+}
+
 export async function stage4_合并对笔记的修改_Process<CR, TT>(
   dataWrap: any, 
   supplierForm: any, 
@@ -680,32 +817,20 @@ export async function stage4_合并对笔记的修改_Process<CR, TT>(
   customNoteDescToken?: string,
   customNoteOpsToken?: string
 ) {
-  const finalPrompt = customPrompt 
-    ? replaceTemplateTokens(
-        customPrompt, 
-        customNoteDesc || 笔记介绍, 
-        customNoteOps || 笔记操作介绍,
-        customNoteDescToken,
-        customNoteOpsToken
-      )
-    : replaceTemplateTokens(
-        stage4_合并对笔记的修改_prompt, 
-        customNoteDesc || 笔记介绍, 
-        customNoteOps || 笔记操作介绍,
-        customNoteDescToken,
-        customNoteOpsToken
-      );
-    
-  const that = await 进一步抽象的标准化处理函数_字典版本<CR, TT>({
-    系统提示词: finalPrompt,
-    制作输入的函数: stage4_合并对笔记的修改_InputGenerator,
-    dataWrap: dataWrap,
-    supplierForm: supplierForm,
-    llmOptions: null,
-    onAfterUpdate: onAfterUpdate,
+  return await stage4_合并对笔记的修改_Process_字典版本<CR, TT>({
+    dataWrap,
+    supplierForm,
+    onAfterUpdate,
+    customPrompt,
+    customNoteDesc,
+    customNoteOps,
+    customNoteDescToken,
+    customNoteOpsToken
   });
-  return that;
-};
+}
+
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
+// ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== //
 
 
 
@@ -720,10 +845,6 @@ export async function stage4_合并对笔记的修改_Process<CR, TT>(
 
 
 
-// stage3 根据例题修改笔记
-
-export const stage3_根据例题修改笔记_prompt = `
-`.trim();
 
 
 
