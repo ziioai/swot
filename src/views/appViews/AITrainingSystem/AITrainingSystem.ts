@@ -24,7 +24,7 @@ import NotebookEditor from './NotebookEditor';
 import FileUploadDialog from './components/FileUploadDialog';
 import PromptTemplatesPanel from './PromptTemplatesPanel';
 import QuestionBankConfigPanel from './QuestionBankConfigPanel';
-import AppConfigView from '../AppConfigView';
+import AIModelConfigPanel from '@components/shared/AIModelConfigPanel';
 import {
   SWOTOptions,
   // SWOTState,
@@ -45,7 +45,7 @@ import {
 import { sleep } from '@utils/functions';
 
 import {
-  // save as appSave,
+  save as appSave,
   load as appLoad,
 } from '@utils/functions';
 type ModelDict = {name?: string, label?: string, id?: string|number};
@@ -286,6 +286,35 @@ export default defineComponent({
      */
     const handleUpdateImportDialogVisibility = (value: boolean) => {
       showImportDialog.value = value;
+    };
+
+    /**
+     * 处理AI模型配置面板的事件
+     */
+    const handleSupplierChanged = (supplier: SupplierDict) => {
+      supplierForm.selectedSupplier = supplier;
+      appSave("supplierForm", supplierForm);
+    };
+
+    const handleApiKeyChanged = (data: { supplierName: string, apiKey: string }) => {
+      supplierForm.apiKeyDict[data.supplierName] = data.apiKey;
+      appSave("supplierForm", supplierForm);
+    };
+
+    const handleModelChanged = (data: { supplierName: string, model: ModelDict }) => {
+      supplierForm.selectedModelDict[data.supplierName] = data.model;
+      appSave("supplierForm", supplierForm);
+    };
+
+    const handleCustomSupplierAdded = (supplier: SupplierDict) => {
+      // 可以在这里处理自定义供应商添加的逻辑
+      console.log('Custom supplier added:', supplier);
+      appSave("supplierForm", supplierForm);
+    };
+
+    const handleModelsRefreshed = (data: { supplierName: string, models: ModelDict[] }) => {
+      supplierForm.supplierModelsDict[data.supplierName] = data.models;
+      appSave("supplierForm", supplierForm);
     };
 
     /**
@@ -738,7 +767,14 @@ export default defineComponent({
                           vnd("div", { class: "font-medium" }, tran("panels.modelInterfaceManagementPanel.title")),
                           vnd("div", { class: "text-sm opacity-80" }, tran("panels.modelInterfaceManagementPanel.description"))
                         ]),
-                        vnd(AppConfigView, {}),
+                        vnd(AIModelConfigPanel, {
+                          supplierForm: supplierForm,
+                          onSupplierChanged: handleSupplierChanged,
+                          onApiKeyChanged: handleApiKeyChanged,
+                          onModelChanged: handleModelChanged,
+                          onCustomSupplierAdded: handleCustomSupplierAdded,
+                          onModelsRefreshed: handleModelsRefreshed,
+                        }),
                       ]
                     }),
                   ],
