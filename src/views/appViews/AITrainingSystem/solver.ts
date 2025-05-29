@@ -646,6 +646,7 @@ interface Stage0判断题型参数字典 {
   supplierForm: any;
   onAfterUpdate?: any;
   customPrompt?: string;
+  llmOptions?: any;
 }
 
 interface Stage1根据笔记做题参数字典 {
@@ -653,6 +654,7 @@ interface Stage1根据笔记做题参数字典 {
   supplierForm: any;
   onAfterUpdate?: any;
   customPrompt?: string;
+  llmOptions?: any;
 }
 
 interface Stage2根据错题修改笔记参数字典 {
@@ -664,6 +666,7 @@ interface Stage2根据错题修改笔记参数字典 {
   customNoteOps?: string;
   customNoteDescToken?: string;
   customNoteOpsToken?: string;
+  llmOptions?: any;
 }
 
 interface Stage4合并对笔记的修改参数字典 {
@@ -675,6 +678,7 @@ interface Stage4合并对笔记的修改参数字典 {
   customNoteOps?: string;
   customNoteDescToken?: string;
   customNoteOpsToken?: string;
+  llmOptions?: any;
 }
 
 export async function stage0_判断题型_Process_字典版本<CR, TT>(params: Stage0判断题型参数字典) {
@@ -683,7 +687,7 @@ export async function stage0_判断题型_Process_字典版本<CR, TT>(params: S
     制作输入的函数: stage0_判断题型_InputGenerator,
     dataWrap: params.dataWrap,
     supplierForm: params.supplierForm,
-    llmOptions: null,
+    llmOptions: params.llmOptions || null,
     onAfterUpdate: params.onAfterUpdate,
   });
   return that;
@@ -695,7 +699,7 @@ export async function stage1_根据笔记做题_Process_字典版本<CR, TT>(par
     制作输入的函数: stage1_根据笔记做题_InputGenerator,
     dataWrap: params.dataWrap,
     supplierForm: params.supplierForm,
-    llmOptions: null,
+    llmOptions: params.llmOptions || null,
     onAfterUpdate: params.onAfterUpdate,
   });
   return that;
@@ -723,7 +727,7 @@ export async function stage2_根据错题修改笔记_Process_字典版本<CR, T
     制作输入的函数: stage2_根据错题修改笔记_InputGenerator,
     dataWrap: params.dataWrap,
     supplierForm: params.supplierForm,
-    llmOptions: null,
+    llmOptions: params.llmOptions || null,
     onAfterUpdate: params.onAfterUpdate,
   });
   return that;
@@ -751,7 +755,7 @@ export async function stage4_合并对笔记的修改_Process_字典版本<CR, T
     制作输入的函数: stage4_合并对笔记的修改_InputGenerator,
     dataWrap: params.dataWrap,
     supplierForm: params.supplierForm,
-    llmOptions: null,
+    llmOptions: params.llmOptions || null,
     onAfterUpdate: params.onAfterUpdate,
   });
   return that;
