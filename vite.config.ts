@@ -9,6 +9,9 @@ const UrlBase = '/swot/'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    allowedHosts: ['miya-unpalliated-tritely.ngrok-free.dev']
+  },
   plugins: [
     vue(),
     UnoCSS(),
