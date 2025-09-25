@@ -197,11 +197,168 @@
 
 
 ## 十二、附：现有关键文件与职责映射
+
 - `src/views/appViews/AITrainingSystem/AITrainingSystem.ts`: 组合 UI 容器，装配训练器、数据加载与各面板。
 - `src/views/appViews/AITrainingSystem/swot-trainer.ts`: 训练核心控制流与统计、版本化与回滚、单题与批处理流程。
 - `src/views/appViews/AITrainingSystem/solver.ts`: 各 stage 提示词与输入生成、笔记操作函数、标记替换与处理包装器。
 - `src/views/appViews/AITrainingSystem/swot-db-functions.ts`: Dexie 存储、快照与记录、性能与批处理工具。
 - `src/views/appViews/AITrainingSystem/types.ts`: 训练选项/状态/题目/枚举类型等。
+
+## 十三、LangGraph 节点/边/状态 细颗粒度设计草案（完整项目）
+
+下述设计覆盖完整项目（非仅 MVP），按“顶层循环 → 批 → 单题 → 笔记合并/应用”四层展开，并给出关键状态结构与条件边。
+
+### 13.1 顶层循环子图（TrainLoopGraph）
+- 节点
+  - InitAndLoad: 载入 options、supplierForm、promptTemplates、notebook、quStateDict、quDataDict；恢复 Checkpoint。
+  - SelectQuestions: 选择“可训练集合”（非简题、未跳过、未达最大验证/确证的题）。
+  - CheckStop: 终止条件判断（达到 maxLoopCount、集合为空且 versionCertifyCount 达标等）。
+  - PrepareBatchQueue: 基于 batchSize 生成批队列（ids[] 分批）。
+  - ProcessNextBatch: 调用 BatchGraph 处理当前批；返回批结果（allCorrect, opsCollected, wrongIds 等）。
+  - UpdateCounters: 根据批结果更新 versionCount/totalCount/versionCertifyCount 等计数器。
+  - DecideNext: 若还有批则回到 ProcessNextBatch；若批处理完则进入下一轮或结束。
+  - PauseGate: 若用户请求暂停（PREPARING_PAUSE），在批与批之间挂起并记录断点。
+  - AbortGate: 若用户请求中止（ABORTING），记录断点并退出到 Abort。
+  - Finish: 正常结束（ENDED），写入收尾快照与事件。
+  - Abort: 异常/用户中止（ABORTED），写入收尾快照与事件。
+  - SaveCheckpoint: 在关键边（选题完成、批结果回填、计数更新后）保存检查点，支持回放与断点续跑。
+- 条件边
+  - InitAndLoad → SelectQuestions（成功）/Abort（加载失败）。
+  - SelectQuestions → CheckStop。
+  - CheckStop → Finish（满足结束）/PrepareBatchQueue（继续）。
+  - PrepareBatchQueue → ProcessNextBatch。
+  - ProcessNextBatch → UpdateCounters。
+  - UpdateCounters → PauseGate → AbortGate → DecideNext。
+  - DecideNext → ProcessNextBatch（还有批）/SelectQuestions（下一轮）/Finish（全部完成）。
+
+### 13.2 批处理子图（BatchGraph）
+- 节点
+  - BuildBatch: 从输入 ids[] 构建批上下文。
+  - ParallelQuestionGraphs: 对每个 id 并行运行 QuestionGraph（并发受 RateLimiter 控制）。
+  - CollectResults: 汇总 per-question 的 judge/answer/errorReport、正误统计、wrongIds。
+  - ExtractOps: 从所有错误结果中提取 ops[] 列表（每题 errorReport.ops）。
+  - DecideApply: 若 practiceOnlyMode 为 false 且存在错误，则输出 opsCollected；否则输出空。
+  - SaveBatchTrace: 记录批级日志摘要（可写 chatRecords）。
+- 条件边
+  - BuildBatch → ParallelQuestionGraphs → CollectResults → ExtractOps → DecideApply → 返回上层。
+
+### 13.3 单题子图（QuestionGraph）
+- 节点
+  - BuildJudgeInput: 由 qtBook.entries + question 构建 stage0 输入。
+  - Classify(LLM): stage0，输出 { matched, name }。
+  - ParseClassify: JSON 校验与兜底（失败重试 / 回退策略：若未匹配，则进入 AnswerWithoutNote）。
+  - FetchNote: 从 notebook.entries 取 name 匹配的 note（无匹配则记警告）。
+  - BuildAnswerInput: 由 note + question 构建 stage1 输入（若无 note 则降级为自解）。
+  - Answer(LLM): stage1，输出 { plan, analyzes[], answer, didFollow, ... }。
+  - ParseAnswer: JSON 校验与兜底（失败重试 / 自解降级）。
+  - JudgeRule: 比较标准答案与输出（字符串 + JSON.stringify 双通道），产出 correct|wrong。
+  - OnCorrect: 更新 per-question 计数（trained/correct），评估是否触发 isSimpleV/T。
+  - BuildShadowNote: 构建影子笔记（该题型完整，其它降采样为 name/desc/clue）。
+  - AnalyzeWrong(LLM): stage2，输出 { operations: [] } 笔记修改计划。
+  - ParseOps: JSON 校验与去重、必要时重试。
+- 条件边
+  - BuildJudgeInput → Classify → ParseClassify → [matched?]
+    - true → FetchNote → BuildAnswerInput → Answer → ParseAnswer → JudgeRule → [correct?]
+      - true → OnCorrect → 返回（无 ops）
+      - false → BuildShadowNote → AnalyzeWrong → ParseOps → 返回（含 ops）
+    - false → BuildAnswerInput（无 note 模式）→ Answer → ParseAnswer → JudgeRule → 分支同上
+
+### 13.4 笔记合并/应用子图（NotebookGraph）
+- 节点
+  - SnapshotBefore: 记录当前 notebook 版本快照（qtBookBackups）。
+  - NewVersion: 生成新版本 ID，清理版本内计数（与现状一致）。
+  - MergeOps(LLM): stage4，对多题 ops 做语义合并、去重与风格统一。
+  - ParseMergedOps: JSON 校验与冲突探测（如 DELETE 与 MODIFY 冲突、索引错位等）。
+  - ApplyOps(Pure): 通过笔记操作函数将 operations 应用到 notebook（纯函数，便于可测与回滚）。
+  - SnapshotAfter: 记录新版本快照（qtBookBackups）。
+  - EmitEvents: 发出成功/失败事件（Toast、声音）。
+  - RollbackOnFailure: 任一失败时回滚到 SnapshotBefore，并记录失败原因。
+- 条件边
+  - SnapshotBefore → NewVersion → MergeOps → ParseMergedOps → ApplyOps → SnapshotAfter → EmitEvents
+  - 任一点失败 → RollbackOnFailure → 返回错误状态
+
+### 13.5 通用支撑节点
+- InvokeLLM: 统一封装供应商/模型选择、重试策略、超时、速率限制、结构化输出校验（结合 JSON Schema）。
+- CheckpointAdapter: 对接 IndexedDB（或 KV）作为 Checkpointer 存储，支持按图/批/题维度打点。
+- RateLimiter: 按供应商/模型配置 QPS/并发（supplierForm 派生）。
+- LogSink: 把简化数据写入 chatRecords（精简 spans），与现有 swot-db-functions 能力对齐。
+
+### 13.6 Graph State 核心结构（建议）
+- global（全局）
+  - options, supplierForm, promptTemplates
+  - notebook: QTBook, notebookVersion
+  - quStateDict, quDataDict
+  - counters: totalCount, versionCount, versionCertifyCount
+  - control: trainingState, pauseRequested, abortRequested, lastBatchIndex
+- batch（批级上下文）
+  - batchIds: string[]
+  - perQuestion: { [id]: { judgeOutput, answerOutput, isCorrect, errorReport?: { operations: [] } } }
+  - opsCollected: operations[]
+  - stats: { allCorrect, allBugs }
+- question（题级临时）
+  - inputs/outputs：各 stage 的输入/输出摘要（便于追踪与复用）
+- checkpoint
+  - markers: 在“选题完成”、“批结果回填”、“新版本生成与应用后”等关键点保存
+
+### 13.7 失败与恢复策略（要点）
+- LLM 超时/结构化失败：自动重试（指数退避，限最大次数），失败则降级为更保守策略（如无 note 自解）。
+- 合并冲突：保守拒绝并回滚，提示人工介入。
+- 中止/暂停：只在批间响应，保证幂等；恢复时从最近检查点继续。
+
+## 十四、“现有 UI 不变、底层替换为 Graph 执行器”的集成点清单
+
+以下按主要界面与模块罗列替换点，尽量保持 UI/props/事件不变，仅更换数据来源与动作落点。
+
+### 14.1 顶层容器（AITrainingSystem.ts）
+- Trainer 实例替换：
+  - 保留 `appData.trainer` 外观接口（start/pause/resume/abort/getTrainingStateText/updatePromptTemplates 等），内部由 GraphRuntime 代理到 Graph。
+  - `signalFn` 与声音提示：Graph 事件总线 → Toast/音效；确保事件语义与现有一致。
+- 本地存储：
+  - `kvs` 键（trainer/questions/promptTemplates/uiData/supplierForm）继续沿用；Graph 的 Checkpointer 采用独立命名空间，避免冲突。
+- 生命周期：
+  - onMounted：从 kvs 恢复 supplierForm/uiData/promptTemplates；初始化 GraphRuntime；装载题库并触发一次 SelectQuestions。
+  - onUnmounted：触发 SaveCheckpoint 与 kvs 保存（与现状一致）。
+
+### 14.2 TrainingControlPanel
+- 读：`trainer.options`、`trainer.state`、`trainingStateText`。
+- 写：`onUpdate:options` 映射到 Graph 的 options 更新；start/pause/resume/abort → GraphRuntime 控制 API；
+- 进度：Graph 事件（batch 开始/结束、pause-ready）转为 UI 可观察数据。
+
+### 14.3 AccuracyPanel
+- 读：Graph State 的 counters 与 quStateDict 聚合统计；
+- 保持现有 props 结构，底层由选择器从 Graph State 派生。
+
+### 14.4 QuestionCard 列表
+- 读：`quEntries`（从既有题库）与 `quDataDict/quStateDict`（Graph State 映射）；
+- 写：错误分析触发（UI Demo）可映射到 QuestionGraph 单次运行（可选）。
+
+### 14.5 NotebookEditor / CurrentNotePanel / NoteHistoryPanel
+- 读写：
+  - 编辑器更新：写入 Graph State 的 notebook，触发 NewVersion/快照仍由 NotebookGraph 负责；
+  - 历史版本：继续读 `qtBookBackups`，但版本生成/保存由 NotebookGraph 统一触发；
+  - 保存动作：触发 NotebookGraph 的 Snapshot（手动保存场景）。
+
+### 14.6 PromptTemplatesPanel
+- 读写：保持现状保存到 kvs；同时调用 GraphRuntime 的 `updatePromptTemplates` 将模板注入各 LLM 节点上下文。
+
+### 14.7 AIModelConfigPanel
+- 读写：supplierForm 仍存 kvs；GraphRuntime 订阅 supplierForm 变化，更新 RateLimiter 与模型路由。
+
+### 14.8 ChatRecordsPanel / StorageInfoPanel
+- ChatRecords：LogSink 继续写 `chatRecords`（精简 spans），UI 无需变更。
+- Storage：StorageInfoPanel 无需变更；可选新增 Checkpointer 存储估算展示。
+
+### 14.9 导入/导出与兼容
+- 导出：保留 `exportTrainerData/exportQuestions`；Graph 侧提供 `exportGraphState` 以便并行使用或合并到同一文件。
+- 导入：解析旧版 `trainer` JSON → 迁移为 Graph State；确保 `quStateDict/quDataDict/notebook` 与版本号一致。
+
+### 14.10 错误处理与用户反馈
+- 统一事件：GraphRuntime → 事件总线（toast/sound）；
+- 失败回滚：NotebookGraph 失败 → UI 弹窗提示，并提供“回滚至前版本”操作（调用 RollbackOnFailure 结果）。
+
+### 14.11 测试与调试
+- 提供“单题运行/单批运行/整图 Dry-run”开关，用于演示与回归测试；
+- 集成 Tracing 视图链接（LangSmith 或自研 logs）到 Debug 面板。
 
 
 ---
